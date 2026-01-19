@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Example helper script for aws-api
+Example helper script for aws-ccapi
 
 This is a placeholder script that can be executed directly.
 Replace with actual implementation or delete if not needed.
@@ -11,7 +11,7 @@ Example real scripts from other skills:
 """
 
 def main():
-    print("This is an example script for aws-api")
+    print("This is an example script for aws-ccapi")
     # TODO: Add actual script logic here
     # This could be data processing, file conversion, API calls, etc.
 

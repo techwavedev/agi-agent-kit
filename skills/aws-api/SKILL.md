@@ -1,85 +1,140 @@
 ---
 name: aws-api
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: Execute AWS CLI commands through AI assistance via AWS API MCP Server. Use for any AWS operation including creating resources, managing infrastructure, running CLI commands, and getting command suggestions. Supports all AWS services with command validation and hallucination protection.
 ---
 
-# Aws Api
+# AWS API Skill
 
-## Overview
+> Part of the [AWS skill family](../aws/SKILL.md). For credentials, see [aws-cli](../aws-cli/SKILL.md).
 
-[TODO: 1-2 sentences explaining what this skill enables]
+Execute AWS CLI commands through AI assistance with validation and safety controls.
 
-## Structuring This Skill
+## MCP Server Setup
 
-[TODO: Choose the structure that best fits this skill's purpose. Common patterns:
+### Quick Setup
 
-**1. Workflow-Based** (best for sequential processes)
-- Works well when there are clear step-by-step procedures
-- Example: DOCX skill with "Workflow Decision Tree" → "Reading" → "Creating" → "Editing"
-- Structure: ## Overview → ## Workflow Decision Tree → ## Step 1 → ## Step 2...
+```json
+{
+  "mcpServers": {
+    "aws-api": {
+      "command": "uvx",
+      "args": ["awslabs.aws-api-mcp-server@latest"],
+      "env": {
+        "AWS_PROFILE": "default",
+        "AWS_REGION": "eu-west-1"
+      }
+    }
+  }
+}
+```
 
-**2. Task-Based** (best for tool collections)
-- Works well when the skill offers different operations/capabilities
-- Example: PDF skill with "Quick Start" → "Merge PDFs" → "Split PDFs" → "Extract Text"
-- Structure: ## Overview → ## Quick Start → ## Task Category 1 → ## Task Category 2...
+### Auto-Configure
 
-**3. Reference/Guidelines** (best for standards or specifications)
-- Works well for brand guidelines, coding standards, or requirements
-- Example: Brand styling with "Brand Guidelines" → "Colors" → "Typography" → "Features"
-- Structure: ## Overview → ## Guidelines → ## Specifications → ## Usage...
+```bash
+python scripts/configure_mcp.py --profile default --region eu-west-1
+```
 
-**4. Capabilities-Based** (best for integrated systems)
-- Works well when the skill provides multiple interrelated features
-- Example: Product Management with "Core Capabilities" → numbered capability list
-- Structure: ## Overview → ## Core Capabilities → ### 1. Feature → ### 2. Feature...
+### Read-Only Mode (Safer)
 
-Patterns can be mixed and matched as needed. Most skills combine patterns (e.g., start with task-based, add workflow for complex operations).
+```json
+{
+  "mcpServers": {
+    "aws-api": {
+      "command": "uvx",
+      "args": ["awslabs.aws-api-mcp-server@latest"],
+      "env": {
+        "AWS_PROFILE": "default",
+        "AWS_REGION": "eu-west-1",
+        "READ_OPERATIONS_ONLY": "true"
+      }
+    }
+  }
+}
+```
 
-Delete this entire "Structuring This Skill" section when done - it's just guidance.]
+## MCP Tools Available
 
-## [TODO: Replace with the first main section based on chosen structure]
+| Tool                   | Description                                            |
+| ---------------------- | ------------------------------------------------------ |
+| `call_aws`             | Execute AWS CLI commands with validation               |
+| `suggest_aws_commands` | Get command suggestions from natural language          |
+| `get_execution_plan`   | Step-by-step guidance for complex tasks (experimental) |
 
-[TODO: Add content here. See examples in existing skills:
-- Code samples for technical skills
-- Decision trees for complex workflows
-- Concrete examples with realistic user requests
-- References to scripts/templates/references as needed]
+## Features
 
-## Resources
+- **All AWS Services** — Supports every AWS CLI command
+- **Command Validation** — Validates before execution
+- **Hallucination Protection** — Only valid CLI commands allowed
+- **Read-Only Mode** — Disable mutations for safe exploration
+- **Latest APIs** — Access services released after model training
 
-This skill includes example resource directories that demonstrate how to organize different types of bundled resources:
+## Configuration Options
 
-### scripts/
-Executable code (Python/Bash/etc.) that can be run directly to perform specific operations.
+| Variable                   | Default   | Description                    |
+| -------------------------- | --------- | ------------------------------ |
+| `AWS_PROFILE`              | default   | AWS profile to use             |
+| `AWS_REGION`               | us-east-1 | Default region                 |
+| `READ_OPERATIONS_ONLY`     | false     | Disable write operations       |
+| `REQUIRE_MUTATION_CONSENT` | false     | Confirm before mutations       |
+| `AWS_API_MCP_WORKING_DIR`  | temp      | Working directory for file ops |
 
-**Examples from other skills:**
-- PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
+## Workflows
 
-**Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
+### 1. Explore Resources (Read-Only)
 
-**Note:** Scripts may be executed without loading into context, but can still be read by Claude for patching or environment adjustments.
+```
+Ask: "List all my S3 buckets"
+→ Uses `suggest_aws_commands` to find: aws s3 ls
+→ Executes via `call_aws`
+```
 
-### references/
-Documentation and reference material intended to be loaded into context to inform Claude's process and thinking.
+### 2. Create Resources
 
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
+```
+Ask: "Create an S3 bucket called my-new-bucket in eu-west-1"
+→ Suggests: aws s3 mb s3://my-new-bucket --region eu-west-1
+→ Executes after validation
+```
 
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Claude should reference while working.
+### 3. Complex Operations
 
-### assets/
-Files not intended to be loaded into context, but rather used within the output Claude produces.
+```
+Ask: "Help me set up a VPC with public and private subnets"
+→ Uses `get_execution_plan` for step-by-step guidance
+→ Executes each step with validation
+```
 
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
+### 4. Get Command Help
 
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
+```
+Ask: "What's the command to list EC2 instances with their tags?"
+→ Uses `suggest_aws_commands` to provide options with parameters
+```
 
----
+## Example Commands
 
-**Any unneeded directories can be deleted.** Not every skill requires all three types of resources.
+| Task                  | Suggested Command                              |
+| --------------------- | ---------------------------------------------- |
+| List EC2 instances    | `aws ec2 describe-instances`                   |
+| Create S3 bucket      | `aws s3 mb s3://bucket-name`                   |
+| List Lambda functions | `aws lambda list-functions`                    |
+| Describe EKS cluster  | `aws eks describe-cluster --name cluster-name` |
+| Get caller identity   | `aws sts get-caller-identity`                  |
+
+## Scripts
+
+| Script                     | Purpose                   |
+| -------------------------- | ------------------------- |
+| `scripts/configure_mcp.py` | Auto-configure MCP client |
+
+## Security Best Practices
+
+1. **Use Read-Only Mode** for exploration: `READ_OPERATIONS_ONLY=true`
+2. **Require Consent** for mutations: `REQUIRE_MUTATION_CONSENT=true`
+3. **Use Least-Privilege IAM** — Limit the profile's permissions
+4. **Review Commands** — Check suggested commands before execution
+
+## References
+
+- [AWS API MCP Server Docs](https://awslabs.github.io/mcp/servers/aws-api-mcp-server)
+- [AWS CLI Command Reference](https://docs.aws.amazon.com/cli/latest/)
