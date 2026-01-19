@@ -20,3 +20,6 @@ venv/
 .vscode/
 .DS_Store
 *.log
+
+#documentation and reports
+reports
