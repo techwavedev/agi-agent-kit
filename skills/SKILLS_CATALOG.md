@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-20 00:13
+> **Auto-generated Documentation** — Last updated: 2026-01-20 00:31
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -17,6 +17,7 @@ This document provides comprehensive documentation on available skills, how to u
 - [Available Skills](#available-skills)
   - [AWS (Hub)](#aws-hub)
   - [Aws Terraform](#aws-terraform)
+  - [Karpenter](#karpenter)
   - [Opensearch](#opensearch)
   - [Pdf Reader](#pdf-reader)
   - [Victoriametrics](#victoriametrics)
@@ -57,6 +58,32 @@ skill-name/
 **References:**
 - `references/common_patterns.md`
 - `references/mcp_servers.md`
+
+---
+
+### Karpenter
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `karpenter` |
+| **Location** | `skills/karpenter/` |
+| **Parent** | [Aws](#aws) |
+
+**Description:** Karpenter Kubernetes autoscaler specialist for EKS clusters. Use for troubleshooting, documenting, managing, creating, updating, upgrading Karpenter deployments, and obtaining live cluster information. Covers NodePool/EC2NodeClass configuration, cost optimization, node consolidation, drift detection, Spot interruption handling, and migration from Cluster Autoscaler. Requires kubectl access to target EKS cluster.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/generate_ec2nodeclass.py` | *[See script for details]* |
+| `scripts/generate_nodepool.py` | *[See script for details]* |
+| `scripts/karpenter_status.py` | *[See script for details]* |
+
+**References:**
+- `references/ec2nodeclasses.md`
+- `references/migration.md`
+- `references/nodepools.md`
+- `references/troubleshooting.md`
 
 ---
 

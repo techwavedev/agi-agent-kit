@@ -176,6 +176,12 @@ Local container building with ECR integration.
 
 [Docs](https://awslabs.github.io/mcp/servers/finch-mcp-server)
 
+### Karpenter (Spoke Skill)
+
+High-performance Kubernetes node autoscaler for EKS.
+
+> **See dedicated skill:** [karpenter](../karpenter/SKILL.md) for NodePool/EC2NodeClass configuration, troubleshooting, migration from Cluster Autoscaler, and cluster status monitoring.
+
 ---
 
 ## ⚡ Serverless
