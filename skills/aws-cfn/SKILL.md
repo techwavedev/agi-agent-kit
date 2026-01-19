@@ -1,85 +1,100 @@
 ---
 name: aws-cfn
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: Manage AWS CloudFormation resources and templates via MCP Server. Use for creating, reading, updating, and deleting resources through Cloud Control API, getting resource schemas, and generating CloudFormation templates from existing resources.
 ---
 
-# Aws Cfn
+# AWS CloudFormation Skill
 
-## Overview
+> Part of the [AWS skill family](../aws/SKILL.md). For full IaC, see [aws-iac](../aws-iac/SKILL.md).
 
-[TODO: 1-2 sentences explaining what this skill enables]
+Manage CloudFormation resources and templates via MCP.
 
-## Structuring This Skill
+## MCP Server Setup
 
-[TODO: Choose the structure that best fits this skill's purpose. Common patterns:
+```json
+{
+  "mcpServers": {
+    "cloudformation": {
+      "command": "uvx",
+      "args": ["awslabs.cfn-mcp-server@latest"],
+      "env": {
+        "AWS_PROFILE": "default",
+        "AWS_REGION": "eu-west-1"
+      }
+    }
+  }
+}
+```
 
-**1. Workflow-Based** (best for sequential processes)
-- Works well when there are clear step-by-step procedures
-- Example: DOCX skill with "Workflow Decision Tree" → "Reading" → "Creating" → "Editing"
-- Structure: ## Overview → ## Workflow Decision Tree → ## Step 1 → ## Step 2...
+### Auto-Configure
 
-**2. Task-Based** (best for tool collections)
-- Works well when the skill offers different operations/capabilities
-- Example: PDF skill with "Quick Start" → "Merge PDFs" → "Split PDFs" → "Extract Text"
-- Structure: ## Overview → ## Quick Start → ## Task Category 1 → ## Task Category 2...
+```bash
+python scripts/configure_mcp.py --profile default --region eu-west-1
+```
 
-**3. Reference/Guidelines** (best for standards or specifications)
-- Works well for brand guidelines, coding standards, or requirements
-- Example: Brand styling with "Brand Guidelines" → "Colors" → "Typography" → "Features"
-- Structure: ## Overview → ## Guidelines → ## Specifications → ## Usage...
+## MCP Tools
 
-**4. Capabilities-Based** (best for integrated systems)
-- Works well when the skill provides multiple interrelated features
-- Example: Product Management with "Core Capabilities" → numbered capability list
-- Structure: ## Overview → ## Core Capabilities → ### 1. Feature → ### 2. Feature...
+| Tool                              | Description                               |
+| --------------------------------- | ----------------------------------------- |
+| `create_resource`                 | Create AWS resource via Cloud Control API |
+| `get_resource`                    | Get resource configuration                |
+| `update_resource`                 | Update resource properties                |
+| `delete_resource`                 | Delete resource                           |
+| `list_resources`                  | List resources by type                    |
+| `get_resource_schema_information` | Get CFN schema for resource type          |
+| `get_request_status`              | Check async operation status              |
+| `create_template`                 | Generate CFN template from resources      |
 
-Patterns can be mixed and matched as needed. Most skills combine patterns (e.g., start with task-based, add workflow for complex operations).
+## Workflows
 
-Delete this entire "Structuring This Skill" section when done - it's just guidance.]
+### 1. Create Resource
 
-## [TODO: Replace with the first main section based on chosen structure]
+```
+Ask: "Create an S3 bucket with versioning enabled"
+→ Uses create_resource with AWS::S3::Bucket
+→ Returns resource identifier
+```
 
-[TODO: Add content here. See examples in existing skills:
-- Code samples for technical skills
-- Decision trees for complex workflows
-- Concrete examples with realistic user requests
-- References to scripts/templates/references as needed]
+### 2. Export to Template
 
-## Resources
+```
+Ask: "Create a CloudFormation template from my existing resources"
+→ List resources with list_resources
+→ Use create_template to generate YAML template
+```
 
-This skill includes example resource directories that demonstrate how to organize different types of bundled resources:
+### 3. Understand Resource Schema
 
-### scripts/
-Executable code (Python/Bash/etc.) that can be run directly to perform specific operations.
+```
+Ask: "What properties can I set on AWS::S3::Bucket?"
+→ Uses get_resource_schema_information
+→ Returns all available properties
+```
 
-**Examples from other skills:**
-- PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
+### 4. Update Resource
 
-**Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
+```
+Ask: "Enable encryption on my S3 bucket"
+→ Uses update_resource with property changes
+→ Applies declarative update
+```
 
-**Note:** Scripts may be executed without loading into context, but can still be read by Claude for patching or environment adjustments.
+## Example Commands
 
-### references/
-Documentation and reference material intended to be loaded into context to inform Claude's process and thinking.
+| Task               | Tool                                       |
+| ------------------ | ------------------------------------------ |
+| Create S3 bucket   | `create_resource` with `AWS::S3::Bucket`   |
+| List EC2 instances | `list_resources` with `AWS::EC2::Instance` |
+| Get bucket config  | `get_resource` with bucket identifier      |
+| Generate template  | `create_template` from listed resources    |
 
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
+## Scripts
 
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Claude should reference while working.
+| Script                     | Purpose                   |
+| -------------------------- | ------------------------- |
+| `scripts/configure_mcp.py` | Auto-configure MCP client |
 
-### assets/
-Files not intended to be loaded into context, but rather used within the output Claude produces.
+## References
 
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
-
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
-
----
-
-**Any unneeded directories can be deleted.** Not every skill requires all three types of resources.
+- [CloudFormation MCP Server](https://awslabs.github.io/mcp/servers/cfn-mcp-server)
+- [CloudFormation Resource Types](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-template-resource-type-ref.html)

@@ -1,85 +1,141 @@
 ---
 name: aws-ccapi
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: Manage 1,100+ AWS resources via Cloud Control API with integrated security scanning. Use for declarative resource creation, reading, updating, deleting, and listing. Features security-first workflow with Checkov scanning, credential awareness, and template generation.
 ---
 
-# Aws Ccapi
+# AWS Cloud Control API Skill
 
-## Overview
+> Part of the [AWS skill family](../aws/SKILL.md). For CLI commands, see [aws-api](../aws-api/SKILL.md).
 
-[TODO: 1-2 sentences explaining what this skill enables]
+Manage AWS resources declaratively via Cloud Control API with security scanning.
 
-## Structuring This Skill
+## MCP Server Setup
 
-[TODO: Choose the structure that best fits this skill's purpose. Common patterns:
+```json
+{
+  "mcpServers": {
+    "ccapi": {
+      "command": "uvx",
+      "args": ["awslabs.ccapi-mcp-server@latest"],
+      "env": {
+        "AWS_PROFILE": "default",
+        "AWS_REGION": "eu-west-1",
+        "SECURITY_SCANNING": "enabled"
+      }
+    }
+  }
+}
+```
 
-**1. Workflow-Based** (best for sequential processes)
-- Works well when there are clear step-by-step procedures
-- Example: DOCX skill with "Workflow Decision Tree" → "Reading" → "Creating" → "Editing"
-- Structure: ## Overview → ## Workflow Decision Tree → ## Step 1 → ## Step 2...
+### Auto-Configure
 
-**2. Task-Based** (best for tool collections)
-- Works well when the skill offers different operations/capabilities
-- Example: PDF skill with "Quick Start" → "Merge PDFs" → "Split PDFs" → "Extract Text"
-- Structure: ## Overview → ## Quick Start → ## Task Category 1 → ## Task Category 2...
+```bash
+python scripts/configure_mcp.py --profile default --region eu-west-1
+```
 
-**3. Reference/Guidelines** (best for standards or specifications)
-- Works well for brand guidelines, coding standards, or requirements
-- Example: Brand styling with "Brand Guidelines" → "Colors" → "Typography" → "Features"
-- Structure: ## Overview → ## Guidelines → ## Specifications → ## Usage...
+## Features
 
-**4. Capabilities-Based** (best for integrated systems)
-- Works well when the skill provides multiple interrelated features
-- Example: Product Management with "Core Capabilities" → numbered capability list
-- Structure: ## Overview → ## Core Capabilities → ### 1. Feature → ### 2. Feature...
+- **1,100+ Resource Types** — All AWS and partner resources
+- **Security Scanning** — Checkov integration before deployment
+- **Credential Awareness** — Shows account/region before changes
+- **Token Workflow** — AI cannot bypass security steps
+- **Template Generation** — Export to CloudFormation
 
-Patterns can be mixed and matched as needed. Most skills combine patterns (e.g., start with task-based, add workflow for complex operations).
+## MCP Tools
 
-Delete this entire "Structuring This Skill" section when done - it's just guidance.]
+### Core Tools
 
-## [TODO: Replace with the first main section based on chosen structure]
+| Tool                           | Description                               |
+| ------------------------------ | ----------------------------------------- |
+| `check_environment_variables`  | Verify AWS credentials configured         |
+| `get_aws_session_info`         | Get account ID, region, credential source |
+| `get_aws_account_info`         | Quick one-step account info               |
+| `generate_infrastructure_code` | Prepare properties and CF template        |
+| `explain`                      | Show what will be created/modified        |
+| `run_checkov`                  | Security scan the template                |
 
-[TODO: Add content here. See examples in existing skills:
-- Code samples for technical skills
-- Decision trees for complex workflows
-- Concrete examples with realistic user requests
-- References to scripts/templates/references as needed]
+### Resource Tools (CRUDL)
 
-## Resources
+| Tool              | Description                           |
+| ----------------- | ------------------------------------- |
+| `create_resource` | Create any AWS resource declaratively |
+| `get_resource`    | Read resource properties              |
+| `update_resource` | Update with JSON Patch operations     |
+| `delete_resource` | Remove resource with confirmation     |
+| `list_resources`  | List all resources of a type          |
 
-This skill includes example resource directories that demonstrate how to organize different types of bundled resources:
+### Utility Tools
 
-### scripts/
-Executable code (Python/Bash/etc.) that can be run directly to perform specific operations.
+| Tool                              | Description                            |
+| --------------------------------- | -------------------------------------- |
+| `get_resource_schema_information` | Get CloudFormation schema for resource |
+| `create_template`                 | Generate CFN template from resources   |
 
-**Examples from other skills:**
-- PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
+## Secure Workflow
 
-**Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
+The server enforces this workflow:
 
-**Note:** Scripts may be executed without loading into context, but can still be read by Claude for patching or environment adjustments.
+```
+1. check_environment_variables() → environment_token
+2. get_aws_session_info() → credentials_token
+3. generate_infrastructure_code() → generated_code_token
+4. explain() → explained_token
+5. run_checkov() → security_scan_token (if enabled)
+6. create_resource() → resource created
+```
 
-### references/
-Documentation and reference material intended to be loaded into context to inform Claude's process and thinking.
+**Security guarantees:**
 
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
+- Cannot skip credential checks
+- Cannot bypass security scans
+- Full transparency before changes
+- Audit trail via token chain
 
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Claude should reference while working.
+## Configuration
 
-### assets/
-Files not intended to be loaded into context, but rather used within the output Claude produces.
+| Variable             | Default   | Description                  |
+| -------------------- | --------- | ---------------------------- |
+| `AWS_PROFILE`        | default   | AWS profile to use           |
+| `AWS_REGION`         | us-east-1 | Target region                |
+| `SECURITY_SCANNING`  | enabled   | Enable Checkov scanning      |
+| `CCAPI_DEFAULT_TAGS` | -         | Auto-apply tags to resources |
 
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
+## Example Operations
 
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
+### Create S3 Bucket
 
----
+```
+Ask: "Create an encrypted S3 bucket with versioning"
+→ Workflow runs through all security steps
+→ Shows exactly what will be created
+→ Runs Checkov security scan
+→ Creates bucket with properties shown
+```
 
-**Any unneeded directories can be deleted.** Not every skill requires all three types of resources.
+### List EC2 Instances
+
+```
+Ask: "List all EC2 instances"
+→ Uses list_resources with AWS::EC2::Instance
+→ Returns all instances with properties
+```
+
+### Get Resource Schema
+
+```
+Ask: "What properties can I set on an RDS instance?"
+→ Uses get_resource_schema_information
+→ Returns full CloudFormation schema
+```
+
+## Scripts
+
+| Script                     | Purpose                   |
+| -------------------------- | ------------------------- |
+| `scripts/configure_mcp.py` | Auto-configure MCP client |
+
+## References
+
+- [AWS Cloud Control API MCP Server](https://awslabs.github.io/mcp/servers/ccapi-mcp-server)
+- [Cloud Control API Docs](https://docs.aws.amazon.com/cloudcontrolapi/latest/userguide/)
+- [Supported Resource Types](https://docs.aws.amazon.com/cloudcontrolapi/latest/userguide/supported-resources.html)
