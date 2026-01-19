@@ -4,12 +4,13 @@ Complete list of AWS MCP servers from [awslabs/mcp](https://awslabs.github.io/mc
 
 ## Core Servers
 
-| Server         | Package                        | Description               |
-| -------------- | ------------------------------ | ------------------------- |
-| AWS API        | `awslabs.aws-api-mcp-server`   | General AWS CLI commands  |
-| CloudFormation | `awslabs.cfn-mcp-server`       | CloudFormation management |
-| CDK            | `awslabs.cdk-mcp-server`       | AWS CDK development       |
-| Terraform      | `awslabs.terraform-mcp-server` | Terraform workflows       |
+| Server         | Package                                | Description               |
+| -------------- | -------------------------------------- | ------------------------- |
+| AWS API        | `awslabs.aws-api-mcp-server`           | General AWS CLI commands  |
+| Documentation  | `awslabs.aws-documentation-mcp-server` | AWS documentation access  |
+| CloudFormation | `awslabs.cfn-mcp-server`               | CloudFormation management |
+| CDK            | `awslabs.cdk-mcp-server`               | AWS CDK development       |
+| Terraform      | `awslabs.terraform-mcp-server`         | Terraform workflows       |
 
 ## Container & Kubernetes
 

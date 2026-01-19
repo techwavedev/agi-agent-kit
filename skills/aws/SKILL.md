@@ -34,7 +34,7 @@ python aws-eks/scripts/configure_mcp.py --allow-write
 | Skill                            | Purpose                         | When to Use                                     |
 | -------------------------------- | ------------------------------- | ----------------------------------------------- |
 | [aws-cli](../aws-cli/SKILL.md)   | Profile & credential management | Setting up credentials, switching accounts, SSO |
-| [aws-docs](../aws-docs/SKILL.md) | AWS documentation & knowledge   | Finding docs, API references, best practices    |
+| [aws-docs](../aws-docs/SKILL.md) | Documentation lookup            | AWS best practices, troubleshooting, guidance   |
 | [aws-eks](../aws-eks/SKILL.md)   | EKS cluster management          | Kubernetes on AWS, cluster ops, deployments     |
 
 ## Routing Guide
@@ -46,12 +46,14 @@ python aws-eks/scripts/configure_mcp.py --allow-write
 - SSO configuration
 - Cross-account role assumption
 
-**Documentation & Knowledge:**
+**Documentation & Best Practices:**
 → Use `aws-docs` skill
 
-- Finding official AWS docs
+- Look up AWS documentation
+- Search for best practices and guidelines
+- Get service recommendations
+- Troubleshooting guidance
 - API references and examples
-- Best practices and patterns
 
 **Kubernetes/EKS:**
 → Use `aws-eks` skill
