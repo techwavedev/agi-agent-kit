@@ -1,85 +1,135 @@
 ---
 name: aws-terraform
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: Terraform workflows for AWS with integrated security scanning via Checkov. Use for AWS provider documentation, Terraform Registry module analysis, running terraform/terragrunt commands, and accessing AWS-IA GenAI modules. Supports init, plan, apply, and destroy operations.
 ---
 
-# Aws Terraform
+# AWS Terraform Skill
 
-## Overview
+> Part of the [AWS skill family](../aws/SKILL.md). For CDK, see [aws-iac](../aws-iac/SKILL.md).
 
-[TODO: 1-2 sentences explaining what this skill enables]
+Terraform workflows for AWS with security scanning.
 
-## Structuring This Skill
+## MCP Server Setup
 
-[TODO: Choose the structure that best fits this skill's purpose. Common patterns:
+```json
+{
+  "mcpServers": {
+    "terraform": {
+      "command": "uvx",
+      "args": ["awslabs.terraform-mcp-server@latest"],
+      "env": { "FASTMCP_LOG_LEVEL": "ERROR" }
+    }
+  }
+}
+```
 
-**1. Workflow-Based** (best for sequential processes)
-- Works well when there are clear step-by-step procedures
-- Example: DOCX skill with "Workflow Decision Tree" → "Reading" → "Creating" → "Editing"
-- Structure: ## Overview → ## Workflow Decision Tree → ## Step 1 → ## Step 2...
+### Auto-Configure
 
-**2. Task-Based** (best for tool collections)
-- Works well when the skill offers different operations/capabilities
-- Example: PDF skill with "Quick Start" → "Merge PDFs" → "Split PDFs" → "Extract Text"
-- Structure: ## Overview → ## Quick Start → ## Task Category 1 → ## Task Category 2...
+```bash
+python scripts/configure_mcp.py
+```
 
-**3. Reference/Guidelines** (best for standards or specifications)
-- Works well for brand guidelines, coding standards, or requirements
-- Example: Brand styling with "Brand Guidelines" → "Colors" → "Typography" → "Features"
-- Structure: ## Overview → ## Guidelines → ## Specifications → ## Usage...
+## Features
 
-**4. Capabilities-Based** (best for integrated systems)
-- Works well when the skill provides multiple interrelated features
-- Example: Product Management with "Core Capabilities" → numbered capability list
-- Structure: ## Overview → ## Core Capabilities → ### 1. Feature → ### 2. Feature...
+- **AWS Provider Docs** — Search AWS/AWSCC provider resources
+- **Module Analysis** — Analyze Terraform Registry modules
+- **Workflow Execution** — Run terraform init/plan/apply/destroy
+- **Terragrunt Support** — Multi-environment workflows
+- **GenAI Modules** — Bedrock, SageMaker, OpenSearch Serverless
+- **Security Scanning** — Checkov integration
 
-Patterns can be mixed and matched as needed. Most skills combine patterns (e.g., start with task-based, add workflow for complex operations).
+## MCP Tools
 
-Delete this entire "Structuring This Skill" section when done - it's just guidance.]
+| Tool                 | Description                                  |
+| -------------------- | -------------------------------------------- |
+| Search provider docs | Find AWS provider resources and attributes   |
+| Module analysis      | Extract inputs, outputs, README from modules |
+| Workflow execution   | Run terraform commands directly              |
+| Terragrunt execution | Run terragrunt with config flags             |
 
-## [TODO: Replace with the first main section based on chosen structure]
+## MCP Resources
 
-[TODO: Add content here. See examples in existing skills:
-- Code samples for technical skills
-- Decision trees for complex workflows
-- Concrete examples with realistic user requests
-- References to scripts/templates/references as needed]
+| Resource                                       | Description               |
+| ---------------------------------------------- | ------------------------- |
+| `terraform://workflow_guide`                   | Security-focused workflow |
+| `terraform://aws_best_practices`               | AWS-specific guidance     |
+| `terraform://aws_provider_resources_listing`   | AWS provider resources    |
+| `terraform://awscc_provider_resources_listing` | AWSCC provider resources  |
 
-## Resources
+## AWS-IA GenAI Modules
 
-This skill includes example resource directories that demonstrate how to organize different types of bundled resources:
+| Module                | Purpose                    |
+| --------------------- | -------------------------- |
+| Amazon Bedrock        | Generative AI applications |
+| OpenSearch Serverless | Vector search              |
+| SageMaker Endpoint    | ML model hosting           |
+| Serverless Streamlit  | AI interfaces              |
 
-### scripts/
-Executable code (Python/Bash/etc.) that can be run directly to perform specific operations.
+## Workflows
 
-**Examples from other skills:**
-- PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
+### 1. Initialize Project
 
-**Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
+```
+Ask: "Help me set up a Terraform project for AWS"
+→ Provides best practices from terraform://workflow_guide
+→ Suggests project structure
+→ terraform init
+```
 
-**Note:** Scripts may be executed without loading into context, but can still be read by Claude for patching or environment adjustments.
+### 2. Find Provider Resources
 
-### references/
-Documentation and reference material intended to be loaded into context to inform Claude's process and thinking.
+```
+Ask: "How do I create an S3 bucket in Terraform?"
+→ Searches AWS provider docs
+→ Returns resource definition and attributes
+```
 
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
+### 3. Analyze Module
 
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Claude should reference while working.
+```
+Ask: "Analyze the terraform-aws-modules/vpc/aws module"
+→ Extracts inputs, outputs, README
+→ Shows usage patterns
+```
 
-### assets/
-Files not intended to be loaded into context, but rather used within the output Claude produces.
+### 4. Execute Workflow
 
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
+```
+Ask: "Plan my Terraform changes"
+→ Runs terraform plan
+→ Shows formatted output
+→ Runs Checkov security scan
+```
 
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
+### 5. Deploy with Terragrunt
 
----
+```
+Ask: "Apply terragrunt in my dev environment"
+→ Runs terragrunt plan -var-file=dev.tfvars
+→ terragrunt apply after confirmation
+```
 
-**Any unneeded directories can be deleted.** Not every skill requires all three types of resources.
+## Prerequisites
+
+```bash
+# Install Terraform CLI
+brew install terraform
+
+# Install Checkov for security scanning
+pip install checkov
+
+# Optional: Terragrunt
+brew install terragrunt
+```
+
+## Scripts
+
+| Script                     | Purpose                   |
+| -------------------------- | ------------------------- |
+| `scripts/configure_mcp.py` | Auto-configure MCP client |
+
+## References
+
+- [AWS Terraform MCP Server](https://awslabs.github.io/mcp/servers/terraform-mcp-server)
+- [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest)
+- [AWSCC Provider](https://registry.terraform.io/providers/hashicorp/awscc/latest)
