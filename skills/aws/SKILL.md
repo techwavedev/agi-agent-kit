@@ -1,11 +1,11 @@
 ---
 name: aws
-description: AWS cloud operations hub. Use for any AWS-related task including EKS cluster management, CLI profile configuration, S3, Lambda, and other AWS services. This skill routes to specialized sub-skills and provides shared context (profiles, regions) across all AWS operations. Start here for AWS work.
+description: AWS cloud operations hub. Use for any AWS-related task including EKS, Lambda, Step Functions, networking, pricing, and IaC. This skill routes to specialized sub-skills and provides shared context (profiles, regions) across all AWS operations. Start here for AWS work.
 ---
 
 # AWS Skill
 
-Central hub for AWS cloud operations. Routes to specialized sub-skills.
+Central hub for AWS cloud operations. Routes to 14 specialized sub-skills.
 
 ## Quick Start
 
@@ -24,119 +24,112 @@ eval $(python aws-cli/scripts/switch_profile.py --profile myprofile)
 
 ### 2. Configure MCP servers
 
-```bash
-# Auto-configure EKS MCP
-python aws-eks/scripts/configure_mcp.py --allow-write
-```
+Each sub-skill has its own `configure_mcp.py` script.
 
 ## Sub-Skills
 
-| Skill                                      | Purpose                         | When to Use                                     |
-| ------------------------------------------ | ------------------------------- | ----------------------------------------------- |
-| [aws-cli](../aws-cli/SKILL.md)             | Profile & credential management | Setting up credentials, switching accounts, SSO |
-| [aws-docs](../aws-docs/SKILL.md)           | Documentation lookup            | AWS best practices, troubleshooting, guidance   |
-| [aws-eks](../aws-eks/SKILL.md)             | EKS cluster management          | Kubernetes on AWS, cluster ops, deployments     |
-| [aws-knowledge](../aws-knowledge/SKILL.md) | AWS Knowledge MCP               | Search docs, API refs, regional availability    |
+| Skill                                              | Purpose           | When to Use                                  |
+| -------------------------------------------------- | ----------------- | -------------------------------------------- |
+| [aws-api](../aws-api/SKILL.md)                     | AWS CLI via MCP   | Execute any AWS CLI command                  |
+| [aws-ccapi](../aws-ccapi/SKILL.md)                 | Cloud Control API | Declarative resource CRUD with security      |
+| [aws-cfn](../aws-cfn/SKILL.md)                     | CloudFormation    | Template generation, resource schemas        |
+| [aws-cli](../aws-cli/SKILL.md)                     | Credentials       | Profile management, SSO, switching           |
+| [aws-cost-explorer](../aws-cost-explorer/SKILL.md) | Cost Explorer     | Analyze actual costs, forecasts              |
+| [aws-docs](../aws-docs/SKILL.md)                   | Documentation     | Best practices, troubleshooting              |
+| [aws-eks](../aws-eks/SKILL.md)                     | EKS               | Kubernetes clusters, deployments             |
+| [aws-iac](../aws-iac/SKILL.md)                     | IaC Hub           | CDK, CloudFormation, Terraform               |
+| [aws-knowledge](../aws-knowledge/SKILL.md)         | Knowledge         | Search docs, API refs, regional availability |
+| [aws-lambda](../aws-lambda/SKILL.md)               | Lambda Tools      | Invoke functions as AI tools                 |
+| [aws-network](../aws-network/SKILL.md)             | Networking        | VPC, TGW, Cloud WAN troubleshooting          |
+| [aws-pricing](../aws-pricing/SKILL.md)             | Pricing           | Lookup prices, estimate costs                |
+| [aws-serverless](../aws-serverless/SKILL.md)       | Serverless        | SAM apps, web deployments                    |
+| [aws-stepfunctions](../aws-stepfunctions/SKILL.md) | Step Functions    | Execute workflows as tools                   |
+| [aws-terraform](../aws-terraform/SKILL.md)         | Terraform         | HCL workflows, modules                       |
 
 ## Routing Guide
 
-**Authentication & Profiles:**
-→ Use `aws-cli` skill
+**Credentials & Profiles:**
+→ `aws-cli`
 
-- Create/list/switch profiles
-- SSO configuration
-- Cross-account role assumption
+**Execute AWS CLI Commands:**
+→ `aws-api`
 
-**Documentation & Best Practices:**
-→ Use `aws-docs` skill
+**Declarative Resource Management:**
+→ `aws-ccapi` (with security scanning)
+→ `aws-cfn` (templates)
 
-- Look up AWS documentation
-- Search for best practices and guidelines
-- Get service recommendations
-- Troubleshooting guidance
+**Infrastructure as Code:**
+→ `aws-iac` (hub for CDK/CFN/TF)
+→ `aws-terraform` (Terraform specific)
 
-**Knowledge & Search:**
-→ Use `aws-knowledge` skill
+**Documentation & Knowledge:**
+→ `aws-docs` (documentation lookup)
+→ `aws-knowledge` (search, regional availability)
 
-- Search across all AWS docs
-- Get API references and examples
-- Check regional availability
-- CDK/CloudFormation patterns
-- API references and examples
+**Kubernetes:**
+→ `aws-eks`
 
-**Kubernetes/EKS:**
-→ Use `aws-eks` skill
+**Serverless:**
+→ `aws-serverless` (SAM, web apps)
+→ `aws-lambda` (invoke functions)
+→ `aws-stepfunctions` (execute workflows)
 
-- Cluster creation/management
-- Node group scaling
-- Pod logs, deployments, troubleshooting
+**Networking:**
+→ `aws-network` (troubleshooting, flow logs)
 
-**General AWS CLI:**
-→ Use AWS CLI directly with the active profile
-
-```bash
-aws <service> <command> --profile <profile>
-```
+**Costs:**
+→ `aws-pricing`
 
 ## Shared Context
 
 All AWS sub-skills inherit from the active profile:
 
 ```bash
-# Set profile for all subsequent operations
 export AWS_PROFILE=myprofile
 export AWS_REGION=eu-west-1
-
-# Or use profile flag per command
---profile myprofile --region eu-west-1
 ```
 
-## MCP Servers
-
-Configure multiple AWS MCP servers for comprehensive access:
+## MCP Servers Overview
 
 ```json
 {
   "mcpServers": {
     "aws-api": {
       "command": "uvx",
-      "args": ["awslabs.aws-api-mcp-server@latest"],
-      "env": { "AWS_PROFILE": "default", "AWS_REGION": "eu-west-1" }
+      "args": ["awslabs.aws-api-mcp-server@latest"]
     },
-    "aws-docs": {
-      "command": "uvx",
-      "args": ["awslabs.aws-documentation-mcp-server@latest"],
-      "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR",
-        "AWS_DOCUMENTATION_PARTITION": "aws"
-      }
+    "aws-knowledge": {
+      "url": "https://knowledge-mcp.global.api.aws",
+      "type": "http"
     },
-    "eks": {
+    "ccapi": { "command": "uvx", "args": ["awslabs.ccapi-mcp-server@latest"] },
+    "eks": { "command": "uvx", "args": ["awslabs.eks-mcp-server@latest"] },
+    "serverless": {
       "command": "uvx",
-      "args": ["awslabs.eks-mcp-server@latest", "--allow-write"],
-      "env": { "AWS_PROFILE": "default", "AWS_REGION": "eu-west-1" }
+      "args": ["awslabs.aws-serverless-mcp-server@latest"]
     },
-    "cloudformation": {
+    "network": {
       "command": "uvx",
-      "args": ["awslabs.cfn-mcp-server@latest"],
-      "env": { "AWS_PROFILE": "default", "AWS_REGION": "eu-west-1" }
+      "args": ["awslabs.aws-network-mcp-server@latest"]
+    },
+    "pricing": {
+      "command": "uvx",
+      "args": ["awslabs.aws-pricing-mcp-server@latest"]
     }
   }
 }
 ```
 
-See [references/mcp_servers.md](references/mcp_servers.md) for full list of AWS MCP servers.
+See [references/mcp_servers.md](references/mcp_servers.md) for complete list.
 
 ## Adding New AWS Sub-Skills
 
-To add a new AWS service skill:
-
 1. Create `skills/aws-<service>/` directory
-2. Follow the skill-creator pattern
+2. Follow skill-creator pattern
 3. Add entry to this routing table
-4. Share profile/region context via `AWS_PROFILE` and `AWS_REGION` env vars
+4. Include parent reference in sub-skill header
 
 ## References
 
 - [references/mcp_servers.md](references/mcp_servers.md) — All AWS MCP servers
-- [references/common_patterns.md](references/common_patterns.md) — Shared patterns across AWS skills
+- [references/common_patterns.md](references/common_patterns.md) — Shared patterns
