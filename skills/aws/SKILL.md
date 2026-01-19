@@ -31,11 +31,12 @@ python aws-eks/scripts/configure_mcp.py --allow-write
 
 ## Sub-Skills
 
-| Skill                            | Purpose                         | When to Use                                     |
-| -------------------------------- | ------------------------------- | ----------------------------------------------- |
-| [aws-cli](../aws-cli/SKILL.md)   | Profile & credential management | Setting up credentials, switching accounts, SSO |
-| [aws-docs](../aws-docs/SKILL.md) | Documentation lookup            | AWS best practices, troubleshooting, guidance   |
-| [aws-eks](../aws-eks/SKILL.md)   | EKS cluster management          | Kubernetes on AWS, cluster ops, deployments     |
+| Skill                                      | Purpose                         | When to Use                                     |
+| ------------------------------------------ | ------------------------------- | ----------------------------------------------- |
+| [aws-cli](../aws-cli/SKILL.md)             | Profile & credential management | Setting up credentials, switching accounts, SSO |
+| [aws-docs](../aws-docs/SKILL.md)           | Documentation lookup            | AWS best practices, troubleshooting, guidance   |
+| [aws-eks](../aws-eks/SKILL.md)             | EKS cluster management          | Kubernetes on AWS, cluster ops, deployments     |
+| [aws-knowledge](../aws-knowledge/SKILL.md) | AWS Knowledge MCP               | Search docs, API refs, regional availability    |
 
 ## Routing Guide
 
@@ -53,6 +54,14 @@ python aws-eks/scripts/configure_mcp.py --allow-write
 - Search for best practices and guidelines
 - Get service recommendations
 - Troubleshooting guidance
+
+**Knowledge & Search:**
+→ Use `aws-knowledge` skill
+
+- Search across all AWS docs
+- Get API references and examples
+- Check regional availability
+- CDK/CloudFormation patterns
 - API references and examples
 
 **Kubernetes/EKS:**
@@ -93,6 +102,14 @@ Configure multiple AWS MCP servers for comprehensive access:
       "command": "uvx",
       "args": ["awslabs.aws-api-mcp-server@latest"],
       "env": { "AWS_PROFILE": "default", "AWS_REGION": "eu-west-1" }
+    },
+    "aws-docs": {
+      "command": "uvx",
+      "args": ["awslabs.aws-documentation-mcp-server@latest"],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR",
+        "AWS_DOCUMENTATION_PARTITION": "aws"
+      }
     },
     "eks": {
       "command": "uvx",

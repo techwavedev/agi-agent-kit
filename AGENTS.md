@@ -193,6 +193,10 @@ project/
 ├── credentials.json      # Google OAuth credentials
 ├── token.json            # Google OAuth token
 ├── directives/           # SOPs in Markdown
+├── docs/                 # Project documentation, guides, and references
+│   ├── guides/           # How-to guides and tutorials
+│   ├── api/              # API references and specifications
+│   └── architecture/     # System design and architecture docs
 ├── execution/            # Deterministic Python scripts
 ├── skill-creator/        # Skill creation toolkit (use to create new skills)
 ├── skills/               # Modular capabilities (PDF reading, web scraping, etc.)
@@ -211,9 +215,20 @@ Skills are modular packages that extend agent capabilities with specialized work
 - **scripts/** — Deterministic tools the agent can execute
 - **references/** — Documentation loaded only when needed
 
-**Creating new skills:** Use `skill-creator/scripts/init_skill.py <name> --path skills/`
+**Key Resources:**
 
-See `skill-creator/SKILL.md` for the full skill creation guide.
+- **Skills Catalog:** `skills/SKILLS_CATALOG.md` — Complete documentation of all available skills
+- **Skill Creator Guide:** `skill-creator/SKILL_skillcreator.md` — How to create new skills
+
+**Commands:**
+
+```bash
+# Create a new skill
+python3 skill-creator/scripts/init_skill.py <name> --path skills/
+
+# Update the skills catalog (MANDATORY after any skill change)
+python3 skill-creator/scripts/update_catalog.py --skills-dir skills/
+```
 
 ### Deliverables vs. Intermediates
 

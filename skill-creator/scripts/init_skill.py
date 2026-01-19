@@ -266,6 +266,7 @@ def init_skill(skill_name, path):
     print("1. Edit SKILL.md to complete the TODO items and update the description")
     print("2. Customize or delete the example files in scripts/, references/, and assets/")
     print("3. Run the validator when ready to check the skill structure")
+    print("4. Update the skills catalog: python skill-creator/scripts/update_catalog.py --skills-dir skills/")
 
     return skill_dir
 

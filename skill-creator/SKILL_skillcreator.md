@@ -208,7 +208,8 @@ Skill creation involves these steps:
 3. Initialize the skill (run init_skill.py)
 4. Edit the skill (implement resources and write SKILL.md)
 5. Package the skill (run package_skill.py)
-6. Iterate based on real usage
+6. Update the skills catalog (run update_catalog.py) — **MANDATORY**
+7. Iterate based on real usage
 
 Follow these steps in order, skipping only if there is a clear reason why they are not applicable.
 
@@ -334,7 +335,6 @@ scripts/package_skill.py <path/to/skill-folder> ./dist
 The packaging script will:
 
 1. **Validate** the skill automatically, checking:
-
    - YAML frontmatter format and required fields
    - Skill naming conventions and directory structure
    - Description completeness and quality
@@ -344,7 +344,40 @@ The packaging script will:
 
 If validation fails, the script will report the errors and exit without creating a package. Fix any validation errors and run the packaging command again.
 
-### Step 6: Iterate
+### Step 6: Update Skills Catalog (MANDATORY)
+
+**CRITICAL:** After any skill operation (create, modify, or delete), the Skills Catalog must be updated. This ensures all skills are discoverable and documented.
+
+```bash
+scripts/update_catalog.py --skills-dir skills/
+```
+
+The catalog update script will:
+
+1. **Scan** all skills in the specified directory
+2. **Extract** metadata from each SKILL.md frontmatter
+3. **Generate** an updated SKILLS_CATALOG.md with:
+   - Table of contents with all skills
+   - Detailed section for each skill
+   - Scripts and references listings
+   - Skill relationship information
+
+**When to update the catalog:**
+
+| Action                   | Catalog Update Required |
+| ------------------------ | ----------------------- |
+| Create new skill         | ✅ Yes                  |
+| Modify skill description | ✅ Yes                  |
+| Add/remove scripts       | ✅ Yes                  |
+| Modify references        | ✅ Yes                  |
+| Delete skill             | ✅ Yes                  |
+| Minor internal fixes     | ⚠️ Optional             |
+
+The catalog file is located at: `skills/SKILLS_CATALOG.md`
+
+**Manual catalog update:** If the automated script cannot capture specific details (e.g., "When to Use" triggers or complex relationships), manually edit the catalog following the template patterns in the existing entries.
+
+### Step 7: Iterate
 
 After testing the skill, users may request improvements. Often this happens right after using the skill, with fresh context of how the skill performed.
 
