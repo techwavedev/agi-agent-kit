@@ -23,13 +23,16 @@ export AWS_REGION=eu-west-1
 
 ## ⚙️ User Defaults
 
-**These preferences apply to all AWS operations unless specified otherwise:**
+**Configured in [`defaults.yaml`](defaults.yaml):**
 
-| Setting     | Default Value  | Notes                         |
-| ----------- | -------------- | ----------------------------- |
-| **SSH Key** | `tooling-key`  | Used for EC2, EKS nodes, etc. |
-| **Region**  | `eu-west-1`    | Ireland                       |
-| **Account** | `511383368449` | Primary account               |
+```yaml
+ssh_key: tooling-key
+iam_instance_profile: SSMInstanceProfile
+region: eu-west-1
+account_id: "511383368449"
+```
+
+These apply to all AWS operations unless specified otherwise.
 
 ---
 
