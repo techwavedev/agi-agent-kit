@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-20 00:02
+> **Auto-generated Documentation** — Last updated: 2026-01-20 00:09
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -17,6 +17,7 @@ This document provides comprehensive documentation on available skills, how to u
 - [Available Skills](#available-skills)
   - [AWS (Hub)](#aws-hub)
   - [Aws Terraform](#aws-terraform)
+  - [Opensearch](#opensearch)
   - [Pdf Reader](#pdf-reader)
 - [Using Skills](#using-skills)
 - [Creating New Skills](#creating-new-skills)
@@ -77,6 +78,29 @@ skill-name/
 **References:**
 - `references/best_practices.md`
 - `references/checkov_reference.md`
+
+---
+
+### Opensearch
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `opensearch` |
+| **Location** | `skills/opensearch/` |
+| **Type** | Standalone |
+
+**Description:** OpenSearch specialist covering querying (Query DSL, SQL), performance optimization, cluster management, monitoring, OpenSearch Dashboards, ML/AI (neural search, embeddings, ML Commons), data ingestion (Logstash, Fluent Bit, Data Prepper), OpenSearch Operator for Kubernetes, and MCP integration. Use for any task involving: (1) Writing or optimizing OpenSearch queries, (2) Index design and mapping, (3) Cluster health and performance tuning, (4) OpenSearch Dashboards visualization, (5) Neural/semantic search with vectors, (6) Log and data ingestion pipelines, (7) Kubernetes deployments with OpenSearch Operator.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/configure_mcp.py` | *[See script for details]* |
+
+**References:**
+- `references/ml_neural_search.md`
+- `references/operator.md`
+- `references/query_dsl.md`
 
 ---
 
