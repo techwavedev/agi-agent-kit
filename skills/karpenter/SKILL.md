@@ -1,85 +1,301 @@
 ---
 name: karpenter
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: Karpenter Kubernetes autoscaler specialist for EKS clusters. Use for troubleshooting, documenting, managing, creating, updating, upgrading Karpenter deployments, and obtaining live cluster information. Covers NodePool/EC2NodeClass configuration, cost optimization, node consolidation, drift detection, Spot interruption handling, and migration from Cluster Autoscaler. Requires kubectl access to target EKS cluster.
 ---
 
-# Karpenter
+# Karpenter Skill
 
-## Overview
+Comprehensive skill for managing Karpenter—the high-performance Kubernetes autoscaler for AWS EKS.
 
-[TODO: 1-2 sentences explaining what this skill enables]
-
-## Structuring This Skill
-
-[TODO: Choose the structure that best fits this skill's purpose. Common patterns:
-
-**1. Workflow-Based** (best for sequential processes)
-- Works well when there are clear step-by-step procedures
-- Example: DOCX skill with "Workflow Decision Tree" → "Reading" → "Creating" → "Editing"
-- Structure: ## Overview → ## Workflow Decision Tree → ## Step 1 → ## Step 2...
-
-**2. Task-Based** (best for tool collections)
-- Works well when the skill offers different operations/capabilities
-- Example: PDF skill with "Quick Start" → "Merge PDFs" → "Split PDFs" → "Extract Text"
-- Structure: ## Overview → ## Quick Start → ## Task Category 1 → ## Task Category 2...
-
-**3. Reference/Guidelines** (best for standards or specifications)
-- Works well for brand guidelines, coding standards, or requirements
-- Example: Brand styling with "Brand Guidelines" → "Colors" → "Typography" → "Features"
-- Structure: ## Overview → ## Guidelines → ## Specifications → ## Usage...
-
-**4. Capabilities-Based** (best for integrated systems)
-- Works well when the skill provides multiple interrelated features
-- Example: Product Management with "Core Capabilities" → numbered capability list
-- Structure: ## Overview → ## Core Capabilities → ### 1. Feature → ### 2. Feature...
-
-Patterns can be mixed and matched as needed. Most skills combine patterns (e.g., start with task-based, add workflow for complex operations).
-
-Delete this entire "Structuring This Skill" section when done - it's just guidance.]
-
-## [TODO: Replace with the first main section based on chosen structure]
-
-[TODO: Add content here. See examples in existing skills:
-- Code samples for technical skills
-- Decision trees for complex workflows
-- Concrete examples with realistic user requests
-- References to scripts/templates/references as needed]
-
-## Resources
-
-This skill includes example resource directories that demonstrate how to organize different types of bundled resources:
-
-### scripts/
-Executable code (Python/Bash/etc.) that can be run directly to perform specific operations.
-
-**Examples from other skills:**
-- PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
-
-**Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
-
-**Note:** Scripts may be executed without loading into context, but can still be read by Claude for patching or environment adjustments.
-
-### references/
-Documentation and reference material intended to be loaded into context to inform Claude's process and thinking.
-
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
-
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Claude should reference while working.
-
-### assets/
-Files not intended to be loaded into context, but rather used within the output Claude produces.
-
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
-
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
+> **Last Updated:** 2026-01-20 from [karpenter.sh](https://karpenter.sh/)
 
 ---
 
-**Any unneeded directories can be deleted.** Not every skill requires all three types of resources.
+## Quick Start
+
+```bash
+# Set cluster context
+export CLUSTER_NAME=eks-nonprod
+aws eks update-kubeconfig --name $CLUSTER_NAME --region eu-west-1
+
+# Verify Karpenter is running
+kubectl get pods -n karpenter
+
+# List NodePools
+kubectl get nodepools
+
+# List EC2NodeClasses
+kubectl get ec2nodeclasses
+```
+
+---
+
+## Core Concepts
+
+### Key Resources
+
+| Resource         | Description                                                                  |
+| ---------------- | ---------------------------------------------------------------------------- |
+| **NodePool**     | Defines constraints, limits, and disruption policies for provisioned nodes   |
+| **EC2NodeClass** | AWS-specific configuration (AMI, security groups, subnets, instance profile) |
+| **NodeClaim**    | Individual node request created by Karpenter                                 |
+
+### How Karpenter Works
+
+1. **Watches** for unschedulable pods (`Unschedulable=True`)
+2. **Evaluates** pod requirements (resources, affinity, tolerations, node selectors)
+3. **Provisions** right-sized nodes matching constraints and cost optimization
+4. **Disrupts** nodes via consolidation, drift, expiration, or interruption handling
+
+---
+
+## Common Workflows
+
+### 1. Check Karpenter Status
+
+```bash
+# Controller pods
+kubectl get pods -n karpenter
+
+# Controller logs
+kubectl logs -n karpenter -l app.kubernetes.io/name=karpenter -c controller --tail=100
+
+# NodePools and their status
+kubectl get nodepools -o wide
+
+# EC2NodeClasses
+kubectl get ec2nodeclasses -o wide
+
+# NodeClaims (requested nodes)
+kubectl get nodeclaims -o wide
+
+# Karpenter-managed nodes
+kubectl get nodes -l karpenter.sh/nodepool
+```
+
+### 2. Create a NodePool
+
+```yaml
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: general-purpose
+spec:
+  template:
+    spec:
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: default
+      requirements:
+        - key: kubernetes.io/arch
+          operator: In
+          values: ["amd64"]
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["spot", "on-demand"]
+        - key: karpenter.k8s.aws/instance-category
+          operator: In
+          values: ["c", "m", "r"]
+        - key: karpenter.k8s.aws/instance-generation
+          operator: Gt
+          values: ["5"]
+  limits:
+    cpu: 1000
+    memory: 1000Gi
+  disruption:
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 1m
+```
+
+### 3. Create an EC2NodeClass
+
+```yaml
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  role: KarpenterNodeRole-${CLUSTER_NAME}
+  amiSelectorTerms:
+    - alias: al2023@latest
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: ${CLUSTER_NAME}
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: ${CLUSTER_NAME}
+  instanceProfile: KarpenterNodeInstanceProfile-${CLUSTER_NAME}
+```
+
+### 4. Troubleshoot Pending Pods
+
+```bash
+# Find unschedulable pods
+kubectl get pods --all-namespaces -o wide | grep Pending
+
+# Check why a pod is pending
+kubectl describe pod <pod-name> -n <namespace>
+
+# Check Karpenter logs for provisioning issues
+kubectl logs -n karpenter -l app.kubernetes.io/name=karpenter -c controller | grep -i "could not"
+
+# Verify NodePool requirements can be met
+kubectl describe nodepool <nodepool-name>
+```
+
+### 5. Force Node Refresh (Drift)
+
+```bash
+# Annotate EC2NodeClass to trigger drift
+kubectl annotate ec2nodeclass default karpenter.k8s.aws/forced-drift=$(date +%s) --overwrite
+
+# Watch drift propagation
+kubectl get nodeclaims -w
+```
+
+### 6. Manual Node Cordoning/Draining
+
+```bash
+# Cordon a node (prevent scheduling)
+kubectl cordon <node-name>
+
+# Drain a node (evict pods gracefully)
+kubectl drain <node-name> --ignore-daemonsets --delete-emptydir-data
+
+# Delete node (Karpenter handles cleanup via finalizer)
+kubectl delete node <node-name>
+```
+
+---
+
+## Troubleshooting Guide
+
+### Enable Debug Logging
+
+```bash
+# Helm upgrade with debug
+helm upgrade karpenter oci://public.ecr.aws/karpenter/karpenter \
+  --set logLevel=debug \
+  -n karpenter
+
+# Or patch deployment
+kubectl set env deployment/karpenter -n karpenter LOG_LEVEL=debug
+```
+
+### Common Issues
+
+| Issue                         | Diagnosis                        | Solution                               |
+| ----------------------------- | -------------------------------- | -------------------------------------- |
+| **No nodes provisioned**      | Check controller logs for errors | Verify IAM permissions, subnet/SG tags |
+| **Node not ready**            | `kubectl describe node`          | Check CNI, kubelet, VPC DNS            |
+| **Spot interruption**         | Events in node description       | Karpenter auto-drains and replaces     |
+| **Drift not detected**        | Check `drifted` condition        | Verify AMI changes, annotate to force  |
+| **Consolidation not working** | Check `consolidatable` condition | Verify pods can be evicted (PDB, etc.) |
+
+### Reference Files
+
+- **[references/troubleshooting.md](references/troubleshooting.md)** — Detailed troubleshooting scenarios
+- **[references/nodepools.md](references/nodepools.md)** — NodePool configuration patterns
+- **[references/ec2nodeclasses.md](references/ec2nodeclasses.md)** — EC2NodeClass examples
+- **[references/migration.md](references/migration.md)** — Migration from Cluster Autoscaler
+
+---
+
+## Scripts
+
+### Get Cluster Status
+
+```bash
+# Run from skill directory
+python scripts/karpenter_status.py --cluster eks-nonprod
+```
+
+### Generate NodePool YAML
+
+```bash
+python scripts/generate_nodepool.py \
+  --name gpu-workloads \
+  --instance-types "p3.2xlarge,p3.8xlarge" \
+  --capacity-type spot \
+  --cpu-limit 500
+```
+
+---
+
+## Best Practices
+
+### Cost Optimization
+
+1. **Use Spot Instances** — Include `spot` in capacity-type requirements
+2. **Enable Consolidation** — Use `WhenEmptyOrUnderutilized` policy
+3. **Set Limits** — Define CPU/memory limits per NodePool
+4. **Right-size Selection** — Use instance categories and generations
+
+### Reliability
+
+1. **Multi-AZ** — Don't restrict to single availability zone
+2. **Instance Diversity** — Allow multiple instance types for flexibility
+3. **PodDisruptionBudgets** — Protect critical workloads during consolidation
+4. **Expiration** — Set `expireAfter` for node recycling (security)
+
+### Security
+
+1. **IMDSv2** — Enforce in EC2NodeClass with `metadataOptions`
+2. **node IAM Role** — Scope permissions to minimum required
+3. **Private subnets** — Use private subnets for nodes
+
+---
+
+## Installation & Upgrade
+
+### Install Karpenter
+
+```bash
+export KARPENTER_VERSION="1.5.2"
+export CLUSTER_NAME="eks-nonprod"
+export AWS_PARTITION="aws"
+export AWS_REGION="eu-west-1"
+export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+
+helm registry logout public.ecr.aws
+helm upgrade --install karpenter oci://public.ecr.aws/karpenter/karpenter \
+  --version "${KARPENTER_VERSION}" \
+  --namespace karpenter --create-namespace \
+  --set "settings.clusterName=${CLUSTER_NAME}" \
+  --set "settings.interruptionQueue=${CLUSTER_NAME}" \
+  --set controller.resources.requests.cpu=1 \
+  --set controller.resources.requests.memory=1Gi \
+  --set controller.resources.limits.cpu=1 \
+  --set controller.resources.limits.memory=1Gi \
+  --wait
+```
+
+### Upgrade Karpenter
+
+```bash
+# Check current version
+kubectl get deployment -n karpenter karpenter -o jsonpath='{.spec.template.spec.containers[0].image}'
+
+# Upgrade
+helm upgrade karpenter oci://public.ecr.aws/karpenter/karpenter \
+  --version "${NEW_VERSION}" \
+  --namespace karpenter \
+  --reuse-values
+```
+
+---
+
+## Related Skills
+
+- **[aws](../aws/SKILL.md)** — Parent AWS skill for broader AWS operations
+- **[aws-terraform](../aws-terraform/SKILL.md)** — Infrastructure as Code for Karpenter deployment
+
+---
+
+## External Resources
+
+- [Karpenter Documentation](https://karpenter.sh/docs/)
+- [Karpenter EKS Best Practices](https://aws.github.io/aws-eks-best-practices/karpenter/)
+- [Karpenter Blueprints](https://github.com/aws-samples/karpenter-blueprints)
+- [EKS Karpenter Workshop](https://www.eksworkshop.com/docs/autoscaling/compute/karpenter/)
