@@ -21,6 +21,18 @@ export AWS_REGION=eu-west-1
 
 ---
 
+## ⚙️ User Defaults
+
+**These preferences apply to all AWS operations unless specified otherwise:**
+
+| Setting     | Default Value  | Notes                         |
+| ----------- | -------------- | ----------------------------- |
+| **SSH Key** | `tooling-key`  | Used for EC2, EKS nodes, etc. |
+| **Region**  | `eu-west-1`    | Ireland                       |
+| **Account** | `511383368449` | Primary account               |
+
+---
+
 ## 🏗️ Core & Infrastructure
 
 ### AWS API MCP Server
