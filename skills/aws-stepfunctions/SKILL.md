@@ -1,85 +1,125 @@
 ---
 name: aws-stepfunctions
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: Execute AWS Step Functions state machines as AI tools. Use for running complex multi-step workflows, orchestrating AWS services, and executing business processes. Supports Standard and Express workflows with EventBridge Schema Registry integration.
 ---
 
-# Aws Stepfunctions
+# AWS Step Functions Skill
 
-## Overview
+> Part of the [AWS skill family](../aws/SKILL.md). For Lambda, see [aws-lambda](../aws-lambda/SKILL.md).
 
-[TODO: 1-2 sentences explaining what this skill enables]
+Execute Step Functions state machines as AI tools.
 
-## Structuring This Skill
+## MCP Server Setup
 
-[TODO: Choose the structure that best fits this skill's purpose. Common patterns:
+```json
+{
+  "mcpServers": {
+    "stepfunctions": {
+      "command": "uvx",
+      "args": ["awslabs.stepfunctions-tool-mcp-server@latest"],
+      "env": {
+        "AWS_PROFILE": "default",
+        "AWS_REGION": "eu-west-1",
+        "STATE_MACHINE_PREFIX": "ai-workflows-"
+      }
+    }
+  }
+}
+```
 
-**1. Workflow-Based** (best for sequential processes)
-- Works well when there are clear step-by-step procedures
-- Example: DOCX skill with "Workflow Decision Tree" → "Reading" → "Creating" → "Editing"
-- Structure: ## Overview → ## Workflow Decision Tree → ## Step 1 → ## Step 2...
+### Auto-Configure
 
-**2. Task-Based** (best for tool collections)
-- Works well when the skill offers different operations/capabilities
-- Example: PDF skill with "Quick Start" → "Merge PDFs" → "Split PDFs" → "Extract Text"
-- Structure: ## Overview → ## Quick Start → ## Task Category 1 → ## Task Category 2...
+```bash
+python scripts/configure_mcp.py --prefix ai-workflows-
+```
 
-**3. Reference/Guidelines** (best for standards or specifications)
-- Works well for brand guidelines, coding standards, or requirements
-- Example: Brand styling with "Brand Guidelines" → "Colors" → "Typography" → "Features"
-- Structure: ## Overview → ## Guidelines → ## Specifications → ## Usage...
+## Features
 
-**4. Capabilities-Based** (best for integrated systems)
-- Works well when the skill provides multiple interrelated features
-- Example: Product Management with "Core Capabilities" → numbered capability list
-- Structure: ## Overview → ## Core Capabilities → ### 1. Feature → ### 2. Feature...
+- **State Machines as Tools** — AI invokes workflows directly
+- **Standard & Express** — Long-running or high-volume workflows
+- **Schema Support** — EventBridge Schema Registry integration
+- **Orchestration** — Coordinate multiple AWS services
+- **Security Isolation** — AI only invokes, workflows have permissions
 
-Patterns can be mixed and matched as needed. Most skills combine patterns (e.g., start with task-based, add workflow for complex operations).
+## Architecture
 
-Delete this entire "Structuring This Skill" section when done - it's just guidance.]
+```
+Model → MCP Client → Step Functions MCP Server → State Machine
+                                                      ↓
+                                          ├── Other AWS Services
+                                          ├── Lambda Functions
+                                          └── External APIs
+```
 
-## [TODO: Replace with the first main section based on chosen structure]
+## Configuration
 
-[TODO: Add content here. See examples in existing skills:
-- Code samples for technical skills
-- Decision trees for complex workflows
-- Concrete examples with realistic user requests
-- References to scripts/templates/references as needed]
+| Variable                                 | Description           |
+| ---------------------------------------- | --------------------- |
+| `STATE_MACHINE_PREFIX`                   | Filter by name prefix |
+| `STATE_MACHINE_LIST`                     | Comma-separated ARNs  |
+| `STATE_MACHINE_TAG_KEY`                  | Filter by tag key     |
+| `STATE_MACHINE_TAG_VALUE`                | Filter by tag value   |
+| `STATE_MACHINE_INPUT_SCHEMA_ARN_TAG_KEY` | Tag with schema ARN   |
 
-## Resources
+## Workflow Types
 
-This skill includes example resource directories that demonstrate how to organize different types of bundled resources:
+| Type         | Use For                             |
+| ------------ | ----------------------------------- |
+| **Standard** | Long-running, needs status tracking |
+| **Express**  | High-volume, short-duration, sync   |
 
-### scripts/
-Executable code (Python/Bash/etc.) that can be run directly to perform specific operations.
+## Tool Documentation
 
-**Examples from other skills:**
-- PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
+The server builds tool docs from:
 
-**Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
+1. **State Machine Description** — Base tool description
+2. **Workflow Comment** — Context from definition
+3. **Input Schema** — From EventBridge Schema Registry
 
-**Note:** Scripts may be executed without loading into context, but can still be read by Claude for patching or environment adjustments.
+## Workflows
 
-### references/
-Documentation and reference material intended to be loaded into context to inform Claude's process and thinking.
+### 1. Execute Business Process
 
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
+```
+Ask: "Process the new customer order"
+→ Invokes order-processing state machine
+→ Orchestrates inventory, payment, shipping
+→ Returns execution result
+```
 
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Claude should reference while working.
+### 2. Run Data Pipeline
 
-### assets/
-Files not intended to be loaded into context, but rather used within the output Claude produces.
+```
+Ask: "Run the daily ETL pipeline"
+→ Invokes ETL state machine
+→ Coordinates Glue, S3, Redshift
+→ Tracks execution status
+```
 
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
+### 3. Orchestrate AI Workflow
 
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
+```
+Ask: "Analyze and summarize the uploaded document"
+→ Invokes document-analysis state machine
+→ Coordinates Textract, Comprehend, Bedrock
+→ Returns analysis results
+```
 
----
+## Best Practices
 
-**Any unneeded directories can be deleted.** Not every skill requires all three types of resources.
+1. **Descriptive Names** — Clear state machine descriptions
+2. **Schema Validation** — Use EventBridge schemas
+3. **Prefix Naming** — Consistent prefix for AI tools
+4. **Idempotency** — Design for retry safety
+5. **Error Handling** — Proper Catch/Retry in definitions
+
+## Scripts
+
+| Script                     | Purpose                   |
+| -------------------------- | ------------------------- |
+| `scripts/configure_mcp.py` | Auto-configure MCP client |
+
+## References
+
+- [Step Functions MCP Server](https://awslabs.github.io/mcp/servers/stepfunctions-tool-mcp-server)
+- [Step Functions Docs](https://docs.aws.amazon.com/step-functions/)
