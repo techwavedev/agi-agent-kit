@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-20 00:09
+> **Auto-generated Documentation** — Last updated: 2026-01-20 00:13
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -19,6 +19,7 @@ This document provides comprehensive documentation on available skills, how to u
   - [Aws Terraform](#aws-terraform)
   - [Opensearch](#opensearch)
   - [Pdf Reader](#pdf-reader)
+  - [Victoriametrics](#victoriametrics)
 - [Using Skills](#using-skills)
 - [Creating New Skills](#creating-new-skills)
 - [Maintenance](#maintenance)
@@ -122,6 +123,23 @@ skill-name/
 
 **References:**
 - `references/pdf_libraries.md`
+
+---
+
+### Victoriametrics
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `victoriametrics` |
+| **Location** | `skills/victoriametrics/` |
+| **Type** | Standalone |
+
+**Description:** VictoriaMetrics time-series database specialist covering deployment (bare metal, Docker, EKS/Kubernetes), cluster architecture (vminsert/vmselect/vmstorage), vmagent configuration, performance optimization, capacity planning, troubleshooting, monitoring, and Prometheus migration/compatibility. Use for any task involving: (1) Installing or upgrading VictoriaMetrics (single-node or cluster), (2) vmagent scraping and remote write configuration, (3) Capacity planning and resource optimization, (4) Prometheus to VictoriaMetrics migration with vmctl, (5) High availability and replication setup, (6) Kubernetes/EKS deployments with Helm or Operator, (7) MetricsQL queries and optimization, (8) Troubleshooting performance issues.
+
+**References:**
+- `references/kubernetes.md`
+- `references/prometheus_migration.md`
+- `references/troubleshooting.md`
 
 ---
 ## Using Skills
