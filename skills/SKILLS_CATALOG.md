@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-19 23:40
+> **Auto-generated Documentation** — Last updated: 2026-01-20 00:02
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -16,6 +16,7 @@ This document provides comprehensive documentation on available skills, how to u
 - [What Are Skills?](#what-are-skills)
 - [Available Skills](#available-skills)
   - [AWS (Hub)](#aws-hub)
+  - [Aws Terraform](#aws-terraform)
   - [Pdf Reader](#pdf-reader)
 - [Using Skills](#using-skills)
 - [Creating New Skills](#creating-new-skills)
@@ -54,6 +55,28 @@ skill-name/
 **References:**
 - `references/common_patterns.md`
 - `references/mcp_servers.md`
+
+---
+
+### Aws Terraform
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `aws-terraform` |
+| **Location** | `skills/aws-terraform/` |
+| **Type** | Standalone |
+
+**Description:** AWS infrastructure deployments using Terraform and Terragrunt. Use for any task involving: (1) Writing, validating, or deploying Terraform/HCL code for AWS, (2) Security scanning with Checkov, (3) AWS provider documentation lookup, (4) Terraform Registry module analysis, (5) Terragrunt multi-environment orchestration, (6) Infrastructure as Code best practices for AWS. Parent skill: aws.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/configure_mcp.py` | *[See script for details]* |
+
+**References:**
+- `references/best_practices.md`
+- `references/checkov_reference.md`
 
 ---
 
