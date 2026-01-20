@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-20 16:31
+> **Auto-generated Documentation** — Last updated: 2026-01-20 16:36
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -84,6 +84,7 @@ skill-name/
 **References:**
 - `references/ansible_playbooks.md`
 - `references/kraft_migration.md`
+- `references/troubleshooting.md`
 - `references/upgrade_7x_to_8x.md`
 
 ---

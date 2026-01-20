@@ -277,6 +277,10 @@ grep "GC pause" /var/log/confluent/kafka/kafka-gc.log | tail -20
   --command topic --topics __consumer_offsets
 ```
 
+### Detailed Troubleshooting
+
+For in-depth troubleshooting scenarios, see **[references/troubleshooting.md](references/troubleshooting.md)**.
+
 ---
 
 ## Ansible Automation
