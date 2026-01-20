@@ -4,6 +4,35 @@ Comprehensive troubleshooting guide for common Confluent Kafka issues in tarball
 
 ---
 
+## ⚠️ EC Environment Path Mappings
+
+> **This guide uses standard Confluent paths in examples.** For EC deployments, substitute paths as follows:
+
+| Standard Path               | EC Path                                                  |
+| --------------------------- | -------------------------------------------------------- |
+| `/opt/confluent/`           | `{{ base_path }}/opt/confluent-{{ confluent_version }}/` |
+| `/var/kafka-logs/`          | `{{ base_path }}/opt/data` (broker)                      |
+| `/var/kafka-controller/`    | `{{ base_path }}/opt/data/controller`                    |
+| `/var/log/confluent/kafka/` | `{{ base_path }}/logs/`                                  |
+| `/var/ssl/kafka/`           | `{{ base_path }}/opt/ssl/`                               |
+| `localhost:9092`            | `$BOOTSTRAP` (use SSL port 9443)                         |
+| `systemctl`                 | `systemctl --user`                                       |
+| `kafka:kafka`               | `{{ kafka_user }}:{{ kafka_group }}`                     |
+
+**EC Quick Setup:**
+
+```bash
+export KAFKA_HOME={{ base_path }}/opt/confluent-{{ confluent_version }}
+export BOOTSTRAP={{ broker_host_1 }}:{{ broker_port }}
+export LOG_DIR={{ base_path }}/logs
+export DATA_DIR={{ base_path }}/opt/data
+export SSL_DIR={{ base_path }}/opt/ssl
+```
+
+See **[ec_deployment.md](ec_deployment.md)** for complete EC paths and configuration.
+
+---
+
 ## Table of Contents
 
 1. [Broker Issues](#broker-issues)

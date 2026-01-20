@@ -5,29 +5,61 @@ description: Confluent Kafka specialist for tarball/Ansible custom installations
 
 # Confluent Kafka Skill
 
-Comprehensive skill for managing Confluent Platform Kafka clusters deployed via tarball distributions and automated with Ansible.
+Comprehensive skill for managing Confluent Platform Kafka clusters deployed via tarball distributions and automated with Ansible. **Primary deployment context is EC (European Commission) controlled environments using KRaft-only, SSL-only, non-root systemd user services.**
 
 > **Last Updated:** 2026-01-20 from [Confluent Documentation](https://docs.confluent.io/)
 
 ---
 
-## Quick Start
+## EC Environment Quick Reference
+
+> **Note:** Values below use variable placeholders. Define actual values in inventory files outside git.
+
+| Item                  | Variable / Default                             |
+| --------------------- | ---------------------------------------------- |
+| **Confluent Version** | `{{ confluent_version }}` (e.g., 7.9.3)        |
+| **Ansible Base**      | `{{ ansible_base }}`                           |
+| **Confluent Install** | `{{ base_path }}/opt/confluent-{{ version }}/` |
+| **JAVA_HOME**         | `{{ base_path }}/opt/{{ java_version }}`       |
+| **SSL Directory**     | `{{ base_path }}/opt/ssl/`                     |
+| **Data: Controller**  | `{{ base_path }}/opt/data/controller`          |
+| **Data: Broker**      | `{{ base_path }}/opt/data`                     |
+| **Logs**              | `{{ base_path }}/logs/`                        |
+| **Systemd (User)**    | `~/.config/systemd/user/`                      |
+| **User/Group**        | `{{ kafka_user }}:{{ kafka_group }}`           |
+| **Controller Port**   | `{{ controller_port }}` (default: 9093)        |
+| **Broker Port**       | `{{ broker_port }}` (default: 9443)            |
+
+> **Full EC deployment reference:** [references/ec_deployment.md](references/ec_deployment.md)
+
+---
+
+## Quick Start (EC Environment)
 
 ```bash
-# SSH to a broker node and check Kafka status
-ssh kafka-broker-01
+# Set environment variables (or source from environment file)
+export KAFKA_HOME={{ base_path }}/opt/confluent-{{ confluent_version }}
+export BOOTSTRAP={{ broker_host_1 }}:{{ broker_port }},{{ broker_host_2 }}:{{ broker_port }}
+export CLIENT_PROPS={{ base_path }}/etc/kafka/client.properties
 
-# Verify broker is running
-systemctl status confluent-server
+# SSH to a broker node
+ssh {{ kafka_user }}@{{ broker_host_1 }}
 
-# Check cluster health with broker ID
-/opt/confluent/bin/kafka-broker-api-versions --bootstrap-server localhost:9092
+# Verify broker is running (user systemd scope)
+systemctl --user status confluent-server
 
-# List active brokers in KRaft mode
-/opt/confluent/bin/kafka-metadata --snapshot /var/kafka-logs/__cluster_metadata-0/00000000000000000000.log --command broker
+# Check cluster health
+$KAFKA_HOME/bin/kafka-broker-api-versions \
+  --bootstrap-server $BOOTSTRAP \
+  --command-config $CLIENT_PROPS
 
-# Check consumer group lag
-/opt/confluent/bin/kafka-consumer-groups --bootstrap-server localhost:9092 --all-groups --describe
+# Check controller quorum (KRaft)
+$KAFKA_HOME/bin/kafka-metadata \
+  --snapshot {{ base_path }}/opt/data/controller/__cluster_metadata-0/00000000000000000000.log \
+  --command quorum
+
+# Use management script
+{{ base_path }}/scripts/management/kafka_node.sh status
 ```
 
 ---
@@ -76,59 +108,79 @@ systemctl status confluent-server
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Tarball Installation Layout
+### EC Installation Layout
 
 ```
-/opt/confluent/                      # Installation root
-├── bin/                             # CLI tools (kafka-*, confluent-*)
-├── etc/                             # Configuration templates
-│   ├── kafka/
-│   │   ├── server.properties        # Broker configuration
-│   │   ├── kraft/                   # KRaft configs
-│   │   └── log4j.properties
-│   ├── schema-registry/
-│   ├── kafka-connect/
-│   └── control-center/
-├── lib/                             # JARs and libraries
-├── share/                           # Documentation
-└── logs/                            # Application logs
+{{ base_path }}/                              # Main installation root
+├── opt/
+│   ├── confluent-{{ confluent_version }}/    # Confluent Platform
+│   │   ├── bin/                              # CLI tools
+│   │   ├── etc/                              # Default configs (unused)
+│   │   └── share/                            # Libraries
+│   │
+│   ├── {{ java_version }}/                   # Java installation
+│   │
+│   ├── ssl/                                  # SSL certificates
+│   │   ├── {{ keystore_filename }}
+│   │   ├── {{ truststore_filename }}
+│   │   └── security.properties               # Encrypted passwords
+│   │
+│   ├── data/                                 # Kafka data
+│   │   ├── controller/                       # Controller logs
+│   │   └── (broker data at root)
+│   │
+│   ├── logs/                                 # Application logs
+│   └── monitoring/                           # JMX exporter
+│
+├── etc/
+│   ├── kafka/server.properties               # Broker config
+│   └── controller/server.properties          # Controller config
+│
+├── logs/                                     # Runtime + GC logs
+├── tmp/                                      # Java temp directory
+└── scripts/management/                       # Management scripts
+    ├── kafka_node.sh                         # Start/stop wrapper
+    └── kafka_tools.sh                        # Aux tools
 
-/var/kafka-logs/                     # Data directory (broker logs)
-├── __cluster_metadata-0/            # KRaft metadata log
-├── __consumer_offsets-*/
-└── <topic>-<partition>/
-
-/var/log/confluent/                  # Service logs
-├── kafka/
-├── schema-registry/
-└── control-center/
+~/.config/systemd/user/                       # User-scope systemd
+├── confluent-kcontroller.service             # Controller service
+└── confluent-server.service                  # Broker service
 ```
+
+> **Standard paths** (non-EC): `/opt/confluent/`, `/var/kafka-logs/`, `/etc/systemd/system/`
 
 ---
 
 ## Common Workflows
 
-### 1. Check Cluster Health
+### 1. Check Cluster Health (EC)
 
 ```bash
-# Broker status
-systemctl status confluent-server
+# Set environment (source from your environment file)
+export KAFKA_HOME={{ base_path }}/opt/confluent-{{ confluent_version }}
+export BOOTSTRAP={{ broker_host_1 }}:{{ broker_port }},{{ broker_host_2 }}:{{ broker_port }},{{ broker_host_3 }}:{{ broker_port }}
+export CLIENT_PROPS={{ base_path }}/etc/kafka/client.properties
+
+# Broker status (user systemd)
+systemctl --user status confluent-server
 
 # Controller quorum status (KRaft)
-/opt/confluent/bin/kafka-metadata \
-  --snapshot /var/kafka-logs/__cluster_metadata-0/00000000000000000000.log \
+$KAFKA_HOME/bin/kafka-metadata \
+  --snapshot {{ base_path }}/opt/data/controller/__cluster_metadata-0/00000000000000000000.log \
   --command quorum
 
 # Under-replicated partitions
-/opt/confluent/bin/kafka-topics --bootstrap-server localhost:9092 \
+$KAFKA_HOME/bin/kafka-topics --bootstrap-server $BOOTSTRAP \
+  --command-config $CLIENT_PROPS \
   --describe --under-replicated-partitions
 
 # Offline partitions (CRITICAL)
-/opt/confluent/bin/kafka-topics --bootstrap-server localhost:9092 \
+$KAFKA_HOME/bin/kafka-topics --bootstrap-server $BOOTSTRAP \
+  --command-config $CLIENT_PROPS \
   --describe --unavailable-partitions
 
 # Broker disk usage
-df -h /var/kafka-logs
+df -h /ec/local/reuse/opt/data
 
 # JVM heap usage
 jstat -gc $(pgrep -f kafka.Kafka) 1000 5
@@ -230,6 +282,7 @@ grep -r "log.message.format.version\|inter.broker.protocol.version" /opt/conflue
 
 ### Reference Files
 
+- **[references/ec_deployment.md](references/ec_deployment.md)** — **EC deployment paths, Vault, and setup**
 - **[references/upgrade_7x_to_8x.md](references/upgrade_7x_to_8x.md)** — Complete 7.x to 8.x migration guide
 - **[references/kraft_migration.md](references/kraft_migration.md)** — ZooKeeper to KRaft migration steps
 - **[references/ansible_playbooks.md](references/ansible_playbooks.md)** — Ansible automation patterns
@@ -250,30 +303,39 @@ grep -r "log.message.format.version\|inter.broker.protocol.version" /opt/conflue
 | **Connect task failed**    | Connector config or target system issue    | Check task status, review error in config     |
 | **OOM on broker**          | Heap exhaustion                            | Tune JVM heap, check for memory leaks         |
 
-### Debug Commands
+### Debug Commands (EC)
 
 ```bash
+# Set paths (source from your environment file)
+export KAFKA_HOME={{ base_path }}/opt/confluent-{{ confluent_version }}
+export LOG_DIR={{ base_path }}/logs
+export DATA_DIR={{ base_path }}/opt/data
+
 # Kafka server logs (last 100 lines)
-tail -100 /var/log/confluent/kafka/server.log
+tail -100 $LOG_DIR/server.log
 
 # Controller logs (KRaft)
-tail -100 /var/log/confluent/kafka/controller.log
+tail -100 $LOG_DIR/controller.log
+
+# Systemd journal logs
+journalctl --user -u confluent-server -f
+journalctl --user -u confluent-kcontroller -f
 
 # Check open file descriptors
 lsof -p $(pgrep -f kafka.Kafka) | wc -l
 
 # Network connections to broker
-netstat -an | grep 9092 | wc -l
+netstat -an | grep {{ broker_port }} | wc -l
 
 # Thread dump for debugging hung brokers
 jstack $(pgrep -f kafka.Kafka) > /tmp/kafka-thread-dump.txt
 
 # GC logs analysis
-grep "GC pause" /var/log/confluent/kafka/kafka-gc.log | tail -20
+grep "GC pause" $LOG_DIR/gc.log | tail -20
 
 # KRaft metadata diagnostics
-/opt/confluent/bin/kafka-metadata \
-  --snapshot /var/kafka-logs/__cluster_metadata-0/00000000000000000000.log \
+$KAFKA_HOME/bin/kafka-metadata \
+  --snapshot $DATA_DIR/controller/__cluster_metadata-0/00000000000000000000.log \
   --command topic --topics __consumer_offsets
 ```
 
@@ -283,89 +345,90 @@ For in-depth troubleshooting scenarios, see **[references/troubleshooting.md](re
 
 ---
 
-## Ansible Automation
+## Ansible Automation (EC Environment)
 
-### Inventory Structure
-
-```ini
-# inventory/confluent.ini
-[controllers]
-kafka-controller-01 ansible_host=10.0.1.11 broker_id=1
-kafka-controller-02 ansible_host=10.0.1.12 broker_id=2
-kafka-controller-03 ansible_host=10.0.1.13 broker_id=3
-
-[brokers]
-kafka-broker-01 ansible_host=10.0.2.11 broker_id=101
-kafka-broker-02 ansible_host=10.0.2.12 broker_id=102
-kafka-broker-03 ansible_host=10.0.2.13 broker_id=103
-
-[schema_registry]
-kafka-sr-01 ansible_host=10.0.3.11
-
-[connect]
-kafka-connect-01 ansible_host=10.0.4.11
-
-[control_center]
-kafka-cc-01 ansible_host=10.0.5.11
-
-[confluent:children]
-controllers
-brokers
-schema_registry
-connect
-control_center
-
-[confluent:vars]
-confluent_version=8.0.0
-kafka_kraft_enabled=true
-kafka_listener_security_protocol=SASL_SSL
-kafka_sasl_mechanism=PLAIN
-```
-
-### Common Playbook Tasks
+### EC Inventory Structure
 
 ```yaml
-# roles/confluent-kafka/tasks/upgrade.yml
-- name: Stop Kafka broker gracefully
-  ansible.builtin.systemd:
-    name: confluent-server
-    state: stopped
-  register: service_stop
+# {{ ansible_base }}/inventories/{{ env_name }}/hosts.yml
+# Replace {{ variable }} placeholders with actual values in your inventory (not in git)
+all:
+  children:
+    kafka_controller:
+      hosts:
+        { { controller_host_1 } }:
+          node_id: { { controller_id_1 } }
+        { { controller_host_2 } }:
+          node_id: { { controller_id_2 } }
+        { { controller_host_3 } }:
+          node_id: { { controller_id_3 } }
 
-- name: Wait for controlled shutdown
-  ansible.builtin.wait_for:
-    port: 9092
-    state: stopped
-    timeout: 300
-
-- name: Backup current installation
-  ansible.builtin.archive:
-    path: /opt/confluent
-    dest: "/backup/confluent-{{ ansible_date_time.date }}.tar.gz"
-    format: gz
-
-- name: Extract new Confluent version
-  ansible.builtin.unarchive:
-    src: "confluent-{{ confluent_version }}.tar.gz"
-    dest: /opt/
-    remote_src: no
-
-- name: Update symlink
-  ansible.builtin.file:
-    src: "/opt/confluent-{{ confluent_version }}"
-    dest: /opt/confluent
-    state: link
-
-- name: Start Kafka broker
-  ansible.builtin.systemd:
-    name: confluent-server
-    state: started
-    enabled: yes
+    kafka_broker:
+      hosts:
+        { { broker_host_1 } }:
+          node_id: { { broker_id_1 } }
+        { { broker_host_2 } }:
+          node_id: { { broker_id_2 } }
+        { { broker_host_3 } }:
+          node_id: { { broker_id_3 } }
 ```
+
+### EC Deployment Commands
+
+```bash
+# Export Vault token (obtain via PrivX or your auth method)
+export VAULT_TOKEN="${VAULT_TOKEN}"
+cd {{ ansible_base }}
+
+# Vault bootstrap (one-time per environment)
+ansible-playbook playbooks/tasks/vault-bootstrap.yml \
+  -e vault_env={{ env_name }} \
+  -e "@resources/secrets.yml"
+
+# Deploy controllers
+ansible-playbook -i inventories/{{ env_name }}/hosts.yml \
+  playbooks/10-kafka-controllers.yml \
+  --limit {{ controller_host_1 }} \
+  -vv \
+  --skip-tags ec,package,sysctl,health_check \
+  -e "@resources/override.yml"
+
+# Deploy brokers
+ansible-playbook -i inventories/{{ env_name }}/hosts.yml \
+  playbooks/20-kafka-brokers.yml \
+  --limit {{ broker_host_1 }} \
+  -vv \
+  --skip-tags ec,package,sysctl,health_check \
+  -e "@resources/override.yml"
+```
+
+### EC Systemd User Service Pattern
+
+```yaml
+# User-scope systemd (no root)
+- name: Kafka Started
+  ansible.builtin.systemd:
+    name: "{{ kafka_broker_service_name }}"
+    enabled: true
+    scope: user # EC constraint: user-mode systemd
+    state: started
+  tags: systemd
+```
+
+### Skip Tags Reference
+
+| Tag            | Purpose              | When to Skip    |
+| -------------- | -------------------- | --------------- |
+| `ec`           | EC-specific mods     | Already applied |
+| `package`      | Package installation | Re-runs         |
+| `sysctl`       | Sysctl tuning        | No root         |
+| `health_check` | Post-checks          | Manual          |
+| `privileged`   | Root-required        | Non-root env    |
 
 ### Reference Files
 
-- **[references/ansible_playbooks.md](references/ansible_playbooks.md)** — Complete Ansible automation patterns
+- **[references/ec_deployment.md](references/ec_deployment.md)** — **Complete EC paths, Vault, Ansible setup**
+- **[references/ansible_playbooks.md](references/ansible_playbooks.md)** — Generic Ansible automation patterns
 
 ---
 

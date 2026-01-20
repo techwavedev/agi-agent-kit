@@ -4,6 +4,32 @@ Ansible automation patterns for Confluent Kafka tarball installations.
 
 ---
 
+## ⚠️ EC Environment Notes
+
+> **This guide shows generic Ansible patterns.** For EC-specific deployments:
+
+| Standard Pattern                      | EC Pattern                                               |
+| ------------------------------------- | -------------------------------------------------------- |
+| Root systemd (`/etc/systemd/system/`) | User systemd (`~/.config/systemd/user/`)                 |
+| `ansible_become: yes`                 | `ansible_become: false`                                  |
+| `systemctl start`                     | `systemctl --user start`                                 |
+| `/opt/confluent/`                     | `{{ base_path }}/opt/confluent-{{ confluent_version }}/` |
+| `/var/kafka-logs/`                    | `{{ base_path }}/opt/data`                               |
+| `/var/ssl/kafka/`                     | `{{ base_path }}/opt/ssl/`                               |
+
+**EC Ansible Base:** `{{ ansible_base }}/` (e.g., `/ec/local/kafka/ansible/`)
+
+**Key EC Constraints:**
+
+- No root access (`ansible_become: false`)
+- User-scope systemd services (`scope: user`)
+- HashiCorp Vault for secrets
+- SSL-only (no SASL/RBAC)
+
+See **[ec_deployment.md](ec_deployment.md)** for complete EC Ansible setup and deployment commands.
+
+---
+
 ## Table of Contents
 
 1. [Directory Structure](#directory-structure)

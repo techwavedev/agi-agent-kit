@@ -4,6 +4,31 @@ Complete guide for migrating Confluent Kafka from ZooKeeper mode to KRaft mode.
 
 ---
 
+## ⚠️ EC Environment Path Mappings
+
+> **This guide uses standard Confluent paths in examples.** For EC deployments, substitute paths as follows:
+
+| Standard Path                 | EC Path                                                  |
+| ----------------------------- | -------------------------------------------------------- |
+| `/opt/confluent/`             | `{{ base_path }}/opt/confluent-{{ confluent_version }}/` |
+| `/var/kafka-logs/`            | `{{ base_path }}/opt/data` (broker)                      |
+| `/var/kafka-controller-data/` | `{{ base_path }}/opt/data/controller`                    |
+| `/var/log/confluent/kafka/`   | `{{ base_path }}/logs/`                                  |
+| `localhost:9092`              | `$BOOTSTRAP` (use SSL port 9443)                         |
+| `systemctl`                   | `systemctl --user`                                       |
+
+**EC Quick Setup:**
+
+```bash
+export KAFKA_HOME={{ base_path }}/opt/confluent-{{ confluent_version }}
+export BOOTSTRAP={{ broker_host_1 }}:{{ broker_port }}
+export DATA_DIR={{ base_path }}/opt/data
+```
+
+See **[ec_deployment.md](ec_deployment.md)** for complete EC paths and configuration.
+
+---
+
 ## Table of Contents
 
 1. [KRaft Overview](#kraft-overview)

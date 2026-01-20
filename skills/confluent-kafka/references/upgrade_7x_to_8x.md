@@ -4,6 +4,30 @@ Complete guide for upgrading Confluent Platform from 7.x versions to 8.x with ta
 
 ---
 
+## ⚠️ EC Environment Path Mappings
+
+> **This guide uses standard Confluent paths in examples.** For EC deployments, substitute paths as follows:
+
+| Standard Path         | EC Path                                                  |
+| --------------------- | -------------------------------------------------------- |
+| `/opt/confluent/`     | `{{ base_path }}/opt/confluent-{{ confluent_version }}/` |
+| `/var/kafka-logs/`    | `{{ base_path }}/opt/data`                               |
+| `/var/log/confluent/` | `{{ base_path }}/logs/`                                  |
+| `/var/ssl/kafka/`     | `{{ base_path }}/opt/ssl/`                               |
+| `localhost:9092`      | `$BOOTSTRAP` (use SSL port 9443)                         |
+| `sudo systemctl`      | `systemctl --user`                                       |
+
+**EC Quick Setup:**
+
+```bash
+export KAFKA_HOME={{ base_path }}/opt/confluent-{{ confluent_version }}
+export BOOTSTRAP={{ broker_host_1 }}:{{ broker_port }}
+```
+
+See **[ec_deployment.md](ec_deployment.md)** for complete EC paths and configuration.
+
+---
+
 ## Table of Contents
 
 1. [Version Compatibility Matrix](#version-compatibility-matrix)
