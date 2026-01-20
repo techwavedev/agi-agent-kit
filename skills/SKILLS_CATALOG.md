@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-20 00:31
+> **Auto-generated Documentation** — Last updated: 2026-01-20 10:08
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -17,6 +17,7 @@ This document provides comprehensive documentation on available skills, how to u
 - [Available Skills](#available-skills)
   - [AWS (Hub)](#aws-hub)
   - [Aws Terraform](#aws-terraform)
+  - [Consul](#consul)
   - [Karpenter](#karpenter)
   - [Opensearch](#opensearch)
   - [Pdf Reader](#pdf-reader)
@@ -58,6 +59,31 @@ skill-name/
 **References:**
 - `references/common_patterns.md`
 - `references/mcp_servers.md`
+
+---
+
+### Consul
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `consul` |
+| **Location** | `skills/consul/` |
+| **Parent** | [Aws](#aws) |
+
+**Description:** HashiCorp Consul specialist for EKS clusters. Use for Consul service mesh installation, configuration, HA setup, maintenance, updates, upgrades, troubleshooting, and optimization. Covers Consul Connect, intentions, health checks, ACLs, gossip encryption, TLS configuration, federation, and Kubernetes integration via consul-k8s Helm chart. Requires kubectl and helm access to target EKS cluster.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/consul_status.py` | *[See script for details]* |
+| `scripts/generate_values.py` | *[See script for details]* |
+
+**References:**
+- `references/acl_setup.md`
+- `references/ha_config.md`
+- `references/troubleshooting.md`
+- `references/upgrades.md`
 
 ---
 
