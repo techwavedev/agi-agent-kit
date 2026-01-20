@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-20 10:08
+> **Auto-generated Documentation** — Last updated: 2026-01-20 10:57
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -76,6 +76,7 @@ skill-name/
 
 | Script | Purpose |
 | ------ | ------- |
+| `scripts/consul_health_report.py` | *[See script for details]* |
 | `scripts/consul_status.py` | *[See script for details]* |
 | `scripts/generate_values.py` | *[See script for details]* |
 

@@ -335,6 +335,40 @@ kubectl exec -n consul consul-server-0 -- consul keyring -remove <old-key>
 
 ## Scripts
 
+### Generate Health Report
+
+```bash
+# Generate PDF + Markdown health report for nonprod
+python skills/consul/scripts/consul_health_report.py \
+  --environment nonprod \
+  --output reports/consul/nonprod/health/
+
+# Generate only PDF for prod
+python skills/consul/scripts/consul_health_report.py \
+  --environment prod \
+  --output reports/consul/prod/health/ \
+  --format pdf
+
+# Generate markdown only
+python skills/consul/scripts/consul_health_report.py \
+  --environment nonprod \
+  --format markdown
+```
+
+**Arguments:**
+
+- `--environment, -e` — Environment name (nonprod, prod) **required**
+- `--output, -o` — Output directory (default: current)
+- `--format, -f` — Output format: pdf, markdown, or both (default: both)
+- `--namespace, -n` — Consul namespace (default: consul)
+- `--region, -r` — AWS region (default: eu-west-1)
+
+**Outputs:**
+
+- `consul_health_<env>_<timestamp>.pdf` — Styled PDF report
+- `consul_health_<env>_<timestamp>.md` — Markdown report
+- `consul_health_<env>_<timestamp>.json` — Raw health data
+
 ### Get Consul Status
 
 ```bash
