@@ -105,9 +105,9 @@ def get_pods_status(namespace: str, context: Optional[str] = None) -> Dict[str, 
         return {"error": "Failed to parse pods JSON"}
 
 
-def get_cluster_members(namespace: str, context: Optional[str] = None) -> Dict[str, Any]:
+def get_cluster_members(namespace: str, context: Optional[str] = None, token: Optional[str] = None) -> Dict[str, Any]:
     """Get Consul cluster members."""
-    success, output, error = run_consul_cmd(namespace, "members", context)
+    success, output, error = run_consul_cmd(namespace, "members", context, token)
     
     if not success:
         return {"error": f"Failed to get members: {error}"}
@@ -127,10 +127,10 @@ def get_cluster_members(namespace: str, context: Optional[str] = None) -> Dict[s
     return {"members": members, "total": len(members)}
 
 
-def get_raft_status(namespace: str, context: Optional[str] = None) -> Dict[str, Any]:
+def get_raft_status(namespace: str, context: Optional[str] = None, token: Optional[str] = None) -> Dict[str, Any]:
     """Get Raft consensus status."""
     success, output, error = run_consul_cmd(
-        namespace, "operator raft list-peers", context
+        namespace, "operator raft list-peers", context, token
     )
     
     if not success:
@@ -191,12 +191,16 @@ def main():
                        help="Output in JSON format")
     args = parser.parse_args()
     
+    # Retrieve bootstrap token for ACL-enabled clusters
+    token = get_bootstrap_token(args.namespace, args.context)
+    
     status = {
         "namespace": args.namespace,
+        "acl_token_found": token is not None,
         "helm": get_helm_info(args.namespace, args.context),
         "pods": get_pods_status(args.namespace, args.context),
-        "members": get_cluster_members(args.namespace, args.context),
-        "raft": get_raft_status(args.namespace, args.context)
+        "members": get_cluster_members(args.namespace, args.context, token),
+        "raft": get_raft_status(args.namespace, args.context, token)
     }
     
     if args.json:
