@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-20 10:57
+> **Auto-generated Documentation** — Last updated: 2026-01-20 16:31
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -17,6 +17,7 @@ This document provides comprehensive documentation on available skills, how to u
 - [Available Skills](#available-skills)
   - [AWS (Hub)](#aws-hub)
   - [Aws Terraform](#aws-terraform)
+  - [Confluent Kafka](#confluent-kafka)
   - [Consul](#consul)
   - [Karpenter](#karpenter)
   - [Opensearch](#opensearch)
@@ -59,6 +60,31 @@ skill-name/
 **References:**
 - `references/common_patterns.md`
 - `references/mcp_servers.md`
+
+---
+
+### Confluent Kafka
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `confluent-kafka` |
+| **Location** | `skills/confluent-kafka/` |
+| **Parent** | [Aws](#aws) |
+
+**Description:** Confluent Kafka specialist for tarball/Ansible custom installations. Expert in updating, maintaining, checking health, troubleshooting, documenting, analyzing metrics, and upgrading Confluent Kafka deployments from 7.x to 8.x versions. Covers KRaft mode (ZooKeeper-less), broker configuration, Schema Registry, Connect, ksqlDB, Control Center, and production-grade operations. Use when working with Confluent Platform installations, migrations to KRaft, performance tuning, health monitoring, and infrastructure-as-code with Ansible.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/kafka_health_check.py` | *[See script for details]* |
+| `scripts/upgrade_preflight.py` | *[See script for details]* |
+| `scripts/validate_config.py` | *[See script for details]* |
+
+**References:**
+- `references/ansible_playbooks.md`
+- `references/kraft_migration.md`
+- `references/upgrade_7x_to_8x.md`
 
 ---
 
