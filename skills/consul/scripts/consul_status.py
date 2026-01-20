@@ -41,12 +41,37 @@ def run_kubectl(args: list, context: Optional[str] = None) -> tuple:
         return False, "", str(e)
 
 
-def run_consul_cmd(namespace: str, cmd: str, context: Optional[str] = None) -> tuple:
-    """Run consul command inside server pod."""
+def get_bootstrap_token(namespace: str, context: Optional[str] = None) -> Optional[str]:
+    """Retrieve bootstrap ACL token from Kubernetes secret."""
+    cmd = ["kubectl"]
+    if context:
+        cmd.extend(["--context", context])
+    cmd.extend([
+        "get", "secret", "consul-bootstrap-acl-token",
+        "-n", namespace,
+        "-o", "jsonpath={.data.token}"
+    ])
+    
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        if result.returncode == 0 and result.stdout:
+            import base64
+            return base64.b64decode(result.stdout).decode('utf-8').strip()
+    except Exception:
+        pass
+    return None
+
+
+def run_consul_cmd(namespace: str, cmd: str, context: Optional[str] = None, token: Optional[str] = None) -> tuple:
+    """Run consul command inside server pod with optional ACL token."""
+    consul_cmd = cmd.split()
+    if token:
+        consul_cmd.extend(["-token", token])
+    
     kubectl_args = [
         "exec", "-n", namespace, "consul-server-0", "--",
         "consul"
-    ] + cmd.split()
+    ] + consul_cmd
     return run_kubectl(kubectl_args, context)
 
 
