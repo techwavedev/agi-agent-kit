@@ -82,18 +82,30 @@ deploy:nonprod:
 
 ### 2.1 Environment Alignment (Confirmed)
 
-Branch strategy for this project:
+Branch strategy for this project (Non-Prod only for now):
 
-| Branch           | Environment    | Agent                  | Notes                 |
-| ---------------- | -------------- | ---------------------- | --------------------- |
-| `prod`           | **Production** | `eks-prod-agent` (TBD) | Protected branch      |
-| `acc`            | Non-Prod       | `eks-nonprod-agent`    | Current active branch |
-| `develop`        | Non-Prod       | `eks-nonprod-agent`    | Default branch        |
-| `main`           | Non-Prod       | `eks-nonprod-agent`    | If used               |
-| Feature branches | Non-Prod       | `eks-nonprod-agent`    | MR pipelines          |
+| Branch           | Environment | Agent               | Notes                 |
+| ---------------- | ----------- | ------------------- | --------------------- |
+| `acc`            | Non-Prod    | `eks-nonprod-agent` | Current active branch |
+| `develop`        | Non-Prod    | `eks-nonprod-agent` | Default branch        |
+| `main`           | Non-Prod    | `eks-nonprod-agent` | If used               |
+| Feature branches | Non-Prod    | `eks-nonprod-agent` | MR pipelines          |
 
 > [!NOTE]
-> **Simple rule**: `prod` branch → Production cluster. Everything else → Non-Prod cluster.
+> Production deployment (`prod` branch) will be addressed separately in a future phase.
+
+### 2.1.1 Branch-Environment File Isolation
+
+**Each branch should only contain files relevant to its environment.**
+
+| Branch        | Values File                    | Files to REMOVE         |
+| ------------- | ------------------------------ | ----------------------- |
+| `acc`         | `helm/values-acc.yaml`         | `helm/values-prod.yaml` |
+| `develop`     | `helm/values.yaml` (base only) | `helm/values-prod.yaml` |
+| Future `prod` | `helm/values-prod.yaml`        | `helm/values-acc.yaml`  |
+
+> [!IMPORTANT]
+> **No mixing**: The `acc` branch should NOT contain `values-prod.yaml`. This prevents accidental production deployments and keeps each branch clean.
 
 ### 2.2 Container Registry Migration (Confirmed)
 
@@ -110,14 +122,12 @@ Migrate from `code.europa.eu` to `sdlc.webcloud.ec.europa.eu`:
 
 ### 2.3 GitLab Agent Configuration
 
-Use the **same agents** as `poc-aws-shared`:
+Use the **same agent** as `poc-aws-shared`:
 
 ```yaml
 variables:
-  # Non-prod agent for all branches except prod
-  KUBE_CONTEXT_NONPROD: "apim/poc-aws-shared:eks-nonprod-agent"
-  # Prod agent only for prod branch (TBD)
-  KUBE_CONTEXT_PROD: "apim/poc-aws-shared:eks-prod-agent"
+  # Non-prod agent for all branches
+  KUBE_CONTEXT: "apim/poc-aws-shared:eks-nonprod-agent"
 ```
 
 **Required**: Update agent config in `poc-aws-shared` to authorize this project:
@@ -130,8 +140,15 @@ ci_access:
     - id: apim/api-catalogue-backend-tests # ADD THIS
 ```
 
-> [!NOTE]
-> Production agent (`eks-prod-agent`) configuration will be defined separately when production deployment is ready.
+**Required**: Update agent config in `poc-aws-shared` to authorize this project:
+
+```yaml
+# File: .gitlab/agents/eks-nonprod-agent/config.yaml
+ci_access:
+  projects:
+    - id: apim/poc-aws-shared
+    - id: apim/api-catalogue-backend-tests # ADD THIS
+```
 
 ---
 
@@ -141,10 +158,10 @@ ci_access:
 
 The current pipeline has two distinct types of jobs:
 
-| Job Type                                        | Current Runner                | Proposed Runner              | Reason                    |
-| ----------------------------------------------- | ----------------------------- | ---------------------------- | ------------------------- |
-| **CI/Build Jobs** (setup-ci, lint, test, build) | `api-catalogue` tag           | **Keep `api-catalogue` tag** | Requires Docker-in-Docker |
-| **Deploy Jobs** (deploy-acc, deploy-prod)       | `api-catalogue-acc/prod` tags | **Switch to GitLab Agent**   | Only needs kubectl        |
+| Job Type                                        | Current Runner          | Proposed Runner              | Reason                    |
+| ----------------------------------------------- | ----------------------- | ---------------------------- | ------------------------- |
+| **CI/Build Jobs** (setup-ci, lint, test, build) | `api-catalogue` tag     | **Keep `api-catalogue` tag** | Requires Docker-in-Docker |
+| **Deploy Jobs** (deploy-acc)                    | `api-catalogue-acc` tag | **Switch to GitLab Agent**   | Only needs kubectl        |
 
 > [!IMPORTANT]
 > **The build stages MUST keep the `api-catalogue` runner tag** because they require Docker-in-Docker capabilities for building multi-arch images. Only the deploy stages should switch to using the GitLab Agent.
@@ -220,34 +237,26 @@ stages:
 deploy:acc:
   image: alpine/k8s:1.29.0 # Uses lightweight kubectl image
   variables:
-    KUBE_CONTEXT: $KUBE_CONTEXT_NONPROD
+    KUBE_CONTEXT: $KUBE_CONTEXT
   environment:
     name: acceptance
     url: https://api-catalogue-acc.shared-services.aws.cloud.tech.ec.europa.eu
     on_stop: cleanup:acc
-  # No tags: - can run on any runner
-
-deploy:prod:
-  image: alpine/k8s:1.29.0
-  variables:
-    KUBE_CONTEXT: $KUBE_CONTEXT_PROD
-  environment:
-    name: production
-    url: https://api-catalogue-prod.shared-services.aws.cloud.tech.ec.europa.eu
-    on_stop: cleanup:prod
   rules:
-    - if: $CI_COMMIT_BRANCH == "prod"
+    - if: $CI_COMMIT_BRANCH == "acc"
+  # No tags: - can run on any runner
 ```
 
 ---
 
 ## 4. Files to Modify
 
-| File                                                          | Action   | Description                                                                                     |
-| ------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------- |
-| `.gitlab-ci.yml`                                              | Refactor | Add agent context, workflow rules, validation stages                                            |
-| `poc-aws-shared/.gitlab/agents/eks-nonprod-agent/config.yaml` | Update   | Authorize api-catalogue project                                                                 |
-| `helm/values.yaml`                                            | Update   | Change `image.repository` to `sdlc.webcloud.ec.europa.eu:4567/apim/api-catalogue-backend-tests` |
+| File                                                          | Action     | Description                                                                                     |
+| ------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------- |
+| `.gitlab-ci.yml`                                              | Refactor   | Add agent context, workflow rules, validation stages, remove deploy-prod                        |
+| `poc-aws-shared/.gitlab/agents/eks-nonprod-agent/config.yaml` | Update     | Authorize api-catalogue project                                                                 |
+| `helm/values.yaml`                                            | Update     | Change `image.repository` to `sdlc.webcloud.ec.europa.eu:4567/apim/api-catalogue-backend-tests` |
+| `helm/values-prod.yaml`                                       | **Delete** | Remove from `acc` branch (branch-environment isolation)                                         |
 
 ### 4.4 Secrets, Variables & Configuration Checklist
 
@@ -255,16 +264,13 @@ deploy:prod:
 
 Update these in **GitLab → Settings → CI/CD → Variables**:
 
-| Variable               | Current              | Action     | Notes                             |
-| ---------------------- | -------------------- | ---------- | --------------------------------- |
-| `REGISTRY_USER`        | For `code.europa.eu` | **Update** | New registry credentials          |
-| `REGISTRY_PASSWORD`    | For `code.europa.eu` | **Update** | New registry credentials (masked) |
-| `ACC_SECURITY_GROUPS`  | Existing             | **Verify** | ALB security group IDs            |
-| `ACC_SUBNETS`          | Existing             | **Verify** | ALB subnet IDs                    |
-| `ACC_SSL_CERT_ARN`     | Existing             | **Verify** | ACM certificate ARN               |
-| `PROD_SECURITY_GROUPS` | Existing             | **Verify** | ALB security group IDs            |
-| `PROD_SUBNETS`         | Existing             | **Verify** | ALB subnet IDs                    |
-| `PROD_SSL_CERT_ARN`    | Existing             | **Verify** | ACM certificate ARN               |
+| Variable              | Current              | Action     | Notes                             |
+| --------------------- | -------------------- | ---------- | --------------------------------- |
+| `REGISTRY_USER`       | For `code.europa.eu` | **Update** | New registry credentials          |
+| `REGISTRY_PASSWORD`   | For `code.europa.eu` | **Update** | New registry credentials (masked) |
+| `ACC_SECURITY_GROUPS` | Existing             | **Verify** | ALB security group IDs            |
+| `ACC_SUBNETS`         | Existing             | **Verify** | ALB subnet IDs                    |
+| `ACC_SSL_CERT_ARN`    | Existing             | **Verify** | ACM certificate ARN               |
 
 #### Kubernetes Secrets (Cluster Level)
 
@@ -311,11 +317,11 @@ FCP_SERVICE_URL: "..."
 
 #### Helm Values Files
 
-| File                    | Key Settings                          | Action              |
-| ----------------------- | ------------------------------------- | ------------------- |
-| `helm/values.yaml`      | `image.repository`, `secretsConfig.*` | **Update** registry |
-| `helm/values-acc.yaml`  | `ingress.hostname`, `resources`       | **Verify**          |
-| `helm/values-prod.yaml` | `ingress.hostname`, `resources`       | **Verify**          |
+| File                    | Key Settings                          | Action                                       |
+| ----------------------- | ------------------------------------- | -------------------------------------------- |
+| `helm/values.yaml`      | `image.repository`, `secretsConfig.*` | **Update** registry                          |
+| `helm/values-acc.yaml`  | `ingress.hostname`, `resources`       | **Verify**                                   |
+| `helm/values-prod.yaml` | N/A                                   | **Delete** from `acc` branch (env isolation) |
 
 ---
 
@@ -338,11 +344,11 @@ FCP_SERVICE_URL: "..."
 - [ ] Verify environment visibility in GitLab UI
 - [ ] Test agent connectivity to EKS cluster
 
-### Phase 4: Production Readiness
+### Phase 4: Finalization
 
 - [ ] Merge changes to `acc` branch
+- [ ] Delete `helm/values-prod.yaml` from `acc` branch (branch-environment isolation)
 - [ ] Document rollback procedures
-- [ ] Schedule maintenance window if needed
 
 ---
 
@@ -383,7 +389,7 @@ helm upgrade --install api-catalogue ./helm \
 1. ~~**Branch Naming**: Keep `acc` or rename?~~ → **Resolved**: Keep `acc`
 2. ~~**Registry**: Keep `code.europa.eu` or migrate?~~ → **Resolved**: Migrate to `sdlc.webcloud.ec.europa.eu`
 3. ~~**Runner Tags**: Can we remove specific runner tags?~~ → **Resolved**: Hybrid approach - keep for CI/Build, remove for deploy
-4. **Production Agent**: When will `eks-prod-agent` be configured for production deployments?
+4. ~~**Production deployment**~~ → **Deferred**: Will be addressed in a future phase
 
 ---
 
