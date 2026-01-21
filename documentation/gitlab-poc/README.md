@@ -1,359 +1,217 @@
-# GitLab Agent for Kubernetes - POC Installation
+# GitLab Agent for Kubernetes - EKS POC
 
-Documentation for the GitLab Kubernetes Agent installed on `eks-nonprod` cluster for the `poc-aws-shared` project.
-
-**Installed:** 2026-01-21  
-**Cluster:** eks-nonprod  
-**Namespace:** gitlab-sdlc  
-**GitLab Project:** apim/poc-aws-shared
-
----
-
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Prerequisites](#prerequisites)
-3. [Installation Steps](#installation-steps)
-4. [Verification](#verification)
-5. [Configuration](#configuration)
-6. [Maintenance](#maintenance)
-7. [Troubleshooting](#troubleshooting)
-
----
+> Documentation for the POC deployment testing GitLab Agent connectivity to EKS clusters
 
 ## Overview
 
-The GitLab Agent for Kubernetes (`agentk`) enables:
+This POC validates the end-to-end integration between the EC GitLab instance (`sdlc.webcloud.ec.europa.eu`) and AWS EKS clusters using the GitLab Agent for Kubernetes.
 
-- **GitOps deployments** via Flux integration
-- **CI/CD kubectl access** for pipelines
-- **Cluster visibility** in GitLab UI
+| Attribute            | Value                        |
+| -------------------- | ---------------------------- |
+| **GitLab Instance**  | `sdlc.webcloud.ec.europa.eu` |
+| **Project**          | `apim/poc-aws-shared`        |
+| **Local Path**       | `gitlab-ec/`                 |
+| **Target Cluster**   | EKS Non-Prod                 |
+| **Test Application** | nginx (2 replicas)           |
+| **Namespace**        | `poc-nginx-test`             |
 
-### Architecture
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  GitLab (sdlc.webcloud.ec.europa.eu)                        │
-│  └── Project: apim/poc-aws-shared (ID: 7794)                │
-│      └── Agent: eks-nonprod-agent (ID: 11)                  │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                    WebSocket (wss://)
-                              │
-┌─────────────────────────────────────────────────────────────┐
-│  EKS Cluster: eks-nonprod                                   │
-│  └── Namespace: gitlab-sdlc                                 │
-│      └── Deployment: gitlab-agent (2 replicas)              │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           EC GitLab Instance                                │
+│                    sdlc.webcloud.ec.europa.eu                               │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  Project: apim/poc-aws-shared                                        │   │
+│  │  ├── .gitlab-ci.yml (CI/CD Pipeline)                                │   │
+│  │  ├── k8s/base/ (Kubernetes manifests)                               │   │
+│  │  └── .gitlab/agents/<agent-name>/config.yaml                        │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────┬───────────────────────────┘
+                                              │
+                                              │ gRPC (outbound from cluster)
+                                              │ Agent pulls instructions
+                                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              AWS EKS Cluster                                │
+│                                 (Non-Prod)                                  │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │  gitlab-agent namespace                                               │  │
+│  │  ┌────────────────────────────────────────────────────────────────┐  │  │
+│  │  │  GitLab Agent Pod                                               │  │  │
+│  │  │  - Connects to GitLab via gRPC                                  │  │  │
+│  │  │  - Receives kubectl commands from CI/CD                         │  │  │
+│  │  │  - Executes deployments in authorized namespaces                │  │  │
+│  │  └────────────────────────────────────────────────────────────────┘  │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │  poc-nginx-test namespace                                             │  │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │  │
+│  │  │  nginx pod  │  │  nginx pod  │  │   Service   │  │  ConfigMap  │  │  │
+│  │  │  (replica 1)│  │  (replica 2)│  │  (ClusterIP)│  │  (HTML)     │  │  │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+## Components
 
-## Prerequisites
+### 1. GitLab Agent
 
-### Access Requirements
+The agent runs inside the EKS cluster and establishes an **outbound** connection to the GitLab instance. This is crucial for environments where inbound connections to the cluster are restricted.
 
-| Requirement   | Details                                           |
-| ------------- | ------------------------------------------------- |
-| GitLab Access | Project Owner/Maintainer on `apim/poc-aws-shared` |
-| AWS Access    | Profile `eks-kafka` with EKS access               |
-| EKS Access    | kubectl access to `eks-nonprod`                   |
-| Tools         | `kubectl`, `helm`, `aws` CLI, `curl`, `jq`        |
+**Key points:**
 
-### Environment Setup
+- Agent initiates connection (firewall-friendly)
+- Uses gRPC over HTTPS
+- Token-based authentication
+- Can be configured for specific namespaces/resources
+
+### 2. CI/CD Pipeline
+
+The pipeline (`/.gitlab-ci.yml`) contains:
+
+| Stage      | Jobs                                                | Purpose                       |
+| ---------- | --------------------------------------------------- | ----------------------------- |
+| `validate` | `validate:manifests`, `validate:agent-connectivity` | Pre-flight checks             |
+| `deploy`   | `deploy:nonprod`                                    | Apply K8s manifests via agent |
+| `verify`   | `verify:deployment`, `verify:resources`             | Health checks                 |
+| `cleanup`  | `cleanup:nonprod`                                   | Remove test resources         |
+
+### 3. Kubernetes Manifests
+
+Located in `k8s/base/`:
+
+| File                 | Resource      | Description                  |
+| -------------------- | ------------- | ---------------------------- |
+| `namespace.yaml`     | Namespace     | `poc-nginx-test` namespace   |
+| `configmap.yaml`     | ConfigMap     | Custom HTML for nginx        |
+| `deployment.yaml`    | Deployment    | 2 nginx replicas with probes |
+| `service.yaml`       | Service       | ClusterIP on port 80         |
+| `kustomization.yaml` | Kustomization | Ties all resources together  |
+
+## Setup Instructions
+
+### Step 1: Register GitLab Agent
+
+1. Navigate to the project in GitLab
+2. Go to **Operate** → **Kubernetes clusters** → **Connect a cluster**
+3. Name your agent (e.g., `eks-nonprod-agent`)
+4. Copy the agent token (displayed only once!)
+
+### Step 2: Install Agent on EKS
 
 ```bash
-# GitLab credentials (stored in .env)
-export GITLAB_HOST=sdlc.webcloud.ec.europa.eu
-export GITLAB_TOKEN=<your-personal-access-token>
-export PROJECT_ID=7794
-
-# Kubernetes context
-export KUBECONFIG=~/.kube/config
-export AWS_PROFILE=eks-kafka
-kubectl config use-context arn:aws:eks:eu-west-1:511383368449:cluster/eks-nonprod
-```
-
----
-
-## Installation Steps
-
-### Step 1: Register Agent in GitLab
-
-Register the agent via GitLab API:
-
-```bash
-curl --request POST \
-  --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
-  --header "Content-Type: application/json" \
-  --url "https://${GITLAB_HOST}/api/v4/projects/${PROJECT_ID}/cluster_agents" \
-  --data '{"name":"eks-nonprod-agent"}'
-```
-
-**Response:**
-
-```json
-{
-  "id": 11,
-  "name": "eks-nonprod-agent"
-}
-```
-
-### Step 2: Create Agent Token
-
-Create authentication token for the agent:
-
-```bash
-curl --request POST \
-  --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
-  --header "Content-Type: application/json" \
-  --url "https://${GITLAB_HOST}/api/v4/projects/${PROJECT_ID}/cluster_agents/11/tokens" \
-  --data '{"name":"initial-token","description":"EKS nonprod agent token"}'
-```
-
-> ⚠️ **Important:** Save the `token` value immediately - it cannot be retrieved again!
-
-### Step 3: Install with Helm
-
-```bash
-# Add GitLab Helm repository
+# Add GitLab Helm repo
 helm repo add gitlab https://charts.gitlab.io
 helm repo update
 
-# Install the agent
+# Install agent
 helm upgrade --install gitlab-agent gitlab/gitlab-agent \
-  --namespace gitlab-sdlc \
+  --namespace gitlab-agent \
   --create-namespace \
-  --set config.token="<AGENT_TOKEN>" \
-  --set config.kasAddress="wss://sdlc.webcloud.ec.europa.eu/-/kubernetes-agent/" \
-  --set image.tag=v17.6.0 \
-  --wait --timeout 120s
+  --set config.token=<AGENT_TOKEN> \
+  --set config.kasAddress=wss://kas.sdlc.webcloud.ec.europa.eu
 ```
 
-**Installation Output:**
+### Step 3: Configure Agent
 
-```
-NAME: gitlab-agent
-LAST DEPLOYED: Wed Jan 21 13:44:22 2026
-NAMESPACE: gitlab-sdlc
-STATUS: deployed
-REVISION: 1
-```
-
----
-
-## Verification
-
-### Check Pod Status
-
-```bash
-kubectl get pods -n gitlab-sdlc
-```
-
-**Expected Output:**
-
-```
-NAME                               READY   STATUS    RESTARTS   AGE
-gitlab-agent-v2-76c44d5799-4hjmr   1/1     Running   0          59s
-gitlab-agent-v2-76c44d5799-spfgd   1/1     Running   0          59s
-```
-
-### Check Agent Logs
-
-```bash
-kubectl logs -n gitlab-sdlc -l app.kubernetes.io/name=gitlab-agent --tail=50
-```
-
-**Look for:**
-
-- `"msg":"Starting"` — Agent modules initializing
-- `"msg":"attempting to acquire leader lease"` — HA election
-- No `"level":"ERROR"` messages
-
-### Verify in GitLab UI
-
-1. Navigate to: https://sdlc.webcloud.ec.europa.eu/apim/poc-aws-shared
-2. Go to **Operate → Kubernetes clusters**
-3. Agent should show as **Connected**
-
-### Verify via API
-
-```bash
-curl --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
-  "https://${GITLAB_HOST}/api/v4/projects/${PROJECT_ID}/cluster_agents" | jq
-```
-
----
-
-## Configuration
-
-### Current Deployment Details
-
-| Setting       | Value                                                  |
-| ------------- | ------------------------------------------------------ |
-| Namespace     | `gitlab-sdlc`                                          |
-| Replicas      | 2 (HA)                                                 |
-| Image Version | `v17.6.0`                                              |
-| KAS Address   | `wss://sdlc.webcloud.ec.europa.eu/-/kubernetes-agent/` |
-| Agent ID      | 11                                                     |
-| Token Name    | `initial-token`                                        |
-
-### Helm Values
-
-To see current values:
-
-```bash
-helm get values gitlab-agent -n gitlab-sdlc
-```
-
-### Agent Configuration File
-
-To enable CI/CD access, create agent config in GitLab repository:
-
-**File:** `.gitlab/agents/eks-nonprod-agent/config.yaml`
+Create `.gitlab/agents/<agent-name>/config.yaml` in the project:
 
 ```yaml
+# Agent configuration
 ci_access:
   projects:
     - id: apim/poc-aws-shared
-  groups:
-    - id: apim
+      default_namespace: poc-nginx-test
+      access_as:
+        agent: {}
 ```
 
----
+### Step 4: Update Pipeline Variable
 
-## Maintenance
+Edit `.gitlab-ci.yml`:
 
-### Upgrade Agent
+```yaml
+variables:
+  KUBE_CONTEXT: "apim/poc-aws-shared:<agent-name>"
+```
+
+### Step 5: Run Pipeline
+
+1. Commit and push changes
+2. Pipeline triggers automatically
+3. Monitor stages in GitLab CI/CD
+
+## Verification
+
+### Check Agent Status
 
 ```bash
-# Check current version
-helm list -n gitlab-sdlc
+# Agent pod
+kubectl get pods -n gitlab-agent
 
-# Upgrade to new version
-helm upgrade gitlab-agent gitlab/gitlab-agent \
-  --namespace gitlab-sdlc \
-  --reuse-values \
-  --set image.tag=v17.8.0
+# Agent logs
+kubectl logs -n gitlab-agent -l app=gitlab-agent --tail=50
 
-# Watch rollout
-kubectl rollout status deployment/gitlab-agent-v2 -n gitlab-sdlc
+# Expected: Connected successfully, receiving instructions
 ```
 
-### Token Rotation
+### Check Deployment
 
 ```bash
-# 1. Create new token (max 2 active)
-curl --request POST \
-  --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
-  --header "Content-Type: application/json" \
-  --url "https://${GITLAB_HOST}/api/v4/projects/${PROJECT_ID}/cluster_agents/11/tokens" \
-  --data '{"name":"rotation-token"}'
+# Pods
+kubectl get pods -n poc-nginx-test
+# Expected: 2/2 Running
 
-# 2. Update Helm with new token
-helm upgrade gitlab-agent gitlab/gitlab-agent \
-  --namespace gitlab-sdlc \
-  --reuse-values \
-  --set config.token="<NEW_TOKEN>"
+# Service
+kubectl get svc -n poc-nginx-test
+# Expected: nginx ClusterIP 80/TCP
 
-# 3. Revoke old token
-curl --request DELETE \
-  --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
-  "https://${GITLAB_HOST}/api/v4/projects/${PROJECT_ID}/cluster_agents/11/tokens/<OLD_TOKEN_ID>"
+# Test locally
+kubectl port-forward -n poc-nginx-test svc/nginx 8080:80
+# Open http://localhost:8080
 ```
-
-### Uninstall
-
-```bash
-# Remove from cluster
-helm uninstall gitlab-agent --namespace gitlab-sdlc
-kubectl delete namespace gitlab-sdlc
-
-# Remove from GitLab (optional)
-curl --request DELETE \
-  --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
-  "https://${GITLAB_HOST}/api/v4/projects/${PROJECT_ID}/cluster_agents/11"
-```
-
----
 
 ## Troubleshooting
 
-### Check Agent Logs
+| Issue                    | Cause                 | Solution                          |
+| ------------------------ | --------------------- | --------------------------------- |
+| Agent not connecting     | Token expired/invalid | Regenerate token in GitLab        |
+| `KUBE_CONTEXT` not found | Agent name mismatch   | Verify agent name in config       |
+| Deployment fails         | RBAC permissions      | Check agent's ServiceAccount RBAC |
+| Pods pending             | Resource constraints  | Check node resources/quotas       |
 
-```bash
-kubectl logs -n gitlab-sdlc -l app.kubernetes.io/name=gitlab-agent --tail=100
-```
+See also: `/skills/gitlab/references/troubleshooting.md`
 
-### Common Issues
+## Security Considerations
 
-| Issue                       | Solution                                                   |
-| --------------------------- | ---------------------------------------------------------- |
-| Pod CrashLoopBackOff        | Check token is valid, check KAS address ends with `/`      |
-| "Connection refused"        | Verify network allows outbound to GitLab on 443            |
-| "Certificate error"         | Add `--set-file config.kasCaCert=./ca.pem` for self-signed |
-| Agent not showing in GitLab | Wait 2-3 minutes, check logs for errors                    |
+1. **Token Management**: Agent token should be rotated regularly
+2. **Namespace Isolation**: Agent configured for specific namespaces only
+3. **RBAC**: Minimum required permissions for deployments
+4. **Network**: Agent uses outbound connection only
 
-### Debug Commands
+## Files Reference
 
-```bash
-# Pod details
-kubectl describe pod -n gitlab-sdlc -l app.kubernetes.io/name=gitlab-agent
+| Path                        | Description                              |
+| --------------------------- | ---------------------------------------- |
+| `gitlab-ec/.gitlab-ci.yml`  | CI/CD pipeline configuration             |
+| `gitlab-ec/k8s/base/`       | Kubernetes manifests                     |
+| `gitlab-ec/README.md`       | Project README                           |
+| `documentation/gitlab-poc/` | This documentation                       |
+| `skills/gitlab/`            | GitLab skill with scripts and references |
 
-# Events
-kubectl get events -n gitlab-sdlc --sort-by='.lastTimestamp'
+## Next Steps
 
-# Helm status
-helm status gitlab-agent -n gitlab-sdlc
-```
+After successful POC validation:
+
+1. [ ] Configure production agent for prod EKS cluster
+2. [ ] Set up Ingress with TLS for external access
+3. [ ] Integrate with GitOps (Flux) for declarative deployments
+4. [ ] Add environment-specific overlays (nonprod/prod)
+5. [ ] Configure monitoring and alerting
 
 ---
 
-## Related Resources
-
-- **Skill Documentation:** `skills/gitlab/SKILL.md`
-- **GitLab Docs:** https://docs.gitlab.com/user/clusters/agent/
-- **Project URL:** https://sdlc.webcloud.ec.europa.eu/apim/poc-aws-shared
-
----
-
-## Appendix: Full Installation Commands
-
-For quick reference, here's the complete installation sequence:
-
-```bash
-# 1. Set environment
-source .env && export $(grep -v '^#' .env | xargs)
-export KUBECONFIG=~/.kube/config
-export AWS_PROFILE=eks-kafka
-
-# 2. Register agent
-AGENT_RESPONSE=$(curl --silent --request POST \
-  --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
-  --header "Content-Type: application/json" \
-  --url "https://${GITLAB_HOST}/api/v4/projects/${PROJECT_ID}/cluster_agents" \
-  --data '{"name":"eks-nonprod-agent"}')
-AGENT_ID=$(echo $AGENT_RESPONSE | jq -r '.id')
-
-# 3. Create token
-TOKEN_RESPONSE=$(curl --silent --request POST \
-  --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
-  --header "Content-Type: application/json" \
-  --url "https://${GITLAB_HOST}/api/v4/projects/${PROJECT_ID}/cluster_agents/${AGENT_ID}/tokens" \
-  --data '{"name":"initial-token"}')
-AGENT_TOKEN=$(echo $TOKEN_RESPONSE | jq -r '.token')
-
-# 4. Install with Helm
-helm repo add gitlab https://charts.gitlab.io
-helm repo update
-helm upgrade --install gitlab-agent gitlab/gitlab-agent \
-  --namespace gitlab-sdlc \
-  --create-namespace \
-  --set config.token="${AGENT_TOKEN}" \
-  --set config.kasAddress="wss://${GITLAB_HOST}/-/kubernetes-agent/" \
-  --set image.tag=v17.6.0
-
-# 5. Verify
-kubectl get pods -n gitlab-sdlc
-kubectl logs -n gitlab-sdlc -l app.kubernetes.io/name=gitlab-agent --tail=20
-```
+**Status:** POC | **Created:** 2026-01-21 | **Author:** Agent
