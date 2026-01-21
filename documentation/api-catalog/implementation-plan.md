@@ -249,6 +249,74 @@ deploy:prod:
 | `poc-aws-shared/.gitlab/agents/eks-nonprod-agent/config.yaml` | Update   | Authorize api-catalogue project                                                                 |
 | `helm/values.yaml`                                            | Update   | Change `image.repository` to `sdlc.webcloud.ec.europa.eu:4567/apim/api-catalogue-backend-tests` |
 
+### 4.4 Secrets, Variables & Configuration Checklist
+
+#### GitLab CI/CD Variables (Pipeline Level)
+
+Update these in **GitLab → Settings → CI/CD → Variables**:
+
+| Variable               | Current              | Action     | Notes                             |
+| ---------------------- | -------------------- | ---------- | --------------------------------- |
+| `REGISTRY_USER`        | For `code.europa.eu` | **Update** | New registry credentials          |
+| `REGISTRY_PASSWORD`    | For `code.europa.eu` | **Update** | New registry credentials (masked) |
+| `ACC_SECURITY_GROUPS`  | Existing             | **Verify** | ALB security group IDs            |
+| `ACC_SUBNETS`          | Existing             | **Verify** | ALB subnet IDs                    |
+| `ACC_SSL_CERT_ARN`     | Existing             | **Verify** | ACM certificate ARN               |
+| `PROD_SECURITY_GROUPS` | Existing             | **Verify** | ALB security group IDs            |
+| `PROD_SUBNETS`         | Existing             | **Verify** | ALB subnet IDs                    |
+| `PROD_SSL_CERT_ARN`    | Existing             | **Verify** | ACM certificate ARN               |
+
+#### Kubernetes Secrets (Cluster Level)
+
+These secrets must exist in the `api-catalog` namespace:
+
+| Secret Name             | Purpose                   | Action            |
+| ----------------------- | ------------------------- | ----------------- |
+| `api-catalogue-secrets` | App environment variables | **Verify exists** |
+| `mongodb-certificate`   | MongoDB TLS certificate   | **Verify exists** |
+
+**Contents of `api-catalogue-secrets`:**
+
+```yaml
+# Required environment variables in the K8s secret:
+MONGODB_URI: "mongodb://..."
+AUTH_TRUSTED_ISSUERS: "[...]"
+IMPORT_SCRIPT_TOKEN: "..."
+WSO2_SERVICES_APIKEY: "..."
+APIM_SERVICE_URL: "..."
+APIM_EXTRA_CLIENT_ID: "..."
+APIM_EXTRA_CLIENT_SECRET: "..."
+APIM_INTRA_CLIENT_ID: "..."
+APIM_INTRA_CLIENT_SECRET: "..."
+KIBANA_SERVICE_URL: "..."
+KIBANA_APIKEY: "..."
+CONSUL_SERVICE_URL: "..."
+CONSUL_TOKEN: "..."
+FCP_SERVICE_URL: "..."
+```
+
+#### ServiceAccount & IRSA
+
+| Config                                                  | Location            | Action                         |
+| ------------------------------------------------------- | ------------------- | ------------------------------ |
+| `serviceAccount.annotations.eks.amazonaws.com/role-arn` | `helm/values*.yaml` | **Verify** IAM role ARN is set |
+
+#### Container Images
+
+| Image                  | Current                                                 | New                                                                | Action                        |
+| ---------------------- | ------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------- |
+| **Application**        | `code.europa.eu:4567/api-gateway/api-catalogue-backend` | `sdlc.webcloud.ec.europa.eu:4567/apim/api-catalogue-backend-tests` | **Update** in pipeline & Helm |
+| **Base (Dockerfile)**  | `node:20` / `node:20-alpine`                            | No change                                                          | ✅ Compliant                  |
+| **kubectl (Pipeline)** | N/A                                                     | `alpine/k8s:1.29.0`                                                | **Add** for deploy jobs       |
+
+#### Helm Values Files
+
+| File                    | Key Settings                          | Action              |
+| ----------------------- | ------------------------------------- | ------------------- |
+| `helm/values.yaml`      | `image.repository`, `secretsConfig.*` | **Update** registry |
+| `helm/values-acc.yaml`  | `ingress.hostname`, `resources`       | **Verify**          |
+| `helm/values-prod.yaml` | `ingress.hostname`, `resources`       | **Verify**          |
+
 ---
 
 ## 5. Implementation Phases
