@@ -243,11 +243,11 @@ deploy:prod:
 
 ## 4. Files to Modify
 
-| File                                                          | Action   | Description                                          |
-| ------------------------------------------------------------- | -------- | ---------------------------------------------------- |
-| `.gitlab-ci.yml`                                              | Refactor | Add agent context, workflow rules, validation stages |
-| `poc-aws-shared/.gitlab/agents/eks-nonprod-agent/config.yaml` | Update   | Authorize api-catalogue project                      |
-| `helm/values.yaml`                                            | Review   | Verify image repository if changing registry         |
+| File                                                          | Action   | Description                                                                                     |
+| ------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------- |
+| `.gitlab-ci.yml`                                              | Refactor | Add agent context, workflow rules, validation stages                                            |
+| `poc-aws-shared/.gitlab/agents/eks-nonprod-agent/config.yaml` | Update   | Authorize api-catalogue project                                                                 |
+| `helm/values.yaml`                                            | Update   | Change `image.repository` to `sdlc.webcloud.ec.europa.eu:4567/apim/api-catalogue-backend-tests` |
 
 ---
 
