@@ -95,15 +95,18 @@ Branch strategy for this project:
 > [!NOTE]
 > **Simple rule**: `prod` branch → Production cluster. Everything else → Non-Prod cluster.
 
-### 2.2 Container Registry Decision
+### 2.2 Container Registry Migration (Confirmed)
 
-| Option               | Registry                                                           | Notes                        |
-| -------------------- | ------------------------------------------------------------------ | ---------------------------- |
-| **A** (Keep current) | `code.europa.eu:4567/api-gateway/api-catalogue-backend`            | Requires cross-registry auth |
-| **B** (Migrate)      | `sdlc.webcloud.ec.europa.eu:4567/apim/api-catalogue-backend-tests` | Same instance as repo        |
+Migrate from `code.europa.eu` to `sdlc.webcloud.ec.europa.eu`:
 
-> [!IMPORTANT]
-> **Decision Required**: Should we keep using `code.europa.eu` registry or migrate images to `sdlc.webcloud.ec.europa.eu`?
+| Aspect       | Current                                                 | New                                                                |
+| ------------ | ------------------------------------------------------- | ------------------------------------------------------------------ |
+| **Registry** | `code.europa.eu:4567/api-gateway/api-catalogue-backend` | `sdlc.webcloud.ec.europa.eu:4567/apim/api-catalogue-backend-tests` |
+| **Login**    | `docker login code.europa.eu:4567`                      | `docker login sdlc.webcloud.ec.europa.eu:4567`                     |
+| **Variable** | `REGISTRY_USER` / `REGISTRY_PASSWORD`                   | Update CI/CD variables                                             |
+
+> [!NOTE]
+> This aligns the container registry with the same GitLab instance as the repository, simplifying authentication and access control.
 
 ### 2.3 GitLab Agent Configuration
 
@@ -309,9 +312,9 @@ helm upgrade --install api-catalogue ./helm \
 
 ## 7. Open Questions
 
-1. ~~**Branch Naming**: Keep `acc` or rename to `tst` for consistency?~~ → **Resolved**: Keep `acc`
-2. **Registry**: Keep `code.europa.eu` or migrate to `sdlc.webcloud.ec.europa.eu`?
-3. ~~**Runner Tags**: Can we remove specific runner tags?~~ → **Resolved**: Hybrid approach - keep `api-catalogue` tag for CI/Build (Docker), remove deploy runner tags
+1. ~~**Branch Naming**: Keep `acc` or rename?~~ → **Resolved**: Keep `acc`
+2. ~~**Registry**: Keep `code.europa.eu` or migrate?~~ → **Resolved**: Migrate to `sdlc.webcloud.ec.europa.eu`
+3. ~~**Runner Tags**: Can we remove specific runner tags?~~ → **Resolved**: Hybrid approach - keep for CI/Build, remove for deploy
 4. **Production Agent**: When will `eks-prod-agent` be configured for production deployments?
 
 ---
