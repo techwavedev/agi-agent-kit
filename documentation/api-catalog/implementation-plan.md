@@ -134,44 +134,106 @@ ci_access:
 
 ## 3. Pipeline Refactoring Summary
 
-### 3.1 Key Changes
+### 3.1 Key Insight: Hybrid Runner Approach
 
-| Aspect            | Current                       | Proposed                                |
-| ----------------- | ----------------------------- | --------------------------------------- |
-| **Agent**         | Direct kubeconfig             | `apim/poc-aws-shared:eks-nonprod-agent` |
-| **Workflow**      | `only:` blocks                | `workflow:rules`                        |
-| **Runners**       | Tag-based (`api-catalogue-*`) | Generic runners                         |
-| **Stages**        | 6 stages                      | 7 stages (add validate, verify)         |
-| **Environments**  | None defined                  | GitLab environments with URLs           |
-| **kubectl Image** | (none - uses runner)          | `alpine/k8s:1.29.0`                     |
+The current pipeline has two distinct types of jobs:
 
-### 3.2 New Stage Structure
+| Job Type                                        | Current Runner                | Proposed Runner              | Reason                    |
+| ----------------------------------------------- | ----------------------------- | ---------------------------- | ------------------------- |
+| **CI/Build Jobs** (setup-ci, lint, test, build) | `api-catalogue` tag           | **Keep `api-catalogue` tag** | Requires Docker-in-Docker |
+| **Deploy Jobs** (deploy-acc, deploy-prod)       | `api-catalogue-acc/prod` tags | **Switch to GitLab Agent**   | Only needs kubectl        |
+
+> [!IMPORTANT]
+> **The build stages MUST keep the `api-catalogue` runner tag** because they require Docker-in-Docker capabilities for building multi-arch images. Only the deploy stages should switch to using the GitLab Agent.
+
+### 3.2 Current vs Proposed - Stage by Stage
+
+#### CI/Build Stages (KEEP EXISTING RUNNER TAGS)
+
+```yaml
+# These stages remain largely unchanged - they need Docker-in-Docker
+setup-ci:
+  tags:
+    - api-catalogue # KEEP - needs Docker
+
+check-lint-format:
+  tags:
+    - api-catalogue # KEEP - needs Docker compose
+
+test:
+  tags:
+    - api-catalogue # KEEP - needs Docker compose + MongoDB
+
+build:
+  tags:
+    - api-catalogue # KEEP - needs Docker buildx
+```
+
+#### Deploy Stages (CHANGE TO GITLAB AGENT)
+
+```yaml
+# Before (current)
+deploy-acc:
+  script:
+    - kubectl config use-context api-catalogue-nonprod # ❌ Direct kubeconfig
+  tags:
+    - api-catalogue-acc # ❌ Specific runner
+
+# After (proposed)
+deploy:acc:
+  image: alpine/k8s:1.29.0
+  script:
+    - kubectl config use-context "$KUBE_CONTEXT_NONPROD" # ✅ GitLab Agent
+  # No tags: - uses any runner with agent access
+```
+
+### 3.3 Summary of Changes
+
+| Aspect               | Current                       | Proposed                        |
+| -------------------- | ----------------------------- | ------------------------------- |
+| **CI/Build Runners** | `api-catalogue` tag           | **No change** - keep tag        |
+| **Deploy Runners**   | `api-catalogue-acc/prod` tags | **Remove** - use agent          |
+| **Deploy Context**   | Direct kubeconfig             | GitLab Agent tunnel             |
+| **Workflow**         | `only:` blocks                | `workflow:rules`                |
+| **Stages**           | 6 stages                      | 7 stages (add validate, verify) |
+| **Environments**     | None defined                  | GitLab environments with URLs   |
+
+### 3.4 New Stage Structure
 
 ```yaml
 stages:
-  - setup-ci # Docker build for CI
-  - check-lint-format # Linting
-  - test # Unit tests
-  - build # Docker build + push
-  - validate # NEW: Helm validation + agent connectivity
-  - deploy # Helm upgrade
-  - verify # NEW: Post-deploy checks
+  - setup-ci # Docker build for CI (KEEP api-catalogue tag)
+  - check-lint-format # Linting (KEEP api-catalogue tag)
+  - test # Unit tests (KEEP api-catalogue tag)
+  - build # Docker build + push (KEEP api-catalogue tag)
+  - validate # NEW: Helm validation + agent connectivity (uses agent)
+  - deploy # Helm upgrade (uses agent)
+  - verify # NEW: Post-deploy checks (uses agent)
 ```
 
-### 3.3 Environment Configuration
+### 3.5 Environment Configuration
 
 ```yaml
 deploy:acc:
+  image: alpine/k8s:1.29.0 # Uses lightweight kubectl image
+  variables:
+    KUBE_CONTEXT: $KUBE_CONTEXT_NONPROD
   environment:
     name: acceptance
     url: https://api-catalogue-acc.shared-services.aws.cloud.tech.ec.europa.eu
     on_stop: cleanup:acc
+  # No tags: - can run on any runner
 
 deploy:prod:
+  image: alpine/k8s:1.29.0
+  variables:
+    KUBE_CONTEXT: $KUBE_CONTEXT_PROD
   environment:
     name: production
     url: https://api-catalogue-prod.shared-services.aws.cloud.tech.ec.europa.eu
     on_stop: cleanup:prod
+  rules:
+    - if: $CI_COMMIT_BRANCH == "prod"
 ```
 
 ---
@@ -249,7 +311,7 @@ helm upgrade --install api-catalogue ./helm \
 
 1. ~~**Branch Naming**: Keep `acc` or rename to `tst` for consistency?~~ → **Resolved**: Keep `acc`
 2. **Registry**: Keep `code.europa.eu` or migrate to `sdlc.webcloud.ec.europa.eu`?
-3. **Runner Tags**: Can we remove specific runner tags, or are they required for infrastructure access?
+3. ~~**Runner Tags**: Can we remove specific runner tags?~~ → **Resolved**: Hybrid approach - keep `api-catalogue` tag for CI/Build (Docker), remove deploy runner tags
 4. **Production Agent**: When will `eks-prod-agent` be configured for production deployments?
 
 ---
