@@ -130,6 +130,42 @@ kubectl describe pod <pod-name> -n <namespace>
 
 ---
 
+## Exec Permission Issues
+
+### Error: `kubectl exec` returns 403 Forbidden
+
+**Cause:** The GitLab Agent's RBAC configuration doesn't include `pods/exec` permissions by default. This is a security measure.
+
+**Example error:**
+
+```
+error: unable to upgrade connection: <html>
+<head><title>403 Forbidden</title></head>
+```
+
+**Solutions:**
+
+1. **Don't use kubectl exec in pipelines** (recommended) - use `kubectl describe` or `kubectl logs` instead:
+
+   ```yaml
+   # Instead of:
+   - kubectl exec $POD -- wget -q -O- http://localhost:80
+
+   # Use:
+   - kubectl describe pod $POD | grep -E "Status:|Ready:"
+   - kubectl logs $POD --tail=10
+   ```
+
+2. **Update agent RBAC** (if exec is required):
+   ```yaml
+   # Add to ClusterRole
+   - apiGroups: [""]
+     resources: ["pods/exec"]
+     verbs: ["create"]
+   ```
+
+---
+
 ## Validation Tips
 
 ### Test pipeline syntax locally
