@@ -7,15 +7,16 @@
 ## Table of Contents
 
 1. [Overview: What Is This Project?](#1-overview-what-is-this-project)
-2. [Project Structure Explained](#2-project-structure-explained)
-3. [File-by-File Deep Dive](#3-file-by-file-deep-dive)
-4. [How GitLab Agent Works](#4-how-gitlab-agent-works)
-5. [Step-by-Step: Create This From Scratch](#5-step-by-step-create-this-from-scratch)
-6. [Kustomize Explained](#6-kustomize-explained)
-7. [Pipeline Stages Explained](#7-pipeline-stages-explained)
-8. [Common Patterns to Reuse](#8-common-patterns-to-reuse)
-9. [Security Best Practices](#9-security-best-practices)
-10. [Troubleshooting Guide](#10-troubleshooting-guide)
+2. [Branch Strategy](#2-branch-strategy)
+3. [Project Structure Explained](#3-project-structure-explained)
+4. [File-by-File Deep Dive](#4-file-by-file-deep-dive)
+5. [How GitLab Agent Works](#5-how-gitlab-agent-works)
+6. [Step-by-Step: Create This From Scratch](#6-step-by-step-create-this-from-scratch)
+7. [Kustomize Explained](#7-kustomize-explained)
+8. [Pipeline Stages Explained](#8-pipeline-stages-explained)
+9. [Common Patterns to Reuse](#9-common-patterns-to-reuse)
+10. [Security Best Practices](#10-security-best-practices)
+11. [Troubleshooting Guide](#11-troubleshooting-guide)
 
 ---
 
@@ -54,24 +55,121 @@ The GitLab Agent for Kubernetes solves this by:
 
 ---
 
-## 2. Project Structure Explained
+## 2. Branch Strategy
+
+This project uses environment-based branches to control deployments.
+
+### Branch Overview
+
+| Branch   | Purpose                          | Pipeline Trigger | Target Environment |
+| -------- | -------------------------------- | ---------------- | ------------------ |
+| `master` | Main development branch          | Automatic        | Development        |
+| `tst`    | POC/Test environment deployments | Automatic        | Test/POC cluster   |
+| `prod`   | Production deployments           | Manual approval  | Production cluster |
+
+### How It Works
+
+```
+master (development)
+   │
+   ├──► tst (test/POC)
+   │      │
+   │      └──► Deploys to test cluster
+   │
+   └──► prod (production)
+          │
+          └──► Deploys to production cluster (manual)
+```
+
+### Workflow Rules in `.gitlab-ci.yml`
+
+```yaml
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "tst"
+    - if: $CI_COMMIT_BRANCH == "prod"
+    - if: $CI_COMMIT_TAG
+    - when: manual
+```
+
+### Creating Environment Branches
+
+```bash
+# Create test branch (inherits from master)
+git checkout master
+git checkout -b tst
+git push -u origin tst
+
+# Create empty production branch (orphan - no history)
+git checkout --orphan prod
+git rm -rf .
+git commit --allow-empty -m "Initial prod branch"
+git push -u origin prod
+```
+
+### Using Branches for Deployments
+
+**Test deployment:**
+
+```bash
+git checkout tst
+git merge master           # Get latest changes
+git push                   # Triggers test pipeline
+```
+
+**Production deployment:**
+
+```bash
+git checkout prod
+git merge tst              # Promote tested code
+git push                   # Triggers production pipeline (may require approval)
+```
+
+### Branch Protection (Recommended)
+
+In GitLab, configure branch protection:
+
+1. Go to **Settings** → **Repository** → **Protected branches**
+2. Protect `prod` branch:
+   - Allowed to merge: Maintainers only
+   - Allowed to push: No one (force merge requests)
+3. Protect `tst` branch:
+   - Allowed to merge: Developers + Maintainers
+   - Allowed to push: Developers + Maintainers
+
+---
+
+## 3. Project Structure Explained
 
 ```
 gitlab-ec/
-├── .gitignore              # 🔒 Prevents secrets from being committed
-├── .gitlab-ci.yml          # 🔄 CI/CD pipeline definition (THE BRAIN)
-├── LICENCE                 # 📜 License file
-├── README.md               # 📖 Project documentation
-├── k8s/                    # 🚢 Kubernetes manifests
+├── .gitignore              # Prevents secrets from being committed
+├── .gitlab-ci.yml          # CI/CD pipeline definition (THE BRAIN)
+├── LICENCE                 # License file
+├── README.md               # Project documentation
+├── k8s/                    # Kubernetes manifests
 │   ├── base/               # Base resources (used everywhere)
 │   │   ├── kustomization.yaml  # Ties all resources together
 │   │   ├── namespace.yaml      # Creates the namespace
 │   │   ├── configmap.yaml      # Application configuration
 │   │   ├── deployment.yaml     # The application pods
 │   │   └── service.yaml        # Network access to pods
-│   └── overlays/           # Environment-specific variations (future)
+│   └── overlays/           # Environment-specific variations
+│       ├── tst/            # Test environment overrides
+│       └── prod/           # Production environment overrides
 └── templates/              # GitLab CI component templates
     └── my-component.yml    # Reusable CI job template
+```
+
+### Git Branches
+
+```
+Branches:
+├── master                  # Main development (default)
+├── tst                     # Test/POC environment
+└── prod                    # Production environment (protected)
 ```
 
 ### Why This Structure?
@@ -80,8 +178,10 @@ gitlab-ec/
 | ---------------- | ------------------------------------------------------------------ |
 | `.gitlab-ci.yml` | **Entry point** - GitLab reads this automatically to run pipelines |
 | `k8s/base/`      | **Base manifests** - Common Kubernetes resources                   |
-| `k8s/overlays/`  | **Environment variations** - Override base for dev/staging/prod    |
+| `k8s/overlays/`  | **Environment variations** - Override base for tst/prod            |
 | `.gitignore`     | **Security** - Blocks credentials from version control             |
+| `tst` branch     | **Test deployments** - POC and integration testing                 |
+| `prod` branch    | **Production deployments** - Protected, requires approval          |
 
 ---
 
