@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-20 23:01
+> **Auto-generated Documentation** — Last updated: 2026-01-21 13:12
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -19,6 +19,7 @@ This document provides comprehensive documentation on available skills, how to u
   - [Aws Terraform](#aws-terraform)
   - [Confluent Kafka](#confluent-kafka)
   - [Consul](#consul)
+  - [Gitlab](#gitlab)
   - [Karpenter](#karpenter)
   - [Opensearch](#opensearch)
   - [Pdf Reader](#pdf-reader)
@@ -113,6 +114,31 @@ skill-name/
 - `references/ha_config.md`
 - `references/troubleshooting.md`
 - `references/upgrades.md`
+
+---
+
+### Gitlab
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `gitlab` |
+| **Location** | `skills/gitlab/` |
+| **Parent** | [Aws](#aws) |
+
+**Description:** GitLab specialist for Kubernetes agent management on EKS clusters. Use for GitLab agent (agentk) installation, configuration, upgrades, GitOps with Flux, CI/CD pipeline integration, project management via API, token management, and troubleshooting connectivity issues. Covers agent registration, Helm deployments, KAS configuration (self-managed on-prem), impersonation, and multi-cluster setups. Requires kubectl/helm access to target EKS cluster and GitLab API token.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/generate_agent_values.py` | *[See script for details]* |
+| `scripts/gitlab_agent_status.py` | *[See script for details]* |
+
+**References:**
+- `references/agent_installation.md`
+- `references/api_reference.md`
+- `references/gitops_flux.md`
+- `references/troubleshooting.md`
 
 ---
 
