@@ -80,18 +80,20 @@ deploy:nonprod:
 
 ## 2. Proposed Changes
 
-### 2.1 Environment Alignment
+### 2.1 Environment Alignment (Confirmed)
 
-Align branching strategy with `gitlab-ec`:
+Branch strategy for this project:
 
-| Current Branch | Proposed Branch     | Environment      |
-| -------------- | ------------------- | ---------------- |
-| `develop`      | `master`            | Main development |
-| `acc`          | `tst` or keep `acc` | Acceptance/Test  |
-| (none)         | `prod`              | Production       |
+| Branch           | Environment    | Agent                  | Notes                 |
+| ---------------- | -------------- | ---------------------- | --------------------- |
+| `prod`           | **Production** | `eks-prod-agent` (TBD) | Protected branch      |
+| `acc`            | Non-Prod       | `eks-nonprod-agent`    | Current active branch |
+| `develop`        | Non-Prod       | `eks-nonprod-agent`    | Default branch        |
+| `main`           | Non-Prod       | `eks-nonprod-agent`    | If used               |
+| Feature branches | Non-Prod       | `eks-nonprod-agent`    | MR pipelines          |
 
-> [!IMPORTANT]
-> **Decision Required**: Should we rename `acc` → `tst` for consistency with `gitlab-ec`, or keep `acc` since that's the established name for this project?
+> [!NOTE]
+> **Simple rule**: `prod` branch → Production cluster. Everything else → Non-Prod cluster.
 
 ### 2.2 Container Registry Decision
 
@@ -105,11 +107,14 @@ Align branching strategy with `gitlab-ec`:
 
 ### 2.3 GitLab Agent Configuration
 
-Use the **same agent** as `poc-aws-shared`:
+Use the **same agents** as `poc-aws-shared`:
 
 ```yaml
 variables:
-  KUBE_CONTEXT: "apim/poc-aws-shared:eks-nonprod-agent"
+  # Non-prod agent for all branches except prod
+  KUBE_CONTEXT_NONPROD: "apim/poc-aws-shared:eks-nonprod-agent"
+  # Prod agent only for prod branch (TBD)
+  KUBE_CONTEXT_PROD: "apim/poc-aws-shared:eks-prod-agent"
 ```
 
 **Required**: Update agent config in `poc-aws-shared` to authorize this project:
@@ -121,6 +126,9 @@ ci_access:
     - id: apim/poc-aws-shared
     - id: apim/api-catalogue-backend-tests # ADD THIS
 ```
+
+> [!NOTE]
+> Production agent (`eks-prod-agent`) configuration will be defined separately when production deployment is ready.
 
 ---
 
@@ -239,9 +247,10 @@ helm upgrade --install api-catalogue ./helm \
 
 ## 7. Open Questions
 
-1. **Branch Naming**: Keep `acc` or rename to `tst` for consistency?
+1. ~~**Branch Naming**: Keep `acc` or rename to `tst` for consistency?~~ → **Resolved**: Keep `acc`
 2. **Registry**: Keep `code.europa.eu` or migrate to `sdlc.webcloud.ec.europa.eu`?
 3. **Runner Tags**: Can we remove specific runner tags, or are they required for infrastructure access?
+4. **Production Agent**: When will `eks-prod-agent` be configured for production deployments?
 
 ---
 
