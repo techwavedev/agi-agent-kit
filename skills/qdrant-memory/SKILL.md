@@ -56,10 +56,11 @@ docker run -d -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant
 
 Choose based on your needs:
 
-| Provider                 | Privacy        | Cost             | Speed        | Setup                 |
-| ------------------------ | -------------- | ---------------- | ------------ | --------------------- |
-| **Ollama** (recommended) | ✅ Fully Local | Free             | Fast (Metal) | `brew install ollama` |
-| OpenAI                   | ❌ Cloud       | ~$0.02/1M tokens | Fast         | API key required      |
+| Provider                 | Privacy        | Cost             | Speed        | Setup                     |
+| ------------------------ | -------------- | ---------------- | ------------ | ------------------------- |
+| **Ollama** (recommended) | ✅ Fully Local | Free             | Fast (Metal) | `brew install ollama`     |
+| **Bedrock** (AWS/Kiro)   | ⚡ AWS Cloud   | ~$0.02/1M tokens | Fast         | Uses AWS profile (no key) |
+| OpenAI                   | ❌ Cloud       | ~$0.02/1M tokens | Fast         | API key required          |
 
 #### Ollama Setup (M3 Mac Optimized)
 
@@ -85,6 +86,35 @@ curl http://localhost:11434/api/embeddings -d '{"model":"nomic-embed-text","prom
 > **Tip**: To auto-start Ollama on login, add `ollama serve &` to your `~/.zshrc` or use `brew services start ollama`.
 
 > **Note**: For Ollama, use `--dimension 768` when creating collections.
+
+#### Amazon Bedrock Setup (AWS/Kiro Subscription)
+
+Uses your existing AWS credentials - no secrets stored in code.
+
+```bash
+# 1. Ensure AWS CLI is configured (uses ~/.aws/credentials)
+aws configure  # Or set AWS_PROFILE for specific profile
+
+# 2. Install boto3 if not present
+pip install boto3
+
+# 3. Set environment variables
+export EMBEDDING_PROVIDER=bedrock
+export AWS_REGION=eu-west-1  # Default region
+
+# 4. Test authentication
+python3 skills/qdrant-memory/scripts/embedding_utils.py
+```
+
+**Models Available** (cheapest first):
+
+| Model                          | Dimensions | Pricing          |
+| ------------------------------ | ---------- | ---------------- |
+| `amazon.titan-embed-text-v2:0` | 1024       | ~$0.02/1M tokens |
+| `amazon.titan-embed-text-v1`   | 1536       | ~$0.02/1M tokens |
+| `cohere.embed-english-v3`      | 1024       | ~$0.10/1M tokens |
+
+> **Note**: For Bedrock Titan V2, use `--dimension 1024` when creating collections.
 
 #### OpenAI Setup (Cloud)
 

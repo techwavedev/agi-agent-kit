@@ -54,6 +54,11 @@ EMBEDDING_CONFIGS = {
         "model": "text-embedding-3-small",
         "dimensions": 1536,
         "url": "https://api.openai.com/v1/embeddings"
+    },
+    "bedrock": {
+        "model": "amazon.titan-embed-text-v2:0",
+        "dimensions": 1024,
+        "url": "via-boto3"
     }
 }
 
@@ -148,10 +153,35 @@ def get_embedding_openai(text: str) -> List[float]:
         return result["data"][0]["embedding"]
 
 
+def get_embedding_bedrock(text: str) -> List[float]:
+    """Generate embedding using Amazon Bedrock."""
+    try:
+        import boto3
+    except ImportError:
+        raise ImportError("boto3 required for Bedrock: pip install boto3")
+    
+    config = EMBEDDING_CONFIGS["bedrock"]
+    session = boto3.Session(region_name=os.environ.get("AWS_REGION", "eu-west-1"))
+    bedrock = session.client("bedrock-runtime")
+    
+    body = json.dumps({"inputText": text})
+    response = bedrock.invoke_model(
+        modelId=config["model"],
+        body=body,
+        contentType="application/json",
+        accept="application/json"
+    )
+    
+    result = json.loads(response["body"].read())
+    return result["embedding"]
+
+
 def get_embedding(text: str) -> List[float]:
     """Generate embedding using configured provider."""
     if EMBEDDING_PROVIDER == "ollama":
         return get_embedding_ollama(text)
+    elif EMBEDDING_PROVIDER == "bedrock":
+        return get_embedding_bedrock(text)
     else:
         return get_embedding_openai(text)
 
@@ -555,9 +585,9 @@ def main():
     )
     parser.add_argument(
         "--embeddings",
-        choices=["ollama", "openai"],
+        choices=["ollama", "openai", "bedrock"],
         default="ollama",
-        help="Embedding provider: ollama (local, free) or openai (cloud, paid)"
+        help="Embedding provider: ollama (local, free), bedrock (AWS), or openai (cloud)"
     )
     parser.add_argument(
         "--cleanup",
