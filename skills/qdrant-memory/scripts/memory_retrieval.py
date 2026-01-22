@@ -3,15 +3,25 @@
 Script: memory_retrieval.py
 Purpose: Long-term memory retrieval for context optimization.
 
+Supports both Ollama (local/private) and OpenAI (cloud) embeddings.
+Default: Ollama with nomic-embed-text model.
+
 Usage:
-    # Retrieve relevant context
-    python memory_retrieval.py retrieve --query "database architecture decisions"
+    # Retrieve relevant context (uses Ollama by default)
+    python3 memory_retrieval.py retrieve --query "database architecture decisions"
     
     # Store memory
-    python memory_retrieval.py store --content "We chose PostgreSQL..." --type decision
+    python3 memory_retrieval.py store --content "We chose PostgreSQL..." --type decision
     
     # List memories
-    python memory_retrieval.py list --type decision --project api-catalogue
+    python3 memory_retrieval.py list --type decision --project api-catalogue
+
+Environment Variables:
+    EMBEDDING_PROVIDER  - "ollama" (default) or "openai"
+    OLLAMA_URL          - Ollama server URL (default: http://localhost:11434)
+    OPENAI_API_KEY      - Required for OpenAI provider
+    QDRANT_URL          - Qdrant server URL (default: http://localhost:6333)
+    MEMORY_COLLECTION   - Collection name (default: agent_memory)
 
 Functions:
     retrieve_context(query, filters, top_k) - Get relevant memory chunks
@@ -35,36 +45,17 @@ from typing import Optional, Dict, Any, List
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 
+# Import shared embedding utilities (supports Ollama and OpenAI)
+try:
+    from embedding_utils import get_embedding
+except ImportError:
+    # Fallback if run from different directory
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from embedding_utils import get_embedding
+
 # Configuration
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 COLLECTION = os.environ.get("MEMORY_COLLECTION", "agent_memory")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
-
-
-def get_embedding(text: str) -> list:
-    """Generate embedding using OpenAI API."""
-    if not OPENAI_API_KEY:
-        raise ValueError("OPENAI_API_KEY environment variable not set")
-    
-    payload = {
-        "input": text,
-        "model": EMBEDDING_MODEL
-    }
-    
-    req = Request(
-        "https://api.openai.com/v1/embeddings",
-        data=json.dumps(payload).encode(),
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {OPENAI_API_KEY}"
-        },
-        method="POST"
-    )
-    
-    with urlopen(req, timeout=30) as response:
-        result = json.loads(response.read().decode())
-        return result["data"][0]["embedding"]
 
 
 def retrieve_context(

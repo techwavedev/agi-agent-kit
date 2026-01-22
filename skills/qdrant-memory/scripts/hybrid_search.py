@@ -3,13 +3,23 @@
 Script: hybrid_search.py
 Purpose: Hybrid search combining vector similarity with keyword filtering.
 
+Supports both Ollama (local/private) and OpenAI (cloud) embeddings.
+Default: Ollama with nomic-embed-text model.
+
 Usage:
-    python hybrid_search.py --query "kubernetes deployment failed" \
+    python3 hybrid_search.py --query "kubernetes deployment failed" \\
         --keyword error_code=ImagePullBackOff --keyword namespace=production
 
 This is particularly useful for technical queries where you need:
 - Semantic understanding (what is the user asking about?)
 - Exact matching (specific error codes, variable names, identifiers)
+
+Environment Variables:
+    EMBEDDING_PROVIDER  - "ollama" (default) or "openai"
+    OLLAMA_URL          - Ollama server URL (default: http://localhost:11434)
+    OPENAI_API_KEY      - Required for OpenAI provider
+    QDRANT_URL          - Qdrant server URL (default: http://localhost:6333)
+    MEMORY_COLLECTION   - Collection name (default: agent_memory)
 
 Exit Codes:
     0 - Success (results found)
@@ -26,36 +36,17 @@ from typing import List, Dict, Any, Optional
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
+# Import shared embedding utilities (supports Ollama and OpenAI)
+try:
+    from embedding_utils import get_embedding
+except ImportError:
+    # Fallback if run from different directory
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from embedding_utils import get_embedding
+
 # Configuration
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 COLLECTION = os.environ.get("MEMORY_COLLECTION", "agent_memory")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
-
-
-def get_embedding(text: str) -> list:
-    """Generate embedding using OpenAI API."""
-    if not OPENAI_API_KEY:
-        raise ValueError("OPENAI_API_KEY environment variable not set")
-    
-    payload = {
-        "input": text,
-        "model": EMBEDDING_MODEL
-    }
-    
-    req = Request(
-        "https://api.openai.com/v1/embeddings",
-        data=json.dumps(payload).encode(),
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {OPENAI_API_KEY}"
-        },
-        method="POST"
-    )
-    
-    with urlopen(req, timeout=30) as response:
-        result = json.loads(response.read().decode())
-        return result["data"][0]["embedding"]
 
 
 def hybrid_query(

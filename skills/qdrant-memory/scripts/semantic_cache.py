@@ -3,15 +3,25 @@
 Script: semantic_cache.py
 Purpose: Semantic caching for LLM responses using Qdrant vector similarity.
 
+Supports both Ollama (local/private) and OpenAI (cloud) embeddings.
+Default: Ollama with nomic-embed-text model.
+
 Usage:
-    # Check cache
-    python semantic_cache.py check --query "How do I reset my password?"
+    # Check cache (uses Ollama by default)
+    python3 semantic_cache.py check --query "How do I reset my password?"
     
     # Store response
-    python semantic_cache.py store --query "Password reset" --response "Go to settings..."
+    python3 semantic_cache.py store --query "Password reset" --response "Go to settings..."
     
     # Clear cache
-    python semantic_cache.py clear --older-than 7
+    python3 semantic_cache.py clear --older-than 7
+
+Environment Variables:
+    EMBEDDING_PROVIDER  - "ollama" (default) or "openai"
+    OLLAMA_URL          - Ollama server URL (default: http://localhost:11434)
+    OPENAI_API_KEY      - Required for OpenAI provider
+    QDRANT_URL          - Qdrant server URL (default: http://localhost:6333)
+    CACHE_COLLECTION    - Collection name (default: semantic_cache)
 
 Functions:
     check_cache(query, threshold) - Check for semantically similar cached response
@@ -35,37 +45,18 @@ from typing import Optional, Dict, Any
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 
+# Import shared embedding utilities (supports Ollama and OpenAI)
+try:
+    from embedding_utils import get_embedding
+except ImportError:
+    # Fallback if run from different directory
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from embedding_utils import get_embedding
+
 # Configuration
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 COLLECTION = os.environ.get("CACHE_COLLECTION", "semantic_cache")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
 DEFAULT_THRESHOLD = 0.92
-
-
-def get_embedding(text: str) -> list:
-    """Generate embedding using OpenAI API."""
-    if not OPENAI_API_KEY:
-        raise ValueError("OPENAI_API_KEY environment variable not set")
-    
-    payload = {
-        "input": text,
-        "model": EMBEDDING_MODEL
-    }
-    
-    req = Request(
-        "https://api.openai.com/v1/embeddings",
-        data=json.dumps(payload).encode(),
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {OPENAI_API_KEY}"
-        },
-        method="POST"
-    )
-    
-    with urlopen(req, timeout=30) as response:
-        result = json.loads(response.read().decode())
-        return result["data"][0]["embedding"]
 
 
 def check_cache(query: str, threshold: float = DEFAULT_THRESHOLD) -> Optional[Dict[str, Any]]:

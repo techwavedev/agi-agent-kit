@@ -204,7 +204,10 @@ def test_collection_info() -> bool:
     try:
         result = qdrant_request("GET", f"/collections/{TEST_COLLECTION}")
         info = result.get("result", {})
-        return info.get("status") == "green" and info.get("vectors_count") is not None
+        # Accept both green (optimized) and yellow (indexing) status
+        valid_status = info.get("status") in ["green", "yellow"]
+        has_vectors = info.get("vectors_count") is not None
+        return valid_status and has_vectors
     except Exception as e:
         print(f"      Error: {e}")
         return False
