@@ -206,8 +206,8 @@ def test_collection_info() -> bool:
         info = result.get("result", {})
         # Accept both green (optimized) and yellow (indexing) status
         valid_status = info.get("status") in ["green", "yellow"]
-        has_vectors = info.get("vectors_count") is not None
-        return valid_status and has_vectors
+        has_points = info.get("points_count") is not None
+        return valid_status and has_points
     except Exception as e:
         print(f"      Error: {e}")
         return False

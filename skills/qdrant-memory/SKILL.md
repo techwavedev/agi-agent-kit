@@ -64,18 +64,25 @@ Choose based on your needs:
 #### Ollama Setup (M3 Mac Optimized)
 
 ```bash
-# 1. Install Ollama
+# 1. Install Ollama (if not already installed)
 brew install ollama
 
-# 2. Start server (runs on localhost:11434)
-ollama serve
+# 2. Start server (choose one option)
+ollama serve              # Foreground (Ctrl+C to stop)
+ollama serve &            # Background (current terminal)
+nohup ollama serve &      # Background (survives terminal close)
 
 # 3. Pull embedding model (768 dimensions, excellent quality)
 ollama pull nomic-embed-text
 
-# 4. Verify
+# 4. Verify server is running
+curl http://localhost:11434/api/tags
+
+# 5. Test embedding generation
 curl http://localhost:11434/api/embeddings -d '{"model":"nomic-embed-text","prompt":"hello"}'
 ```
+
+> **Tip**: To auto-start Ollama on login, add `ollama serve &` to your `~/.zshrc` or use `brew services start ollama`.
 
 > **Note**: For Ollama, use `--dimension 768` when creating collections.
 
