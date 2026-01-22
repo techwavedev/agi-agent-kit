@@ -341,6 +341,7 @@ Track savings with metadata:
 
 ## References
 
+- See `references/complete_guide.md` for **full setup, testing, and troubleshooting**
 - See `references/collection_schemas.md` for complete schema definitions
 - See `references/embedding_models.md` for model comparisons
 - See `references/advanced_patterns.md` for RAG optimization patterns
