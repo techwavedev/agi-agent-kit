@@ -40,6 +40,53 @@ Token optimization engine using Qdrant vector database for semantic caching and 
 
 ---
 
+## Prerequisites
+
+### Qdrant (Vector Database)
+
+```bash
+# Option 1: Docker (recommended)
+docker run -d -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant
+
+# Option 2: Docker Compose (persistent)
+# See references/complete_guide.md for docker-compose.yml
+```
+
+### Embeddings Provider
+
+Choose based on your needs:
+
+| Provider                 | Privacy        | Cost             | Speed        | Setup                 |
+| ------------------------ | -------------- | ---------------- | ------------ | --------------------- |
+| **Ollama** (recommended) | ✅ Fully Local | Free             | Fast (Metal) | `brew install ollama` |
+| OpenAI                   | ❌ Cloud       | ~$0.02/1M tokens | Fast         | API key required      |
+
+#### Ollama Setup (M3 Mac Optimized)
+
+```bash
+# 1. Install Ollama
+brew install ollama
+
+# 2. Start server (runs on localhost:11434)
+ollama serve
+
+# 3. Pull embedding model (768 dimensions, excellent quality)
+ollama pull nomic-embed-text
+
+# 4. Verify
+curl http://localhost:11434/api/embeddings -d '{"model":"nomic-embed-text","prompt":"hello"}'
+```
+
+> **Note**: For Ollama, use `--dimension 768` when creating collections.
+
+#### OpenAI Setup (Cloud)
+
+```bash
+export OPENAI_API_KEY="sk-..."
+```
+
+---
+
 ## Quick Start
 
 ### MCP Server Configuration
@@ -63,7 +110,11 @@ Token optimization engine using Qdrant vector database for semantic caching and 
 Run `scripts/init_collection.py` to create the optimized collection:
 
 ```bash
-python scripts/init_collection.py --collection agent_memory --dimension 1536
+# For Ollama (nomic-embed-text - 768 dimensions)
+python3 scripts/init_collection.py --collection agent_memory --dimension 768
+
+# For OpenAI (text-embedding-3-small - 1536 dimensions)
+python3 scripts/init_collection.py --collection agent_memory --dimension 1536
 ```
 
 ---
