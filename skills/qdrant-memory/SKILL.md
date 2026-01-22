@@ -1,6 +1,6 @@
 ---
 name: qdrant-memory
-description: Intelligent token optimization through Qdrant-powered semantic caching and long-term memory. Use for: (1) Semantic Cache - avoid LLM calls entirely for semantically similar queries (100% token savings), (2) Long-Term Memory - retrieve only relevant context chunks instead of full conversation history (80-95% context reduction), (3) Hybrid Search - combine vector similarity with keyword filtering for technical queries, (4) Memory Management - store and retrieve conversation memories, decisions, and code patterns with metadata filtering. Triggers when needing to cache responses, remember past interactions, optimize context windows, or implement RAG patterns.
+description: "Intelligent token optimization through Qdrant-powered semantic caching and long-term memory. Use for (1) Semantic Cache - avoid LLM calls entirely for semantically similar queries with 100% token savings, (2) Long-Term Memory - retrieve only relevant context chunks instead of full conversation history with 80-95% context reduction, (3) Hybrid Search - combine vector similarity with keyword filtering for technical queries, (4) Memory Management - store and retrieve conversation memories, decisions, and code patterns with metadata filtering. Triggers when needing to cache responses, remember past interactions, optimize context windows, or implement RAG patterns."
 ---
 
 # Qdrant Memory Skill
