@@ -116,6 +116,8 @@ ${colors.bright}Examples:${colors.reset}
   npx @techwavedev/agi-agent-kit init
   npx @techwavedev/agi-agent-kit init --pack=core
   npx @techwavedev/agi-agent-kit init --pack=ec --path=./my-project
+
+${colors.bright}Note:${colors.reset} Most scripts require ${colors.cyan}python3${colors.reset}.
 `);
 }
 
@@ -225,7 +227,8 @@ function copyBaseFiles(targetPath, templatesPath, options) {
   
   const baseFiles = [
     { src: 'AGENTS.md', dest: 'AGENTS.md' },
-    { src: '.gitignore', dest: '.gitignore' }
+    { src: '.gitignore', dest: '.gitignore' },
+    { src: 'requirements.txt', dest: 'requirements.txt' }
   ];
   
   for (const file of baseFiles) {
@@ -343,9 +346,12 @@ async function init(options) {
   console.log(`
 Next steps:
   1. Review ${colors.cyan}AGENTS.md${colors.reset} for architecture overview
-  2. Check ${colors.cyan}skills/${colors.reset} for available capabilities
-  3. Create ${colors.cyan}.env${colors.reset} with your API keys
+  2. Install Python dependencies:
+     ${colors.yellow}pip install requests beautifulsoup4 html2text lxml qdrant-client${colors.reset}
+  3. Check ${colors.cyan}skills/${colors.reset} for available capabilities
+  4. Create ${colors.cyan}.env${colors.reset} with your API keys
 
+${colors.bright}EC Skills Reminder:${colors.reset}
 For EC skills, ensure you have proper access to:
   - AWS EKS clusters
   - CITnet Jira

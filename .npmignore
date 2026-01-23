@@ -1,0 +1,11 @@
+# Exclude EC private skills from NPM package
+templates/skills/ec/
+
+# Exclude local testing files
+techwavedev-agi-agent-kit-*.tgz
+.agent/
+.tmp/
+.venv/
+.env
+*.log
+node_modules/
