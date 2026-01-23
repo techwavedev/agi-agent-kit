@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-23 16:30
+> **Auto-generated Documentation** — Last updated: 2026-01-23 16:32
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -15,6 +15,7 @@ This document provides comprehensive documentation on available skills, how to u
 
 - [What Are Skills?](#what-are-skills)
 - [Available Skills](#available-skills)
+  - [Documentation](#documentation)
   - [Pdf Reader](#pdf-reader)
   - [Qdrant Memory](#qdrant-memory)
   - [Webcrawler](#webcrawler)
@@ -41,6 +42,31 @@ skill-name/
 ---
 
 ## Available Skills
+
+### Documentation
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `documentation` |
+| **Location** | `skills/documentation/` |
+| **Type** | Standalone |
+
+**Description:** "Automated documentation maintenance and generation skill. Triggers when: (1) Code is added, changed, updated, or deleted in any skill, (2) New scripts or references are created, (3) SKILL.md files are modified, (4) User requests documentation updates, (5) Skills catalog needs regeneration, (6) README or AGENTS.md need updates reflecting code changes. Use for generating technical documentation, updating docs after code changes, producing changelogs, ensuring documentation stays synchronized with the codebase, and maintaining the skills catalog."
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/analyze_code.py` | *[See script for details]* |
+| `scripts/detect_changes.py` | *[See script for details]* |
+| `scripts/generate_changelog.py` | *[See script for details]* |
+| `scripts/sync_docs.py` | *[See script for details]* |
+| `scripts/update_skill_docs.py` | *[See script for details]* |
+
+**References:**
+- `references/best_practices.md`
+
+---
 
 ### Pdf Reader
 
