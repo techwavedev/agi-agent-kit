@@ -4,6 +4,10 @@ import sys
 
 FORBIDDEN_TERMS = [
     "EC (European Commission)",
+    "Jira",
+    "GitLab",
+    "AWS EKS",
+    "Consul",
     "private branch",
     "ec branch"
 ]
