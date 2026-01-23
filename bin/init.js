@@ -50,6 +50,12 @@ const PACKS = {
     name: 'Knowledge',
     description: 'Core + 36 specialized skills (API, Security, Design, Architecture)',
     skills: ['core', 'knowledge']
+  },
+  full: {
+    name: 'Full Suite',
+    description: 'Complete suite (Core + Knowledge + .agent structure)',
+    skills: ['core', 'knowledge'],
+    includeAgent: true
   }
 };
 
