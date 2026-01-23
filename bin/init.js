@@ -304,6 +304,64 @@ function copyAgentStructure(targetPath, templatesPath) {
   }
 }
 
+// Main init function
+async function init(options) {
+  log.header('🚀 AGI Agent Kit Initializer');
+  
+  // Determine pack
+  let pack = options.pack;
+  if (!pack) {
+    pack = await promptPackSelection();
+  }
+  
+  if (!PACKS[pack]) {
+    log.error(`Unknown pack: ${pack}`);
+    process.exit(1);
+  }
+  
+  log.info(`Installing ${PACKS[pack].name} pack to: ${options.path}`);
+  
+  // Get templates path (relative to this script)
+  const templatesPath = path.join(__dirname, '..', 'templates');
+  
+  if (!fs.existsSync(templatesPath)) {
+    log.error('Templates directory not found. Package may be corrupted.');
+    process.exit(1);
+  }
+  
+  // Create structure
+  createStructure(options.path, options);
+  
+  // Copy base files
+  copyBaseFiles(options.path, templatesPath, options);
+  
+  // Copy skills
+  copySkills(options.path, pack, templatesPath);
+  
+  // Create symlinks
+  if (options.symlinks) {
+    createSymlinks(options.path);
+  }
+  
+  // Copy .agent/ for full pack
+  if (PACKS[pack].includeAgent) {
+    copyAgentStructure(options.path, templatesPath);
+  }
+  
+  // Final message
+  log.header('✨ Installation complete!');
+  console.log(`
+Next steps:
+  1. Review ${colors.cyan}AGENTS.md${colors.reset} for architecture overview
+  2. Install Python dependencies:
+     ${colors.yellow}pip install requests beautifulsoup4 html2text lxml qdrant-client${colors.reset}
+  3. Check ${colors.cyan}skills/${colors.reset} for available capabilities
+  4. Create ${colors.cyan}.env${colors.reset} with your API keys
+  
+Happy coding! 🎉
+`);
+}
+
 // Update function
 async function update(options) {
   log.header('🔄 AGI Agent Kit Updater');
