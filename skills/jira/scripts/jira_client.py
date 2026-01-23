@@ -199,7 +199,7 @@ class JiraClient:
         if comment:
             data['update'] = {
                 'comment': [{
-                    'add': {'body': self._format_adf(comment)}
+                    'add': {'body': self._format_body(comment)}
                 }]
             }
         
@@ -229,7 +229,7 @@ class JiraClient:
     def add_comment(self, key: str, body: str, visibility: Dict = None) -> Tuple[bool, Any]:
         """Add a comment to an issue."""
         data = {
-            'body': self._format_adf(body)
+            'body': self._format_body(body)
         }
         if visibility:
             data['visibility'] = visibility
@@ -239,7 +239,7 @@ class JiraClient:
     def update_comment(self, key: str, comment_id: str, body: str) -> Tuple[bool, Any]:
         """Update an existing comment."""
         data = {
-            'body': self._format_adf(body)
+            'body': self._format_body(body)
         }
         return self._request('PUT', f'issue/{key}/comment/{comment_id}', json=data)
     
@@ -271,7 +271,7 @@ class JiraClient:
             'timeSpent': time_spent
         }
         if comment:
-            data['comment'] = self._format_adf(comment)
+            data['comment'] = self._format_body(comment)
         if started:
             data['started'] = started
         
@@ -308,12 +308,16 @@ class JiraClient:
     
     # ========== Helpers ==========
     
-    def _format_adf(self, text: str) -> Dict:
+    def _format_body(self, text: str) -> Any:
         """
-        Convert plain text to Atlassian Document Format (ADF).
-        
-        Simple implementation - converts text to paragraphs.
+        Format text for the appropriate Jira version.
+        Jira Server (v2) expects plain string.
+        Jira Cloud (v3) expects ADF (Atlassian Document Format).
         """
+        if self.is_server:
+            return text
+            
+        # Atlassian Document Format (ADF) for Jira Cloud
         paragraphs = []
         for para in text.split('\n\n'):
             if para.strip():
