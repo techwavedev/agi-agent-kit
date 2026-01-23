@@ -45,6 +45,11 @@ const PACKS = {
     name: 'Core',
     description: 'Essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)',
     skills: ['core']
+  },
+  knowledge: {
+    name: 'Knowledge',
+    description: 'Core + 36 specialized skills (API, Security, Design, Architecture)',
+    skills: ['core', 'knowledge']
   }
 };
 
@@ -94,6 +99,9 @@ ${colors.bright}Packs:${colors.reset}
   ${colors.green}core${colors.reset}   Base framework + common skills
          (webcrawler, pdf-reader, qdrant-memory, documentation)
 
+  ${colors.blue}knowledge${colors.reset} Core + 36 specialized skills
+         (API, Security, Design, Architecture, Testing...)
+
 ${colors.bright}Examples:${colors.reset}
   npx @techwavedev/agi-agent-kit init
   npx @techwavedev/agi-agent-kit init --pack=core
@@ -112,12 +120,14 @@ async function promptPackSelection() {
   return new Promise((resolve) => {
     console.log(`\n${colors.bright}Which pack would you like to install?${colors.reset}\n`);
     console.log(`  1. ${colors.green}core${colors.reset}  - Essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)`);
+    console.log(`  2. ${colors.blue}knowledge${colors.reset} - Core + 36 specialized skills (API, Security, Design...)`);
 
-    rl.question(`Enter choice (1) or pack name (default: core): `, (answer) => {
+    rl.question(`Enter choice (1-2) or pack name (default: core): `, (answer) => {
       rl.close();
       const choice = answer.trim().toLowerCase();
       
       if (choice === '1' || choice === 'core' || choice === '') resolve('core');
+      else if (choice === '2' || choice === 'knowledge') resolve('knowledge');
       else {
         log.warn('Invalid choice, defaulting to core');
         resolve('core');
