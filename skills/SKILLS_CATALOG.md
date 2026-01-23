@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-22 12:35
+> **Auto-generated Documentation** — Last updated: 2026-01-23 12:47
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -25,6 +25,7 @@ This document provides comprehensive documentation on available skills, how to u
   - [Pdf Reader](#pdf-reader)
   - [Qdrant Memory](#qdrant-memory)
   - [Victoriametrics](#victoriametrics)
+  - [Webcrawler](#webcrawler)
 - [Using Skills](#using-skills)
 - [Creating New Skills](#creating-new-skills)
 - [Maintenance](#maintenance)
@@ -249,10 +250,13 @@ skill-name/
 
 | Script | Purpose |
 | ------ | ------- |
+| `scripts/benchmark_token_savings.py` | *[See script for details]* |
+| `scripts/embedding_utils.py` | *[See script for details]* |
 | `scripts/hybrid_search.py` | *[See script for details]* |
 | `scripts/init_collection.py` | *[See script for details]* |
 | `scripts/memory_retrieval.py` | *[See script for details]* |
 | `scripts/semantic_cache.py` | *[See script for details]* |
+| `scripts/test_skill.py` | *[See script for details]* |
 
 **References:**
 - `references/advanced_patterns.md`
@@ -276,6 +280,29 @@ skill-name/
 - `references/kubernetes.md`
 - `references/prometheus_migration.md`
 - `references/troubleshooting.md`
+
+---
+
+### Webcrawler
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `webcrawler` |
+| **Location** | `skills/webcrawler/` |
+| **Type** | Standalone |
+
+**Description:** "Documentation harvesting agent for crawling and extracting content from documentation websites. Use for crawling documentation sites and extracting all pages about a subject, building offline knowledge bases from online docs, harvesting API references, tutorials, or guides from documentation portals, creating structured markdown exports from multi-page documentation, and downloading and organizing technical docs for embedding or RAG pipelines. Supports recursive crawling with depth control, content filtering, and structured output."
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/crawl_docs.py` | *[See script for details]* |
+| `scripts/extract_page.py` | *[See script for details]* |
+| `scripts/filter_docs.py` | *[See script for details]* |
+
+**References:**
+- `references/advanced_crawling.md`
 
 ---
 ## Using Skills
