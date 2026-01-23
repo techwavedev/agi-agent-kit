@@ -50,6 +50,12 @@ const PACKS = {
     name: 'Knowledge',
     description: 'Core + 36 specialized skills (API, Security, Design, Architecture)',
     skills: ['core', 'knowledge']
+  },
+  full: {
+    name: 'Full Suite',
+    description: 'Complete suite (Core + Knowledge + .agent structure)',
+    skills: ['core', 'knowledge'],
+    includeAgent: true
   }
 };
 
@@ -101,6 +107,9 @@ ${colors.bright}Packs:${colors.reset}
 
   ${colors.blue}knowledge${colors.reset} Core + 36 specialized skills
          (API, Security, Design, Architecture, Testing...)
+  
+  ${colors.yellow}full${colors.reset}      Complete suite
+         (Core + Knowledge + .agent/ structure)
 
 ${colors.bright}Examples:${colors.reset}
   npx @techwavedev/agi-agent-kit init
@@ -121,13 +130,15 @@ async function promptPackSelection() {
     console.log(`\n${colors.bright}Which pack would you like to install?${colors.reset}\n`);
     console.log(`  1. ${colors.green}core${colors.reset}  - Essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)`);
     console.log(`  2. ${colors.blue}knowledge${colors.reset} - Core + 36 specialized skills (API, Security, Design...)`);
+    console.log(`  3. ${colors.yellow}full${colors.reset}      - Complete suite including .agent/ structure\n`);
 
-    rl.question(`Enter choice (1-2) or pack name (default: core): `, (answer) => {
+    rl.question(`Enter choice (1-3) or pack name (default: core): `, (answer) => {
       rl.close();
       const choice = answer.trim().toLowerCase();
       
       if (choice === '1' || choice === 'core' || choice === '') resolve('core');
       else if (choice === '2' || choice === 'knowledge') resolve('knowledge');
+      else if (choice === '3' || choice === 'full') resolve('full');
       else {
         log.warn('Invalid choice, defaulting to core');
         resolve('core');
