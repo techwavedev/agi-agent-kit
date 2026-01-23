@@ -17,6 +17,7 @@ Arguments:
     --labels        Comma-separated labels
     --components    Comma-separated component names
     --epic          Epic link key
+    --parent        Parent ticket key (for sub-tasks)
     --custom-fields Custom fields as JSON string
     --output        Output format: json, key, url (default: json)
 
@@ -59,17 +60,27 @@ def build_fields(args, client) -> dict:
     
     if args.assignee:
         # Try to resolve assignee
+        user_id_key = 'name' if client.is_server else 'accountId'
+        
         if args.assignee.lower() == 'me':
             success, me = client.get_myself()
             if success:
-                fields['assignee'] = {'accountId': me.get('accountId')}
+                fields['assignee'] = {user_id_key: me.get(user_id_key)}
         else:
             # Search for user
             success, users = client.search_users(args.assignee, max_results=1)
             if success and users:
-                fields['assignee'] = {'accountId': users[0].get('accountId')}
+                fields['assignee'] = {user_id_key: users[0].get(user_id_key)}
             else:
-                print(f"⚠️  Warning: Could not find user '{args.assignee}'", file=sys.stderr)
+                # Fallback to literal name if search fails but we have a candidate
+                fields['assignee'] = {user_id_key: args.assignee}
+    
+    if args.parent:
+        fields['parent'] = {'key': args.parent}
+    
+    if args.epic:
+        # Epic link field varies by project, but 'parent' is often used in newer Jira
+        fields['parent'] = {'key': args.epic}
     
     if args.labels:
         fields['labels'] = parse_labels(args.labels)
@@ -103,6 +114,7 @@ def main():
     parser.add_argument('--labels', help='Comma-separated labels')
     parser.add_argument('--components', help='Comma-separated components')
     parser.add_argument('--epic', help='Epic link key')
+    parser.add_argument('--parent', help='Parent ticket key (for sub-tasks)')
     parser.add_argument('--custom-fields', help='Custom fields as JSON')
     parser.add_argument('--output', choices=['json', 'key', 'url'], default='json',
                         help='Output format')
