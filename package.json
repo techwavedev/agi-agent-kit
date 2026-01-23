@@ -1,0 +1,34 @@
+{
+  "name": "@techwavedev/agi-agent-kit",
+  "version": "1.0.0",
+  "description": "AI Agent Kit - Modular skill-based AI assistant toolkit with semantic memory",
+  "bin": {
+    "agi-agent-kit": "./bin/init.js"
+  },
+  "files": [
+    "bin/",
+    "templates/"
+  ],
+  "keywords": [
+    "ai",
+    "agent",
+    "skills",
+    "claude",
+    "gemini",
+    "llm",
+    "semantic-cache",
+    "qdrant"
+  ],
+  "author": "Elton Machado",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/techwavedev/agi-agent-kit"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
