@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-01-23
+
+### Added
+
+- **Self-Update Skill**: New `self-update` skill with `update_kit.py` script for easy framework updates.
+- **System Checkup**: New `system_checkup.py` execution script to verify agents, skills, workflows, and scripts.
+- **Workflows**: Added `/checkup` and `/update` workflows for quick access.
+
+### Changed
+
+- Updated `README.md` with comprehensive Quick Start, Commands, and Architecture sections.
+- Updated `SKILLS_CATALOG.md` to include self-update skill.
+
+## [1.1.01] - 2026-01-23
+
+### Fixed
+
+- Stabilized Full Suite activation.
+- Micro-bump for polish releases.
+
 ## [1.1.0] - 2026-01-23
 
 ### Added
@@ -27,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Security**: Removed all references to private infrastructure (EC, Consul) from public templates.
+- **Security**: Removed all references to private infrastructure from public templates.
 - **Safety**: Added `verify_public_release.py` to prevent accidental publication of private secrets.
 - **Menu**: Fixed `init` menu showing internal options.
 
