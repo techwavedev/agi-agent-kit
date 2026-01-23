@@ -107,6 +107,9 @@ ${colors.bright}Packs:${colors.reset}
 
   ${colors.blue}knowledge${colors.reset} Core + 36 specialized skills
          (API, Security, Design, Architecture, Testing...)
+  
+  ${colors.yellow}full${colors.reset}      Complete suite
+         (Core + Knowledge + .agent/ structure)
 
 ${colors.bright}Examples:${colors.reset}
   npx @techwavedev/agi-agent-kit init
