@@ -225,6 +225,30 @@ python skills/jira/scripts/log_work.py \
   --remaining <duration>    # Remaining estimate (optional)
 ```
 
+### `bulk_log_work.py` — Automated Bulk Logging
+
+Log work across a date range. Automatically skips weekends and European Commission holidays.
+
+```bash
+python skills/jira/scripts/bulk_log_work.py \
+  --ticket <key>            # Ticket key (required)
+  --start <YYYY-MM-DD>      # Start date (required)
+  --end <YYYY-MM-DD>        # End date (default: today)
+  --time <duration>         # Time per day (e.g., "3h")
+  --comment <text>          # Comment (use | to rotate multiple comments)
+```
+
+**Example:**
+
+```bash
+# Log 2h for every working day of the month with rotating comments
+python skills/jira/scripts/bulk_log_work.py \
+  --ticket KASP-1241 \
+  --start 2026-01-01 \
+  --time 2h \
+  --comment "Infra check|Alerts check|Maintenance check"
+```
+
 **Examples:**
 
 ```bash

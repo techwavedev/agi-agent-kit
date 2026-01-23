@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-23 14:14
+> **Auto-generated Documentation** — Last updated: 2026-01-23 14:50
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -234,6 +234,7 @@ skill-name/
 | Script | Purpose |
 | ------ | ------- |
 | `scripts/add_comment.py` | *[See script for details]* |
+| `scripts/bulk_log_work.py` | *[See script for details]* |
 | `scripts/create_ticket.py` | *[See script for details]* |
 | `scripts/get_ticket.py` | *[See script for details]* |
 | `scripts/jira_client.py` | *[See script for details]* |
