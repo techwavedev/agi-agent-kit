@@ -1,7 +1,7 @@
 {
   "name": "@techwavedev/agi-agent-kit",
-  "version": "1.0.0",
-  "description": "AI Agent Kit - Modular skill-based AI assistant toolkit with semantic memory",
+  "version": "0.1.0",
+  "description": "AI Agent Kit & Agent Creator - Modular skill-based AI assistant toolkit with semantic memory",
   "bin": {
     "agi-agent-kit": "./bin/init.js"
   },

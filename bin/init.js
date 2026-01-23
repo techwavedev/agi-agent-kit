@@ -47,17 +47,6 @@ const PACKS = {
     name: 'Core',
     description: 'Essential skills (webcrawler, pdf-reader, qdrant-memory)',
     skills: ['core']
-  },
-  ec: {
-    name: 'EC (European Commission)',
-    description: 'Core + EC infrastructure skills (private)',
-    skills: ['core', 'ec']
-  },
-  full: {
-    name: 'Full Suite',
-    description: 'Complete installation including .agent/ structure',
-    skills: ['core', 'ec'],
-    includeAgent: true
   }
 };
 
@@ -106,16 +95,10 @@ ${colors.bright}Options:${colors.reset}
 ${colors.bright}Packs:${colors.reset}
   ${colors.green}core${colors.reset}   Base framework + common skills
          (webcrawler, pdf-reader, qdrant-memory)
-  
-  ${colors.yellow}ec${colors.reset}     Core + EC infrastructure skills (private)
-         (aws, kafka, consul, gitlab, jira, karpenter...)
-  
-  ${colors.blue}full${colors.reset}   Everything including .agent/ structure
 
 ${colors.bright}Examples:${colors.reset}
   npx @techwavedev/agi-agent-kit init
   npx @techwavedev/agi-agent-kit init --pack=core
-  npx @techwavedev/agi-agent-kit init --pack=ec --path=./my-project
 
 ${colors.bright}Note:${colors.reset} Most scripts require ${colors.cyan}python3${colors.reset}.
 `);
@@ -131,16 +114,12 @@ async function promptPackSelection() {
   return new Promise((resolve) => {
     console.log(`\n${colors.bright}Which pack would you like to install?${colors.reset}\n`);
     console.log(`  1. ${colors.green}core${colors.reset}  - Essential skills (webcrawler, pdf-reader, qdrant-memory)`);
-    console.log(`  2. ${colors.yellow}ec${colors.reset}    - Core + EC infrastructure (private)`);
-    console.log(`  3. ${colors.blue}full${colors.reset}  - Complete suite with .agent/ structure\n`);
 
-    rl.question(`Enter choice (1-3) or pack name: `, (answer) => {
+    rl.question(`Enter choice (1) or pack name (default: core): `, (answer) => {
       rl.close();
       const choice = answer.trim().toLowerCase();
       
-      if (choice === '1' || choice === 'core') resolve('core');
-      else if (choice === '2' || choice === 'ec') resolve('ec');
-      else if (choice === '3' || choice === 'full') resolve('full');
+      if (choice === '1' || choice === 'core' || choice === '') resolve('core');
       else {
         log.warn('Invalid choice, defaulting to core');
         resolve('core');
@@ -350,12 +329,6 @@ Next steps:
      ${colors.yellow}pip install requests beautifulsoup4 html2text lxml qdrant-client${colors.reset}
   3. Check ${colors.cyan}skills/${colors.reset} for available capabilities
   4. Create ${colors.cyan}.env${colors.reset} with your API keys
-
-${colors.bright}EC Skills Reminder:${colors.reset}
-For EC skills, ensure you have proper access to:
-  - AWS EKS clusters
-  - CITnet Jira
-  - GitLab on-premise
   
 Happy coding! 🎉
 `);
