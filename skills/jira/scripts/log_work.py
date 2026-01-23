@@ -23,12 +23,54 @@ Exit Codes:
 
 import argparse
 import json
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from jira_client import get_client
+
+
+def round_to_15min_blocks(time_str: str) -> str:
+    """
+    Round time to 15-minute blocks (EC Jira requirement).
+    
+    Args:
+        time_str: Time string like "2h", "25m", "1h 20m"
+    
+    Returns:
+        Rounded time string using 15m/30m/45m/1h increments
+    """
+    # Parse time to total minutes
+    total_minutes = 0
+    patterns = {
+        'w': 5 * 8 * 60,  # 1 week = 5 days = 40 hours
+        'd': 8 * 60,      # 1 day = 8 hours
+        'h': 60,
+        'm': 1
+    }
+    
+    for match in re.finditer(r'(\d+)\s*([wdhm])', time_str.lower()):
+        value, unit = int(match.group(1)), match.group(2)
+        total_minutes += value * patterns.get(unit, 0)
+    
+    if total_minutes == 0:
+        return time_str  # Return original if parsing failed
+    
+    # Round to nearest 15 minutes (minimum 15 min)
+    rounded_minutes = max(15, round(total_minutes / 15) * 15)
+    
+    # Convert back to Jira format
+    hours = rounded_minutes // 60
+    mins = rounded_minutes % 60
+    
+    if hours > 0 and mins > 0:
+        return f"{hours}h {mins}m"
+    elif hours > 0:
+        return f"{hours}h"
+    else:
+        return f"{mins}m"
 
 
 def main():
@@ -47,7 +89,14 @@ def main():
     client = get_client()
     ticket = args.ticket.upper()
     
-    print(f"⏱️  Logging {args.time} to {ticket}...", file=sys.stderr)
+    # Round to 15-minute blocks (EC requirement)
+    original_time = args.time
+    rounded_time = round_to_15min_blocks(original_time)
+    
+    if original_time != rounded_time:
+        print(f"⏱️  Rounding {original_time} → {rounded_time} (15-min blocks)", file=sys.stderr)
+    
+    print(f"⏱️  Logging {rounded_time} to {ticket}...", file=sys.stderr)
     
     # Verify ticket exists
     success, issue = client.get_issue(ticket)
@@ -71,10 +120,10 @@ def main():
         adjust_estimate = 'new'
         new_estimate = args.remaining
     
-    # Add worklog
+    # Add worklog with rounded time
     success, result = client.add_worklog(
         ticket,
-        time_spent=args.time,
+        time_spent=rounded_time,
         comment=args.comment,
         started=started,
         adjust_estimate=adjust_estimate,

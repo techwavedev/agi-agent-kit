@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-23 13:48
+> **Auto-generated Documentation** — Last updated: 2026-01-23 14:14
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -21,6 +21,7 @@ This document provides comprehensive documentation on available skills, how to u
   - [Consul](#consul)
   - [Documentation](#documentation)
   - [Gitlab](#gitlab)
+  - [Jira](#jira)
   - [Karpenter](#karpenter)
   - [Opensearch](#opensearch)
   - [Pdf Reader](#pdf-reader)
@@ -215,6 +216,34 @@ skill-name/
 
 **References:**
 - `references/best_practices.md`
+
+---
+
+### Jira
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `jira` |
+| **Location** | `skills/jira/` |
+| **Type** | Standalone |
+
+**Description:** "Jira ticket management skill for creating, updating, and managing issues. Use for: (1) Creating new tickets/issues with custom fields, (2) Updating existing tickets (status, assignee, priority, labels), (3) Adding and updating comments, (4) Logging work time and time tracking, (5) Searching issues with JQL, (6) Managing transitions and workflows, (7) Bulk operations on multiple tickets, (8) Sprint and board management. Supports both MCP server integration and direct REST API calls. Requires JIRA_API_TOKEN and JIRA_URL environment variables."
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/add_comment.py` | *[See script for details]* |
+| `scripts/create_ticket.py` | *[See script for details]* |
+| `scripts/get_ticket.py` | *[See script for details]* |
+| `scripts/jira_client.py` | *[See script for details]* |
+| `scripts/log_work.py` | *[See script for details]* |
+| `scripts/search_tickets.py` | *[See script for details]* |
+| `scripts/update_comment.py` | *[See script for details]* |
+| `scripts/update_ticket.py` | *[See script for details]* |
+
+**References:**
+- `references/jql_reference.md`
 
 ---
 

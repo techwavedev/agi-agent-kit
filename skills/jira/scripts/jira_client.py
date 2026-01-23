@@ -63,19 +63,42 @@ class JiraClient:
         self.email = email or os.getenv('JIRA_EMAIL', '')
         self.token = token or os.getenv('JIRA_API_TOKEN', '')
         
-        if not all([self.base_url, self.email, self.token]):
+        if not all([self.base_url, self.token]):
             missing = []
             if not self.base_url:
                 missing.append('JIRA_URL')
-            if not self.email:
-                missing.append('JIRA_EMAIL')
             if not self.token:
                 missing.append('JIRA_API_TOKEN')
             raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
         
-        self.api_url = f"{self.base_url}/rest/api/3"
+        # Detect Jira Server vs Cloud and set appropriate API version
+        # Jira Server uses /rest/api/2, Jira Cloud uses /rest/api/3
+        self.is_server = 'atlassian.net' not in self.base_url.lower()
+        api_version = '2' if self.is_server else '3'
+        
+        # Clean base URL (remove /secure/Dashboard.jspa or similar paths)
+        import re
+        self.base_url = re.sub(r'/secure/.*$', '', self.base_url)
+        self.base_url = re.sub(r'/browse/.*$', '', self.base_url)
+        self.base_url = self.base_url.rstrip('/')
+        
+        self.api_url = f"{self.base_url}/rest/api/{api_version}"
         self.session = requests.Session()
-        self.session.auth = (self.email, self.token)
+        
+        # Jira Server can use token directly as Bearer or basic auth
+        # Try Bearer token first for server, basic auth for cloud
+        if self.is_server:
+            self.session.headers.update({
+                'Authorization': f'Bearer {self.token}'
+            })
+        else:
+            if self.email:
+                self.session.auth = (self.email, self.token)
+            else:
+                self.session.headers.update({
+                    'Authorization': f'Bearer {self.token}'
+                })
+        
         self.session.headers.update({
             'Accept': 'application/json',
             'Content-Type': 'application/json'
