@@ -55,7 +55,7 @@ def build_fields(args, client) -> dict:
         fields['priority'] = {'name': args.priority}
     
     if args.description:
-        fields['description'] = client._format_adf(args.description)
+        fields['description'] = client._format_body(args.description)
     
     if args.assignee:
         # Try to resolve assignee

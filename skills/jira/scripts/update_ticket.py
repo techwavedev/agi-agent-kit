@@ -91,7 +91,7 @@ def main():
         fields['summary'] = args.summary
     
     if args.description:
-        fields['description'] = client._format_adf(args.description)
+        fields['description'] = client._format_body(args.description)
     
     if args.priority:
         fields['priority'] = {'name': args.priority}
