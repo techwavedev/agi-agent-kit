@@ -9,3 +9,4 @@ techwavedev-agi-agent-kit-*.tgz
 .env
 *.log
 node_modules/
+*.skill
