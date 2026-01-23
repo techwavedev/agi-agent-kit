@@ -7,7 +7,7 @@ description: Confluent Kafka specialist for tarball/Ansible custom installations
 
 Comprehensive skill for managing Confluent Platform Kafka clusters deployed via tarball distributions and automated with Ansible. **Primary deployment context is EC (European Commission) controlled environments using KRaft-only, SSL-only, non-root systemd user services.**
 
-> **Last Updated:** 2026-01-20 from [Confluent Documentation](https://docs.confluent.io/)
+> **Last Updated:** 2026-01-23 from [Confluent Documentation](https://docs.confluent.io/)
 
 ---
 

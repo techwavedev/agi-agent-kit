@@ -7,7 +7,7 @@ description: GitLab specialist for Kubernetes agent management on EKS clusters. 
 
 Comprehensive skill for managing GitLab Kubernetes agents and project integrations on Amazon EKS. This skill covers the full lifecycle of GitLab agent deployment, GitOps workflows with Flux, CI/CD pipeline configurations, and project management via the GitLab API.
 
-> **Last Updated:** 2026-01-21 from [docs.gitlab.com](https://docs.gitlab.com/user/clusters/agent/)
+> **Last Updated:** 2026-01-23 from [docs.gitlab.com](https://docs.gitlab.com/user/clusters/agent/)
 
 ---
 

@@ -7,7 +7,7 @@ description: HashiCorp Consul specialist for EKS clusters. Use for Consul servic
 
 Comprehensive skill for managing HashiCorp Consul—the service mesh and service discovery solution—on Amazon EKS.
 
-> **Last Updated:** 2026-01-20 from [consul.io](https://developer.hashicorp.com/consul)
+> **Last Updated:** 2026-01-23 from [consul.io](https://developer.hashicorp.com/consul)
 
 ---
 

@@ -7,7 +7,7 @@ description: Comprehensive AWS MCP skill covering ALL AWS services. Use for any 
 
 Unified skill for all AWS MCP servers. One skill to rule them all.
 
-> **Last Updated:** 2026-01-19 from [awslabs.github.io/mcp](https://awslabs.github.io/mcp/)
+> **Last Updated:** 2026-01-23 from [awslabs.github.io/mcp](https://awslabs.github.io/mcp/)
 
 ## Quick Start
 
