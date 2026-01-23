@@ -10,3 +10,5 @@ techwavedev-agi-agent-kit-*.tgz
 *.log
 node_modules/
 *.skill
+scripts/
+verify_public_release.py

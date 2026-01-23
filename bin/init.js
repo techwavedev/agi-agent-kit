@@ -9,8 +9,6 @@
  * 
  * Packs:
  *   core   - Base framework + common skills (webcrawler, pdf-reader, qdrant-memory)
- *   ec     - Core + EC infrastructure skills (private)
- *   full   - Everything (requires ec branch access)
  * 
  * Options:
  *   --path=<dir>    Target directory (default: current)
