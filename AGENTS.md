@@ -115,7 +115,40 @@ python execution/scrape_single_site.py \
 
 ## Operating Principles
 
-### 1. Check for Existing Tools First
+### 1. Memory-First (Automatic)
+
+**All operations use the Qdrant-powered memory system by default.**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  QUERY RECEIVED                                              │
+│  ↓                                                           │
+│  1. Check for opt-out flags ("no cache", "fresh", etc.)     │
+│  ↓                                                           │
+│  2. SEMANTIC CACHE CHECK (similarity > 0.92)                │
+│     └─ Hit? → Return cached response (100% token savings)   │
+│  ↓                                                           │
+│  3. CONTEXT RETRIEVAL (top 5 relevant memories)             │
+│     └─ Inject decisions, patterns, solutions (80-95% saved) │
+│  ↓                                                           │
+│  4. EXECUTE QUERY with enriched context                      │
+│  ↓                                                           │
+│  5. STORE RESPONSE for future cache hits                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Opt-out:** User says "don't use cache", "no cache", "skip memory", or "fresh"
+
+**Auto-stored memories:**
+
+- `decision` — Architecture choices, design decisions
+- `code` — Script patterns, reusable implementations
+- `error` — Bug resolutions with root cause
+- `technical` — Documentation, API knowledge
+
+> See `directives/memory_integration.md` for full details.
+
+### 2. Check for Existing Tools First
 
 Before writing any new script:
 
@@ -125,7 +158,7 @@ Before writing any new script:
 
 Only create new scripts when truly necessary. Reuse and extend existing tools.
 
-### 2. Self-Anneal When Things Break
+### 3. Self-Anneal When Things Break
 
 Errors are learning opportunities, not failures. When something breaks:
 
@@ -150,7 +183,7 @@ Errors are learning opportunities, not failures. When something breaks:
 
 **Example:** You hit an API rate limit → investigate API docs → find batch endpoint → rewrite script to use batching → test → update directive with rate limit info and new approach.
 
-### 3. Update Directives as You Learn
+### 4. Update Directives as You Learn
 
 Directives are **living documents**. Update them when you discover:
 
@@ -166,7 +199,7 @@ Directives are **living documents**. Update them when you discover:
 - Append learnings to existing directives rather than replacing content
 - Date your additions for future reference
 
-### 4. Validate Before Delivering
+### 5. Validate Before Delivering
 
 Before marking a task complete:
 
