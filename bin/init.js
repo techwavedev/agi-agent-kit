@@ -147,6 +147,15 @@ async function promptPackSelection() {
   });
 }
 
+// Prompt for update components
+async function promptUpdateSelection() {
+  return new Promise((resolve) => {
+    // For now, update implies updating the Full suite or existing installation
+    // We can default to 'full' logic for updates to ensure everything is covered
+    resolve('full');
+  });
+}
+
 // Copy directory recursively
 function copyDirSync(src, dest) {
   if (!fs.existsSync(src)) {
@@ -295,62 +304,82 @@ function copyAgentStructure(targetPath, templatesPath) {
   }
 }
 
-// Main init function
-async function init(options) {
-  log.header('🚀 AGI Agent Kit Initializer');
-  
-  // Determine pack
-  let pack = options.pack;
-  if (!pack) {
-    pack = await promptPackSelection();
-  }
-  
-  if (!PACKS[pack]) {
-    log.error(`Unknown pack: ${pack}`);
+// Update function
+async function update(options) {
+  log.header('🔄 AGI Agent Kit Updater');
+
+  if (!fs.existsSync(path.join(options.path, 'AGENTS.md'))) {
+    log.error('AGENTS.md not found. Are you in a valid AGI Agent project?');
+    log.info('Use "init" to start a new project.');
     process.exit(1);
   }
+
+  // Default to full pack logic for updates to capture all skills/agents
+  // Users typically want to update their tooling
+  log.info(`Updating framework components in: ${options.path}`);
   
-  log.info(`Installing ${PACKS[pack].name} pack to: ${options.path}`);
-  
-  // Get templates path (relative to this script)
   const templatesPath = path.join(__dirname, '..', 'templates');
   
   if (!fs.existsSync(templatesPath)) {
-    log.error('Templates directory not found. Package may be corrupted.');
+    log.error('Templates directory not found.');
     process.exit(1);
   }
+
+  // 1. Update Skills (Core + Knowledge)
+  // We use 'knowledge' pack definition to cover all skills
+  const skillsToUpdate = ['core', 'knowledge'];
+  log.header('Updating Skills...');
   
-  // Create structure
-  createStructure(options.path, options);
-  
-  // Copy base files
-  copyBaseFiles(options.path, templatesPath, options);
-  
-  // Copy skills
-  copySkills(options.path, pack, templatesPath);
-  
-  // Create symlinks
+  for (const group of skillsToUpdate) {
+    const srcSkillsPath = path.join(templatesPath, 'skills', group);
+    const destSkillsPath = path.join(options.path, 'skills');
+    
+    if (fs.existsSync(srcSkillsPath)) {
+      const skills = fs.readdirSync(srcSkillsPath, { withFileTypes: true })
+        .filter(d => d.isDirectory())
+        .map(d => d.name);
+      
+      for (const skill of skills) {
+        // Only update if it already exists or if it's new (standard updates usually add new capabilities)
+        const src = path.join(srcSkillsPath, skill);
+        const dest = path.join(destSkillsPath, skill);
+        
+        // We overwrite logic scripts but maybe we should be careful?
+        // For now, standard behavior is to upgrade toolsets.
+        if (copyDirSync(src, dest)) {
+          console.log(`  ${colors.green}✔${colors.reset} Updated: ${skill}`);
+        }
+      }
+    }
+  }
+
+  // 2. Update Agents & Workflows (.agent/)
+  log.header('Updating Agents & Workflows...');
+  const srcAgent = path.join(templatesPath, '.agent');
+  const destAgent = path.join(options.path, '.agent');
+  if (fs.existsSync(srcAgent)) {
+     if (copyDirSync(srcAgent, destAgent)) {
+        console.log(`  ${colors.green}✔${colors.reset} Updated .agent/ directory`);
+     }
+  }
+
+  // 3. Update Skill Creator
+  log.header('Updating Skill Creator...');
+  const srcSC = path.join(templatesPath, 'base', 'skill-creator');
+  const destSC = path.join(options.path, 'skill-creator');
+  if (fs.existsSync(srcSC)) {
+      copyDirSync(srcSC, destSC);
+      console.log(`  ${colors.green}✔${colors.reset} Updated skill-creator/`);
+  }
+
+  // 4. Update Core Documentation if needed
+  // We generally respect user's AGENTS.md, but maybe we update GEMINI.md/CLAUDE.md symlinks?
   if (options.symlinks) {
     createSymlinks(options.path);
   }
-  
-  // Copy .agent/ for full pack
-  if (PACKS[pack].includeAgent) {
-    copyAgentStructure(options.path, templatesPath);
-  }
-  
-  // Final message
-  log.header('✨ Installation complete!');
-  console.log(`
-Next steps:
-  1. Review ${colors.cyan}AGENTS.md${colors.reset} for architecture overview
-  2. Install Python dependencies:
-     ${colors.yellow}pip install requests beautifulsoup4 html2text lxml qdrant-client${colors.reset}
-  3. Check ${colors.cyan}skills/${colors.reset} for available capabilities
-  4. Create ${colors.cyan}.env${colors.reset} with your API keys
-  
-Happy coding! 🎉
-`);
+
+  log.header('✨ Update complete!');
+  log.info('Please review any changes to your skills or agents.');
 }
 
 // Entry point
@@ -362,13 +391,15 @@ async function main() {
     process.exit(0);
   }
   
-  if (options.command !== 'init' && !options.command) {
+  if (options.command !== 'init' && options.command !== 'update' && !options.command) {
     // Default to init if no command specified
     options.command = 'init';
   }
   
   if (options.command === 'init') {
     await init(options);
+  } else if (options.command === 'update') {
+    await update(options);
   } else {
     log.error(`Unknown command: ${options.command}`);
     showHelp();
