@@ -4,6 +4,38 @@
 
 ---
 
+## Getting Started
+
+### Installation
+
+Run this command in any directory where you want to scaffold a new AI agent:
+
+```bash
+npx @techwavedev/agi-agent-kit init
+```
+
+### Dependencies
+
+This toolkit relies on Python scripts for deterministic execution. Ensure you have the following installed:
+
+1. **Python 3.8+**: `python3 --version`
+2. **Pip Dependencies**:
+   ```bash
+   pip install requests beautifulsoup4 html2text lxml qdrant-client
+   ```
+
+### Updates
+
+To update the kit to the latest version:
+
+```bash
+# Clear npx cache to force latest version download
+rm -rf ~/.npm/_npx
+npx @techwavedev/agi-agent-kit init
+```
+
+---
+
 ## Core Philosophy: Determinism Over Probability
 
 LLMs are probabilistic, but business logic requires consistency. This system fixes that mismatch by **pushing complexity into deterministic code** and letting the agent focus on intelligent decision-making.
