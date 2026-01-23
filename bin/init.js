@@ -45,7 +45,7 @@ const log = {
 const PACKS = {
   core: {
     name: 'Core',
-    description: 'Essential skills (webcrawler, pdf-reader, qdrant-memory)',
+    description: 'Essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)',
     skills: ['core']
   }
 };
@@ -94,7 +94,7 @@ ${colors.bright}Options:${colors.reset}
 
 ${colors.bright}Packs:${colors.reset}
   ${colors.green}core${colors.reset}   Base framework + common skills
-         (webcrawler, pdf-reader, qdrant-memory)
+         (webcrawler, pdf-reader, qdrant-memory, documentation)
 
 ${colors.bright}Examples:${colors.reset}
   npx @techwavedev/agi-agent-kit init
@@ -113,7 +113,7 @@ async function promptPackSelection() {
 
   return new Promise((resolve) => {
     console.log(`\n${colors.bright}Which pack would you like to install?${colors.reset}\n`);
-    console.log(`  1. ${colors.green}core${colors.reset}  - Essential skills (webcrawler, pdf-reader, qdrant-memory)`);
+    console.log(`  1. ${colors.green}core${colors.reset}  - Essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)`);
 
     rl.question(`Enter choice (1) or pack name (default: core): `, (answer) => {
       rl.close();
