@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-23 19:51
+> **Auto-generated Documentation** — Last updated: 2026-01-28 00:37
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -15,10 +15,14 @@ This document provides comprehensive documentation on available skills, how to u
 
 - [What Are Skills?](#what-are-skills)
 - [Available Skills](#available-skills)
+  - [Design Md](#design-md)
   - [Documentation](#documentation)
+  - [Notebooklm Mcp](#notebooklm-mcp)
   - [Pdf Reader](#pdf-reader)
   - [Qdrant Memory](#qdrant-memory)
+  - [React:Components](#react:components)
   - [Self Update](#self-update)
+  - [Stitch Loop](#stitch-loop)
   - [Webcrawler](#webcrawler)
 - [Using Skills](#using-skills)
 - [Creating New Skills](#creating-new-skills)
@@ -44,6 +48,18 @@ skill-name/
 
 ## Available Skills
 
+### Design Md
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `design-md` |
+| **Location** | `skills/design-md/` |
+| **Type** | Standalone |
+
+**Description:** Analyze Stitch projects and synthesize a semantic design system into DESIGN.md files
+
+---
+
 ### Documentation
 
 | Property | Value |
@@ -66,6 +82,21 @@ skill-name/
 
 **References:**
 - `references/best_practices.md`
+
+---
+
+### Notebooklm Mcp
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `notebooklm-mcp` |
+| **Location** | `skills/notebooklm-mcp/` |
+| **Type** | Standalone |
+
+**Description:** "Connects to Google NotebookLM via Model Context Protocol (MCP) to access notebooks, sources, and query content. Triggers when the user asks to summarize, query, or interact with NotebookLM content."
+
+**References:**
+- `references/api_reference.md`
 
 ---
 
@@ -120,6 +151,18 @@ skill-name/
 
 ---
 
+### React:Components
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `react:components` |
+| **Location** | `skills/react-components/` |
+| **Type** | Standalone |
+
+**Description:** Converts Stitch designs into modular Vite and React components using system-level networking and AST-based validation.
+
+---
+
 ### Self Update
 
 | Property | Value |
@@ -135,6 +178,18 @@ skill-name/
 | Script | Purpose |
 | ------ | ------- |
 | `scripts/update_kit.py` | *[See script for details]* |
+
+---
+
+### Stitch Loop
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `stitch-loop` |
+| **Location** | `skills/stitch-loop/` |
+| **Type** | Standalone |
+
+**Description:** Teaches agents to iteratively build websites using Stitch with an autonomous baton-passing loop pattern
 
 ---
 
