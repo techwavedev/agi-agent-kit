@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-01-27 15:06
+> **Auto-generated Documentation** — Last updated: 2026-01-28 00:37
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -17,6 +17,7 @@ This document provides comprehensive documentation on available skills, how to u
 - [Available Skills](#available-skills)
   - [Design Md](#design-md)
   - [Documentation](#documentation)
+  - [Notebooklm Mcp](#notebooklm-mcp)
   - [Pdf Reader](#pdf-reader)
   - [Qdrant Memory](#qdrant-memory)
   - [React:Components](#react:components)
@@ -81,6 +82,21 @@ skill-name/
 
 **References:**
 - `references/best_practices.md`
+
+---
+
+### Notebooklm Mcp
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `notebooklm-mcp` |
+| **Location** | `skills/notebooklm-mcp/` |
+| **Type** | Standalone |
+
+**Description:** "Connects to Google NotebookLM via Model Context Protocol (MCP) to access notebooks, sources, and query content. Triggers when the user asks to summarize, query, or interact with NotebookLM content."
+
+**References:**
+- `references/api_reference.md`
 
 ---
 
