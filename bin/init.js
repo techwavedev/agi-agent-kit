@@ -9,8 +9,6 @@
  * 
  * Packs:
  *   core   - Base framework + common skills (webcrawler, pdf-reader, qdrant-memory)
- *   ec     - Core + EC infrastructure skills (private)
- *   full   - Everything (requires ec branch access)
  * 
  * Options:
  *   --path=<dir>    Target directory (default: current)
@@ -45,18 +43,18 @@ const log = {
 const PACKS = {
   core: {
     name: 'Core',
-    description: 'Essential skills (webcrawler, pdf-reader, qdrant-memory)',
+    description: 'Essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)',
     skills: ['core']
   },
-  ec: {
-    name: 'EC (European Commission)',
-    description: 'Core + EC infrastructure skills (private)',
-    skills: ['core', 'ec']
+  knowledge: {
+    name: 'Knowledge',
+    description: 'Core + 36 specialized skills (API, Security, Design, Architecture)',
+    skills: ['core', 'knowledge']
   },
   full: {
     name: 'Full Suite',
-    description: 'Complete installation including .agent/ structure',
-    skills: ['core', 'ec'],
+    description: 'Complete suite (Core + Knowledge + .agent structure)',
+    skills: ['core', 'knowledge'],
     includeAgent: true
   }
 };
@@ -105,17 +103,19 @@ ${colors.bright}Options:${colors.reset}
 
 ${colors.bright}Packs:${colors.reset}
   ${colors.green}core${colors.reset}   Base framework + common skills
-         (webcrawler, pdf-reader, qdrant-memory)
+         (webcrawler, pdf-reader, qdrant-memory, documentation)
+
+  ${colors.blue}knowledge${colors.reset} Core + 36 specialized skills
+         (API, Security, Design, Architecture, Testing...)
   
-  ${colors.yellow}ec${colors.reset}     Core + EC infrastructure skills (private)
-         (aws, kafka, consul, gitlab, jira, karpenter...)
-  
-  ${colors.blue}full${colors.reset}   Everything including .agent/ structure
+  ${colors.yellow}full${colors.reset}      Complete suite
+         (Core + Knowledge + .agent/ structure)
 
 ${colors.bright}Examples:${colors.reset}
   npx @techwavedev/agi-agent-kit init
   npx @techwavedev/agi-agent-kit init --pack=core
-  npx @techwavedev/agi-agent-kit init --pack=ec --path=./my-project
+
+${colors.bright}Note:${colors.reset} Most scripts require ${colors.cyan}python3${colors.reset}.
 `);
 }
 
@@ -128,22 +128,31 @@ async function promptPackSelection() {
 
   return new Promise((resolve) => {
     console.log(`\n${colors.bright}Which pack would you like to install?${colors.reset}\n`);
-    console.log(`  1. ${colors.green}core${colors.reset}  - Essential skills (webcrawler, pdf-reader, qdrant-memory)`);
-    console.log(`  2. ${colors.yellow}ec${colors.reset}    - Core + EC infrastructure (private)`);
-    console.log(`  3. ${colors.blue}full${colors.reset}  - Complete suite with .agent/ structure\n`);
+    console.log(`  1. ${colors.green}core${colors.reset}  - Essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)`);
+    console.log(`  2. ${colors.blue}knowledge${colors.reset} - Core + 36 specialized skills (API, Security, Design...)`);
+    console.log(`  3. ${colors.yellow}full${colors.reset}      - Complete suite including .agent/ structure\n`);
 
-    rl.question(`Enter choice (1-3) or pack name: `, (answer) => {
+    rl.question(`Enter choice (1-3) or pack name (default: core): `, (answer) => {
       rl.close();
       const choice = answer.trim().toLowerCase();
       
-      if (choice === '1' || choice === 'core') resolve('core');
-      else if (choice === '2' || choice === 'ec') resolve('ec');
+      if (choice === '1' || choice === 'core' || choice === '') resolve('core');
+      else if (choice === '2' || choice === 'knowledge') resolve('knowledge');
       else if (choice === '3' || choice === 'full') resolve('full');
       else {
         log.warn('Invalid choice, defaulting to core');
         resolve('core');
       }
     });
+  });
+}
+
+// Prompt for update components
+async function promptUpdateSelection() {
+  return new Promise((resolve) => {
+    // For now, update implies updating the Full suite or existing installation
+    // We can default to 'full' logic for updates to ensure everything is covered
+    resolve('full');
   });
 }
 
@@ -225,7 +234,8 @@ function copyBaseFiles(targetPath, templatesPath, options) {
   
   const baseFiles = [
     { src: 'AGENTS.md', dest: 'AGENTS.md' },
-    { src: '.gitignore', dest: '.gitignore' }
+    { src: '.gitignore', dest: '.gitignore' },
+    { src: 'requirements.txt', dest: 'requirements.txt' }
   ];
   
   for (const file of baseFiles) {
@@ -343,16 +353,91 @@ async function init(options) {
   console.log(`
 Next steps:
   1. Review ${colors.cyan}AGENTS.md${colors.reset} for architecture overview
-  2. Check ${colors.cyan}skills/${colors.reset} for available capabilities
-  3. Create ${colors.cyan}.env${colors.reset} with your API keys
-
-For EC skills, ensure you have proper access to:
-  - AWS EKS clusters
-  - CITnet Jira
-  - GitLab on-premise
+  2. Install Python dependencies:
+     ${colors.yellow}pip install requests beautifulsoup4 html2text lxml qdrant-client${colors.reset}
+  3. Check ${colors.cyan}skills/${colors.reset} for available capabilities
+  4. Create ${colors.cyan}.env${colors.reset} with your API keys
   
 Happy coding! 🎉
 `);
+}
+
+// Update function
+async function update(options) {
+  log.header('🔄 AGI Agent Kit Updater');
+
+  if (!fs.existsSync(path.join(options.path, 'AGENTS.md'))) {
+    log.error('AGENTS.md not found. Are you in a valid AGI Agent project?');
+    log.info('Use "init" to start a new project.');
+    process.exit(1);
+  }
+
+  // Default to full pack logic for updates to capture all skills/agents
+  // Users typically want to update their tooling
+  log.info(`Updating framework components in: ${options.path}`);
+  
+  const templatesPath = path.join(__dirname, '..', 'templates');
+  
+  if (!fs.existsSync(templatesPath)) {
+    log.error('Templates directory not found.');
+    process.exit(1);
+  }
+
+  // 1. Update Skills (Core + Knowledge)
+  // We use 'knowledge' pack definition to cover all skills
+  const skillsToUpdate = ['core', 'knowledge'];
+  log.header('Updating Skills...');
+  
+  for (const group of skillsToUpdate) {
+    const srcSkillsPath = path.join(templatesPath, 'skills', group);
+    const destSkillsPath = path.join(options.path, 'skills');
+    
+    if (fs.existsSync(srcSkillsPath)) {
+      const skills = fs.readdirSync(srcSkillsPath, { withFileTypes: true })
+        .filter(d => d.isDirectory())
+        .map(d => d.name);
+      
+      for (const skill of skills) {
+        // Only update if it already exists or if it's new (standard updates usually add new capabilities)
+        const src = path.join(srcSkillsPath, skill);
+        const dest = path.join(destSkillsPath, skill);
+        
+        // We overwrite logic scripts but maybe we should be careful?
+        // For now, standard behavior is to upgrade toolsets.
+        if (copyDirSync(src, dest)) {
+          console.log(`  ${colors.green}✔${colors.reset} Updated: ${skill}`);
+        }
+      }
+    }
+  }
+
+  // 2. Update Agents & Workflows (.agent/)
+  log.header('Updating Agents & Workflows...');
+  const srcAgent = path.join(templatesPath, '.agent');
+  const destAgent = path.join(options.path, '.agent');
+  if (fs.existsSync(srcAgent)) {
+     if (copyDirSync(srcAgent, destAgent)) {
+        console.log(`  ${colors.green}✔${colors.reset} Updated .agent/ directory`);
+     }
+  }
+
+  // 3. Update Skill Creator
+  log.header('Updating Skill Creator...');
+  const srcSC = path.join(templatesPath, 'base', 'skill-creator');
+  const destSC = path.join(options.path, 'skill-creator');
+  if (fs.existsSync(srcSC)) {
+      copyDirSync(srcSC, destSC);
+      console.log(`  ${colors.green}✔${colors.reset} Updated skill-creator/`);
+  }
+
+  // 4. Update Core Documentation if needed
+  // We generally respect user's AGENTS.md, but maybe we update GEMINI.md/CLAUDE.md symlinks?
+  if (options.symlinks) {
+    createSymlinks(options.path);
+  }
+
+  log.header('✨ Update complete!');
+  log.info('Please review any changes to your skills or agents.');
 }
 
 // Entry point
@@ -364,13 +449,15 @@ async function main() {
     process.exit(0);
   }
   
-  if (options.command !== 'init' && !options.command) {
+  if (options.command !== 'init' && options.command !== 'update' && !options.command) {
     // Default to init if no command specified
     options.command = 'init';
   }
   
   if (options.command === 'init') {
     await init(options);
+  } else if (options.command === 'update') {
+    await update(options);
   } else {
     log.error(`Unknown command: ${options.command}`);
     showHelp();

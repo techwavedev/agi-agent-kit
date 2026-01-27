@@ -21,19 +21,19 @@ python skills/webcrawler/scripts/crawl_docs.py \
   --depth 2 \
   --output .tmp/docs/python-asyncio/
 
-# Crawl AWS EKS documentation
+# Crawl React documentation
 python skills/webcrawler/scripts/crawl_docs.py \
-  --url "https://docs.aws.amazon.com/eks/latest/userguide/" \
-  --subject "EKS" \
+  --url "https://react.dev/" \
+  --subject "React" \
   --depth 3 \
-  --output .tmp/docs/aws-eks/
+  --output .tmp/docs/react/
 
 # Extract only API reference pages
 python skills/webcrawler/scripts/crawl_docs.py \
-  --url "https://developer.hashicorp.com/consul/api-docs" \
-  --subject "Consul API" \
+  --url "https://expressjs.com/en/4x/api.html" \
+  --subject "Express API" \
   --filter "api" \
-  --output .tmp/docs/consul-api/
+  --output .tmp/docs/express-api/
 ```
 
 ---

@@ -1,0 +1,6 @@
+requests
+beautifulsoup4
+html2text
+lxml
+qdrant-client
+boto3 # for bedrock/aws skills
