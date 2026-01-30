@@ -49,14 +49,20 @@ notebooklm-mcp-auth
 
 ### 3. MCP Configuration
 
-Add the following to your MCP client configuration (e.g., Claude Desktop or OpenCode):
+Add the following to your MCP client configuration (e.g., Claude Desktop or OpenCode). Note that the executable name is explicit:
 
 ```json
 {
   "mcpServers": {
-    "notebooklm-mcp-server": {
+    "notebooklm": {
       "command": "uv",
-      "args": ["tool", "run", "notebooklm-mcp-server"]
+      "args": [
+        "tool",
+        "run",
+        "--from",
+        "notebooklm-mcp-server",
+        "notebooklm-mcp"
+      ]
     }
   }
 }
@@ -66,6 +72,10 @@ Add the following to your MCP client configuration (e.g., Claude Desktop or Open
 
 Use the available MCP tools to interact with NotebookLM.
 
-- `list_notebooks()`
-- `get_notebook(notebook_id)`
-- `query_notebook(notebook_id, query)`
+- `notebook_list()` - List all notebooks
+- `notebook_get(notebook_id)` - Get contents of a notebook
+- `notebook_query(notebook_id, query)` - Query a notebook
+- `notebook_create(title)` - Create a new notebook
+- `notebook_delete(notebook_id)` - Delete a notebook
+- `notebook_add_url(notebook_id, url)` - Add a URL source
+- `notebook_add_text(notebook_id, text)` - Add text content

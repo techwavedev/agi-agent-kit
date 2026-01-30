@@ -52,7 +52,7 @@ def parse_header_cookies(content: str) -> dict[str, str]:
     """Parse raw HTTP header format (key=value; key=value)."""
     cookies = {}
     # Remove 'Cookie:' prefix if present
-    cleaned = re.sub(r'^(?i)cookie:\s*', '', content)
+    cleaned = re.sub(r'(?i)^cookie:\s*', '', content)
     for pair in cleaned.split(';'):
         if '=' in pair:
             key, value = pair.split('=', 1)
