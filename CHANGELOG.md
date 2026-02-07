@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.6] - 2026-02-07
+
+### Added
+
+- **37 Knowledge Skills Promoted to Root**: All knowledge-pack skills now live at `skills/` root alongside core skills for unified access:
+  - `api-patterns`, `app-builder`, `architecture`, `bash-linux`, `behavioral-modes`, `brainstorming`, `clean-code`, `code-review-checklist`, `database-design`, `deployment-procedures`, `documentation-templates`, `frontend-design`, `game-development`, `geo-fundamentals`, `i18n-localization`, `intelligent-routing`, `lint-and-validate`, `mcp-builder`, `mobile-design`, `nextjs-best-practices`, `nodejs-best-practices`, `parallel-agents`, `performance-profiling`, `plan-writing`, `powershell-windows`, `python-patterns`, `react-patterns`, `red-team-tactics`, `seo-fundamentals`, `server-management`, `systematic-debugging`, `tailwind-patterns`, `tdd-workflow`, `testing-patterns`, `vulnerability-scanner`, `webapp-testing`.
+- **NotebookLM MCP Skill**: New `notebooklm-mcp` skill to interact with Google NotebookLM via Model Context Protocol, with documentation, example script, and reference assets.
+- **Opencode Support**: Added `OPENCODE.md` configuration file for Opencode editor compatibility with `opencode-antigravity-auth` plugin.
+- **Execution Scripts**: Two new deterministic execution scripts:
+  - `memory_manager.py` — Centralized memory management for Qdrant operations.
+  - `session_init.py` — Session initialization and context bootstrapping.
+- **Stitch Skills in Templates**: `design-md`, `react-components`, and `stitch-loop` now included in knowledge templates (`templates/skills/knowledge/`) for NPX distribution.
+- **Self-Update in Templates**: `self-update` skill with `update_kit.py` added to knowledge templates.
+- **Knowledge SKILLS_CATALOG**: New comprehensive `SKILLS_CATALOG.md` inside `templates/skills/knowledge/` for template-level skill discovery.
+
+### Changed
+
+- **AGENTS.md**: Added "Getting Started" section with installation, dependency, and update instructions.
+- **Memory Integration Directive**: Complete rewrite of `directives/memory_integration.md` — simplified from 211 lines to 95 lines with clearer goal/inputs/execution structure and Ollama embedding documentation.
+- **Skill Creator**: Updated `SKILL_skillcreator.md` with refined skill creation guidelines.
+- **SKILLS_CATALOG.md**: Expanded with 560+ lines of new skill entries covering all promoted knowledge skills.
+- **Documentation Skill**: Updated `skills/documentation/SKILL.md` with improved detection and sync logic.
+- **Template Hierarchy Restructured**: Shifted standalone template skills (`design-md`, `react-components`, `stitch-loop`) into `templates/skills/knowledge/` for consistent NPX packaging.
+
+### Improved
+
+- **Core Skill Definitions**: Refined SKILL.md files across `pdf-reader`, `qdrant-memory`, and `webcrawler` with updated descriptions, triggers, and references.
+- **Qdrant Memory Scripts**: Updated all 7 scripts (`benchmark_token_savings.py`, `embedding_utils.py`, `hybrid_search.py`, `init_collection.py`, `memory_retrieval.py`, `semantic_cache.py`, `test_skill.py`) with improved patterns.
+- **Knowledge Skill Documentation**: Mass update of SKILL.md definitions across 36+ knowledge skills with enhanced frontmatter, triggers, and reference content in templates.
+- **Audit Scripts**: Updated `ux_audit.py`, `security_scan.py`, `lighthouse_audit.py`, `test_runner.py`, `playwright_runner.py`, and `seo_checker.py` in templates.
+
+### Fixed
+
+- **Version Bump**: Package version correctly set to `1.1.6` in `package.json`.
+- **Template Cleanup**: Removed duplicate standalone Stitch skill templates (`templates/skills/design-md/`, `templates/skills/react-components/`, `templates/skills/stitch-loop/`), consolidated into `templates/skills/knowledge/`.
+- **Removed `verify_public_release.py`**: Deprecated top-level verification script removed (functionality integrated into CI/CD pipeline).
+
 ## [1.1.5] - 2026-01-27
 
 ### Added
