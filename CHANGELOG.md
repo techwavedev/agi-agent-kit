@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.7] - 2026-02-07
+
+### Added
+
+- **NotebookLM RAG Skill** (EC Scoped): New `notebooklm-rag` skill providing deep-search RAG capabilities powered by Google NotebookLM + Gemini 2.5. Complementary to `qdrant-memory` for explicit, document-grounded research.
+  - **B.L.A.S.T. Protocol**: Structured research workflow (Browse → Load → Ask → Synthesize → Transfer).
+  - **4 Research Modes**: Quick (single query), Deep (3-5 iterative), Cross-Ref (multi-notebook), Plan (doc-grounded planning).
+  - **Confidence Classification**: Automatic HIGH/MEDIUM/LOW categorization with source attribution.
+  - `scripts/research_query.py` — Generates structured research questions by mode.
+  - `scripts/research_report.py` — Formats findings into Markdown/JSON reports with confidence levels and knowledge gap analysis.
+  - `scripts/preflight_check.py` — Pre-flight validation checklist for MCP server, auth, and library.
+  - `references/research_patterns.md` — Workflow templates, query optimization, rate limit strategies.
+- **Auto-Update in Skill Creator**: `init_skill.py` now auto-runs `update_catalog.py` and `sync_docs.py` after creating a new skill.
+  - Default ON — use `--no-auto-update` to skip.
+  - New `--skills-dir` flag for specifying catalog update target directory.
+  - Non-fatal: graceful warnings if documentation skill is not installed.
+
+### Changed
+
+- **NotebookLM MCP Skill**: Migrated to `PleasePrompto/notebooklm-mcp` browser-automated implementation with full auth, library management, and stealth mode support.
+- **Skill Creator Documentation** (`SKILL_skillcreator.md`):
+  - Step 3: Documents new auto-update behavior and `--no-auto-update` / `--skills-dir` flags.
+  - Step 6: Notes that manual catalog update is now only needed for modifications/deletions.
+- **SKILLS_CATALOG.md**: Regenerated with 55 skills including `notebooklm-rag`.
+
+### Fixed
+
+- **`init_skill.py` argument parsing**: Migrated from fragile positional parsing (`sys.argv`) to robust `argparse` with proper help text and validation.
+- **`sync_docs.py` invocation**: Fixed `--update-catalog` flag to pass `"true"` as required value (not just the bare flag).
+
 ## [1.1.6] - 2026-02-07
 
 ### Added
