@@ -266,6 +266,12 @@ Usage:
 
 ```bash
 scripts/init_skill.py <skill-name> --path <output-directory>
+
+# Skip automatic catalog/docs updates
+scripts/init_skill.py <skill-name> --path <output-directory> --no-auto-update
+
+# Specify skills directory for catalog updates (if different from --path)
+scripts/init_skill.py <skill-name> --path <output-directory> --skills-dir skills/
 ```
 
 The script:
@@ -274,6 +280,10 @@ The script:
 - Generates a SKILL.md template with proper frontmatter and TODO placeholders
 - Creates example resource directories: `scripts/`, `references/`, and `assets/`
 - Adds example files in each directory that can be customized or deleted
+- **Auto-runs `update_catalog.py`** to regenerate `SKILLS_CATALOG.md` (default ON)
+- **Auto-runs `sync_docs.py`** to synchronize documentation (default ON, if documentation skill exists)
+
+> **Note:** Use `--no-auto-update` to skip automatic catalog and documentation updates.
 
 After initialization, customize or remove the generated SKILL.md and example files as needed.
 
@@ -348,7 +358,10 @@ If validation fails, the script will report the errors and exit without creating
 
 **CRITICAL:** After any skill operation (create, modify, or delete), the Skills Catalog must be updated. This ensures all skills are discoverable and documented.
 
+> **For new skills:** `init_skill.py` now auto-runs catalog and documentation updates by default. Manual update is only needed when modifying or deleting existing skills.
+
 ```bash
+# Manual update (for modifications/deletions, or if --no-auto-update was used)
 scripts/update_catalog.py --skills-dir skills/
 ```
 

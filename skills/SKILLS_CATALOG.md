@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-02-07 22:50
+> **Auto-generated Documentation** — Last updated: 2026-02-07 23:46
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -425,7 +425,7 @@ skill-name/
 | **Location** | `skills/notebooklm-mcp/` |
 | **Type** | Standalone |
 
-**Description:** "Connects to Google NotebookLM via Model Context Protocol (MCP) to access notebooks, sources, and query content. Triggers when the user asks to summarize, query, or interact with NotebookLM content."
+**Description:** "Connects to Google NotebookLM via MCP using PleasePrompto/notebooklm-mcp. Browser-automated auth, zero-hallucination research, smart library management. Triggers when user asks to research docs, query NotebookLM, or manage notebook libraries."
 
 **References:**
 - `references/api_reference.md`

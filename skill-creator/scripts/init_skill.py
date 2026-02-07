@@ -11,6 +11,7 @@ Examples:
     init_skill.py custom-skill --path /custom/location
 """
 
+import subprocess
 import sys
 from pathlib import Path
 
@@ -266,27 +267,134 @@ def init_skill(skill_name, path):
     print("1. Edit SKILL.md to complete the TODO items and update the description")
     print("2. Customize or delete the example files in scripts/, references/, and assets/")
     print("3. Run the validator when ready to check the skill structure")
-    print("4. Update the skills catalog: python skill-creator/scripts/update_catalog.py --skills-dir skills/")
 
     return skill_dir
 
 
-def main():
-    if len(sys.argv) < 4 or sys.argv[2] != '--path':
-        print("Usage: init_skill.py <skill-name> --path <path>")
-        print("\nSkill name requirements:")
-        print("  - Hyphen-case identifier (e.g., 'data-analyzer')")
-        print("  - Lowercase letters, digits, and hyphens only")
-        print("  - Max 40 characters")
-        print("  - Must match directory name exactly")
-        print("\nExamples:")
-        print("  init_skill.py my-new-skill --path skills/public")
-        print("  init_skill.py my-api-helper --path skills/private")
-        print("  init_skill.py custom-skill --path /custom/location")
-        sys.exit(1)
+def auto_update_catalog(skills_dir: Path) -> bool:
+    """
+    Auto-run update_catalog.py after skill creation.
+    
+    Args:
+        skills_dir: Path to the skills directory
+    
+    Returns:
+        True if successful, False otherwise
+    """
+    # Locate update_catalog.py relative to this script
+    script_dir = Path(__file__).resolve().parent
+    catalog_script = script_dir / "update_catalog.py"
+    
+    if not catalog_script.exists():
+        print(f"  ⚠️  Could not find update_catalog.py at {catalog_script}")
+        return False
+    
+    print(f"\n📚 Auto-updating skills catalog...")
+    try:
+        result = subprocess.run(
+            [sys.executable, str(catalog_script), "--skills-dir", str(skills_dir)],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if result.returncode == 0:
+            print("✅ Skills catalog updated automatically")
+            return True
+        else:
+            print(f"  ⚠️  Catalog update returned non-zero: {result.stderr.strip()}")
+            return False
+    except subprocess.TimeoutExpired:
+        print("  ⚠️  Catalog update timed out (30s)")
+        return False
+    except Exception as e:
+        print(f"  ⚠️  Catalog update failed: {e}")
+        return False
 
-    skill_name = sys.argv[1]
-    path = sys.argv[3]
+
+def auto_update_docs(skills_dir: Path, skill_name: str) -> bool:
+    """
+    Auto-run documentation sync after skill creation.
+    
+    Args:
+        skills_dir: Path to the skills directory
+        skill_name: Name of the skill to update docs for
+    
+    Returns:
+        True if successful, False otherwise
+    """
+    # Locate sync_docs.py in the documentation skill
+    sync_script = skills_dir / "documentation" / "scripts" / "sync_docs.py"
+    
+    if not sync_script.exists():
+        # Documentation skill not installed — silently skip
+        return False
+    
+    print(f"\n📝 Auto-updating documentation...")
+    try:
+        result = subprocess.run(
+            [
+                sys.executable, str(sync_script),
+                "--skills-dir", str(skills_dir),
+                "--update-catalog", "true",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if result.returncode == 0:
+            print("✅ Documentation updated automatically")
+            return True
+        else:
+            # sync_docs may not exist or have issues — non-fatal
+            print(f"  ⚠️  Documentation sync skipped: {result.stderr.strip()[:200]}")
+            return False
+    except subprocess.TimeoutExpired:
+        print("  ⚠️  Documentation sync timed out (60s)")
+        return False
+    except Exception as e:
+        print(f"  ⚠️  Documentation sync skipped: {e}")
+        return False
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Initialize a new skill from template with auto-update of catalog and docs.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  init_skill.py my-new-skill --path skills/
+  init_skill.py my-api-helper --path skills/ --no-auto-update
+  init_skill.py custom-skill --path /custom/location --skills-dir skills/
+
+Skill name requirements:
+  - Hyphen-case identifier (e.g., 'data-analyzer')
+  - Lowercase letters, digits, and hyphens only
+  - Max 40 characters
+  - Must match directory name exactly
+""",
+    )
+    parser.add_argument("skill_name", help="Name of the skill to create")
+    parser.add_argument("--path", required=True, help="Directory where skill folder will be created")
+    parser.add_argument(
+        "--no-auto-update",
+        action="store_true",
+        default=False,
+        help="Skip automatic catalog and documentation updates (default: auto-update ON)",
+    )
+    parser.add_argument(
+        "--skills-dir",
+        default=None,
+        help="Skills directory for catalog/docs update (default: same as --path)",
+    )
+
+    # Support legacy positional format: init_skill.py <name> --path <path>
+    args = parser.parse_args()
+
+    skill_name = args.skill_name
+    path = args.path
+    skills_dir = Path(args.skills_dir or path).resolve()
 
     print(f"🚀 Initializing skill: {skill_name}")
     print(f"   Location: {path}")
@@ -294,10 +402,19 @@ def main():
 
     result = init_skill(skill_name, path)
 
-    if result:
-        sys.exit(0)
-    else:
+    if not result:
         sys.exit(1)
+
+    # Auto-update catalog and documentation (unless explicitly disabled)
+    if not args.no_auto_update:
+        auto_update_catalog(skills_dir)
+        auto_update_docs(skills_dir, skill_name)
+    else:
+        print("\n⏭️  Auto-update skipped (--no-auto-update)")
+        print(f"   Manual update: python skill-creator/scripts/update_catalog.py --skills-dir {skills_dir}")
+
+    print(f"\n🎉 Done! Skill '{skill_name}' is ready for development.")
+    sys.exit(0)
 
 
 if __name__ == "__main__":

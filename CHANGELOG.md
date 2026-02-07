@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.7] - 2026-02-07
+
+### Added
+
+- **Auto-Update in Skill Creator**: `init_skill.py` now auto-runs `update_catalog.py` and `sync_docs.py` after creating a new skill.
+  - Default ON — use `--no-auto-update` to skip.
+  - New `--skills-dir` flag for specifying catalog update target directory.
+  - Non-fatal: graceful warnings if documentation skill is not installed.
+
+### Changed
+
+- **NotebookLM MCP Skill**: Migrated to `PleasePrompto/notebooklm-mcp` browser-automated implementation with full auth, library management, and stealth mode support.
+- **Skill Creator Documentation** (`SKILL_skillcreator.md`):
+  - Step 3: Documents new auto-update behavior and `--no-auto-update` / `--skills-dir` flags.
+  - Step 6: Notes that manual catalog update is now only needed for modifications/deletions.
+- **SKILLS_CATALOG.md**: Regenerated with 45 public skills.
+
+### Fixed
+
+- **`init_skill.py` argument parsing**: Migrated from fragile positional parsing (`sys.argv`) to robust `argparse` with proper help text and validation.
+- **`sync_docs.py` invocation**: Fixed `--update-catalog` flag to pass `"true"` as required value (not just the bare flag).
+
 ## [1.1.6] - 2026-02-07
 
 ### Added
