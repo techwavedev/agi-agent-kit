@@ -2,10 +2,11 @@
 
 ## Supported Versions
 
-Use the latest version of `@techwavedev/agi-agent-kit` to ensure you present the most secure and reliable agent framework.
+Use the latest version of `@techwavedev/agi-agent-kit` to ensure you have the most secure and reliable agent framework.
 
 | Version | Supported          |
 | ------- | ------------------ |
+| 1.1.6   | :white_check_mark: |
 | 1.1.x   | :white_check_mark: |
 | 1.0.x   | :x:                |
 | < 1.0   | :x:                |
@@ -24,6 +25,8 @@ We will acknowledge your report within 48 hours and work with you to remediate t
 
 This framework includes built-in security mechanisms:
 
-- **Pre-flight Sanitization:** `verify_public_release.py` scans for private tokens and credentials before publishing.
+- **Pre-flight Sanitization:** `verify_public_release.py` and `scripts/verify_public_release.py` scan for private tokens, credentials, and forbidden terms before publishing.
+- **Credential Exclusion:** `.gitignore` blocks `.env`, `credentials.json`, `token.json`, `*.pem`, and `*.key` from version control.
 - **Deterministic Execution:** Limits the agent's ability to hallucinate dangerous commands by restricting it to pre-approved scripts.
+- **Vulnerability Scanner Skill:** Built-in `vulnerability-scanner` skill with `security_scan.py` detects API keys, private keys, and hardcoded secrets in codebases.
 - **Provenance:** We use NPM provenance to verify build integrity.
