@@ -21,7 +21,7 @@ python skills/documentation/scripts/detect_changes.py \
 
 # Update documentation for a specific skill after changes
 python skills/documentation/scripts/update_skill_docs.py \
-  --skill consul \
+  --skill qdrant-memory \
   --changelog
 
 # Full repository documentation sync
@@ -180,16 +180,16 @@ node_modules/
 ## Impacted Documentation
 
 - [ ] SKILLS_CATALOG.md (skill added)
-- [ ] skills/consul/SKILL.md (new script)
+- [ ] skills/qdrant-memory/SKILL.md (new script)
 - [ ] README.md (features updated)
 
 ## Detailed Changes
 
 ### Added Files
 
-| File                            | Type   | Impact                 |
-| ------------------------------- | ------ | ---------------------- |
-| skills/consul/scripts/backup.py | Script | Update consul SKILL.md |
+| File                                   | Type   | Impact                        |
+| -------------------------------------- | ------ | ----------------------------- |
+| skills/qdrant-memory/scripts/backup.py | Script | Update qdrant-memory SKILL.md |
 
 ### Modified Files
 
@@ -203,7 +203,7 @@ node_modules/
 
 ### Added
 
-- New backup script for Consul skill (`skills/consul/scripts/backup.py`)
+- New backup script for Qdrant Memory skill (`skills/qdrant-memory/scripts/backup.py`)
 
 ### Changed
 
@@ -224,7 +224,7 @@ node_modules/
 ```bash
 # Update the skill's documentation
 python skills/documentation/scripts/update_skill_docs.py \
-  --skill consul \
+  --skill qdrant-memory \
   --changelog
 
 # Then update the catalog
