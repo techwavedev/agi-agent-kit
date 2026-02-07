@@ -7,7 +7,7 @@ description: "Jira ticket management skill for creating, updating, and managing 
 
 Comprehensive Jira ticket management for creating, updating, and managing issues with support for MCP server integration and direct REST API access.
 
-> **Last Updated:** 2026-01-23
+> **Last Updated:** 2026-02-07
 
 ---
 

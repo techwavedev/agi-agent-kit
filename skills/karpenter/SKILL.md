@@ -7,7 +7,7 @@ description: Karpenter Kubernetes autoscaler specialist for EKS clusters. Use fo
 
 Comprehensive skill for managing Karpenter—the high-performance Kubernetes autoscaler for AWS EKS.
 
-> **Last Updated:** 2026-01-23 from [karpenter.sh](https://karpenter.sh/)
+> **Last Updated:** 2026-02-07 from [karpenter.sh](https://karpenter.sh/)
 
 ---
 
