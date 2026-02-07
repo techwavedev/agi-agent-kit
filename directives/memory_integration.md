@@ -1,211 +1,95 @@
-# Agent Memory Integration
+# Memory Integration Directive
 
-> **Status**: ENABLED BY DEFAULT
-> **Opt-out**: User says "don't use cache", "no cache", "skip memory", or "fresh"
+## Goal
 
----
+Ensure all AI agents use the Qdrant-powered memory system by default to save tokens and preserve context across sessions. Embedding is handled locally via Ollama (`nomic-embed-text`, 768 dimensions) at zero cost.
 
-## Overview
+## Inputs
 
-All agent operations automatically use the Qdrant-powered memory system for:
-
-1. **Semantic Caching** — Avoid redundant LLM calls (100% token savings)
-2. **Context Retrieval** — Inject relevant memories instead of full history (80-95% savings)
-3. **Knowledge Persistence** — Store decisions, patterns, and solutions for future use
-
----
-
-## Automatic Behavior
-
-### Before Every Query
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  1. CHECK OPT-OUT FLAGS                                      │
-│     └─ User said "no cache/fresh/skip memory"? → Skip cache │
-│                                                              │
-│  2. SEMANTIC CACHE CHECK (threshold: 0.92 similarity)       │
-│     └─ Similar query found? → Return cached response        │
-│     └─ No match? → Continue to step 3                       │
-│                                                              │
-│  3. CONTEXT RETRIEVAL (top 5 relevant memories)             │
-│     └─ Inject relevant decisions, patterns, solutions       │
-│     └─ Reduces context window by 80-95%                     │
-│                                                              │
-│  4. EXECUTE QUERY                                            │
-│     └─ Process with enriched context                        │
-│                                                              │
-│  5. STORE RESPONSE                                           │
-│     └─ Cache for future similar queries                     │
-│     └─ Auto-categorize: decision, code, error, technical    │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### After Important Operations
-
-Automatically store in long-term memory:
-
-| Event Type            | Memory Type    | Example                                   |
-| --------------------- | -------------- | ----------------------------------------- |
-| Architecture decision | `decision`     | "We chose PostgreSQL for ACID compliance" |
-| Code pattern created  | `code`         | Script implementations, reusable patterns |
-| Error resolved        | `error`        | Bug fix with root cause and solution      |
-| Documentation created | `technical`    | API docs, architecture diagrams           |
-| Key conversation      | `conversation` | Important user preferences, requirements  |
-
----
-
-## Opt-Out Triggers
-
-The user can disable caching for specific queries by using these phrases:
-
-- "don't use cache"
-- "no cache"
-- "skip memory"
-- "fresh" (at start of query)
-- "without caching"
-- "ignore cache"
-
-**Example:**
-
-```
-USER: fresh - what's the status of the EKS cluster?
-→ Memory check SKIPPED, live data fetched
-```
-
----
-
-## Memory Types
-
-| Type           | Purpose                                | TTL       |
-| -------------- | -------------------------------------- | --------- |
-| `cache`        | Query-response pairs for deduplication | 7 days    |
-| `decision`     | Architectural and design decisions     | Permanent |
-| `code`         | Code patterns and implementations      | 90 days   |
-| `error`        | Error resolutions and troubleshooting  | 60 days   |
-| `technical`    | Technical documentation and knowledge  | Permanent |
-| `conversation` | Key conversation points                | 30 days   |
-
----
-
-## Implementation
-
-### Middleware Location
-
-```
-execution/memory_middleware.py
-```
-
-### Usage in Scripts
-
-```python
-from execution.memory_middleware import MemoryMiddleware, memory_wrap
-
-# Automatic caching via decorator
-@memory_wrap
-def process_query(query):
-    return llm_call(query)
-
-# Manual control
-memory = MemoryMiddleware()
-
-# Check cache
-cached = memory.check_cache(query)
-if cached:
-    return cached["response"]
-
-# Retrieve context
-context = memory.retrieve_context(query, memory_types=["decision", "code"])
-
-# Store response
-memory.store_response(query, response)
-
-# Store important memory
-memory.store_memory(
-    content="We decided to use Karpenter for node autoscaling",
-    memory_type="decision",
-    metadata={"project": "eks-nonprod", "tags": ["infrastructure"]}
-)
-```
-
-### CLI Commands
-
-```bash
-# Check middleware status
-python execution/memory_middleware.py --status
-
-# View metrics
-python execution/memory_middleware.py --metrics
-
-# Test connection
-python execution/memory_middleware.py --test
-
-# Clean expired cache
-python execution/memory_middleware.py --cleanup
-```
-
----
+- User query (natural language)
+- Project name (optional, for scoped retrieval)
+- Memory type classification (auto-detected or explicit)
 
 ## Prerequisites
 
-1. **Qdrant Running**
+| Component          | Required | Check Command                                       |
+| ------------------ | -------- | --------------------------------------------------- |
+| Qdrant (Docker)    | Yes      | `curl http://localhost:6333/collections`             |
+| Ollama             | Yes      | `curl http://localhost:11434/api/tags`               |
+| nomic-embed-text   | Yes      | `ollama pull nomic-embed-text`                       |
+| Collections setup  | Yes      | `python3 execution/session_init.py`                  |
 
-   ```bash
-   docker run -d -p 6333:6333 qdrant/qdrant
-   ```
+## Execution Protocol
 
-2. **Collections Initialized**
+### 1. Session Start (Run Once)
 
-   ```bash
-   python skills/qdrant-memory/scripts/init_collection.py --collection semantic_cache --dimension 768
-   python skills/qdrant-memory/scripts/init_collection.py --collection agent_memory --dimension 768
-   ```
-
-3. **Embedding Provider Running**
-   ```bash
-   # Ollama (recommended)
-   ollama serve &
-   ollama pull nomic-embed-text
-   ```
-
----
-
-## Metrics Tracking
-
-The middleware tracks:
-
-- `cache_hits` — Number of queries served from cache
-- `cache_misses` — Number of queries that required LLM
-- `tokens_saved` — Estimated tokens saved from caching
-- `cache_hit_rate` — Percentage of cache hits
-
-Access via:
-
-```python
-memory = MemoryMiddleware()
-print(memory.get_metrics())
+```bash
+python3 execution/session_init.py
 ```
 
----
+This verifies Qdrant, Ollama, and creates `agent_memory` (768d) and `semantic_cache` (768d) collections if they don't exist.
 
-## Environment Variables
+### 2. Before Every Complex Task
 
-| Variable             | Default                 | Description                   |
-| -------------------- | ----------------------- | ----------------------------- |
-| `MEMORY_ENABLED`     | `true`                  | Enable/disable memory         |
-| `QDRANT_URL`         | `http://localhost:6333` | Qdrant server URL             |
-| `EMBEDDING_PROVIDER` | `ollama`                | ollama, bedrock, or openai    |
-| `CACHE_THRESHOLD`    | `0.92`                  | Similarity threshold for hits |
-| `CACHE_TTL_DAYS`     | `7`                     | Days before cache expires     |
+```bash
+python3 execution/memory_manager.py auto --query "<user request summary>"
+```
 
----
+**Decision tree based on result:**
 
-## Troubleshooting
+| Result             | Action                                                   |
+| ------------------ | -------------------------------------------------------- |
+| `cache_hit: true`  | Use cached response directly. Inform user of cache hit.  |
+| `source: memory`   | Inject retrieved context chunks into your reasoning.     |
+| `source: none`     | Proceed normally. Store the result when done.            |
 
-| Issue                      | Solution                                  |
-| -------------------------- | ----------------------------------------- |
-| "Qdrant not available"     | Start Qdrant: `docker start qdrant`       |
-| "Embeddings not available" | Start Ollama: `ollama serve`              |
-| Low cache hit rate         | Lower `CACHE_THRESHOLD` (e.g., 0.88)      |
-| Stale cached responses     | Run `--cleanup` or lower `CACHE_TTL_DAYS` |
-| Memory not persisting      | Check Qdrant storage volume is mounted    |
+### 3. After Key Decisions or Solutions
+
+```bash
+python3 execution/memory_manager.py store \
+  --content "Description of what was decided/solved" \
+  --type decision \
+  --project <project-name> \
+  --tags relevant-tag1 relevant-tag2
+```
+
+### 4. After Completing a Complex Task (Cache the Response)
+
+```bash
+python3 execution/memory_manager.py cache-store \
+  --query "The original user question" \
+  --response "The complete response that was generated"
+```
+
+## Memory Type Guide
+
+| Type           | When to Store                                    | Retention |
+| -------------- | ------------------------------------------------ | --------- |
+| `decision`     | Architecture choice, tech selection, trade-off   | Permanent |
+| `code`         | Reusable pattern, snippet, config                | Permanent |
+| `error`        | Bug fix with root cause and solution             | 90 days   |
+| `technical`    | API docs, library quirks, config patterns        | Permanent |
+| `conversation` | User preference, constraint, project context     | 30 days   |
+
+## Token Savings Reference
+
+| Scenario              | Without Memory | With Memory | Savings |
+| --------------------- | -------------- | ----------- | ------- |
+| Repeated question     | ~2000 tokens   | 0 tokens    | 100%    |
+| Similar architecture  | ~5000 tokens   | ~500 tokens | 90%     |
+| Past error resolution | ~3000 tokens   | ~300 tokens | 90%     |
+| Context from history  | ~10000 tokens  | ~1000 tokens| 90%     |
+
+## Edge Cases
+
+- **Qdrant not running:** Log warning, proceed without memory. Never block user workflow.
+- **Ollama not running:** Same as above. Memory is optional, never mandatory for task completion.
+- **Stale cache:** Cache entries older than 7 days are auto-cleared. Run `python3 execution/memory_manager.py cache-clear --older-than 7` manually if needed.
+- **Dimension mismatch:** If switching providers (e.g., OpenAI→Ollama), run `python3 execution/session_init.py --force` to recreate collections with correct dimensions.
+- **User opt-out:** Respect "no cache", "fresh", "skip memory" keywords.
+
+## Outputs
+
+- Cached responses (in Qdrant `semantic_cache` collection)
+- Stored memories (in Qdrant `agent_memory` collection)
+- Session health report (JSON from `session_init.py`)

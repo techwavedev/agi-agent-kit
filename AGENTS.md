@@ -1,6 +1,38 @@
 # Agent Instructions
 
-> `CLAUDE.md` and `GEMINI.md` are symlinks to this file, so the same instructions load in any AI environment.
+> `CLAUDE.md`, `GEMINI.md`, and `OPENCODE.md` are symlinks to this file, so the same instructions load in any AI environment.
+
+---
+
+## Getting Started
+
+### Installation
+
+Run this command in any directory where you want to scaffold a new AI agent:
+
+```bash
+npx @techwavedev/agi-agent-kit init
+```
+
+### Dependencies
+
+This toolkit relies on Python scripts for deterministic execution. Ensure you have the following installed:
+
+1. **Python 3.8+**: `python3 --version`
+2. **Pip Dependencies**:
+   ```bash
+   pip install requests beautifulsoup4 html2text lxml qdrant-client
+   ```
+
+### Updates
+
+To update the kit to the latest version:
+
+```bash
+# Clear npx cache to force latest version download
+rm -rf ~/.npm/_npx
+npx @techwavedev/agi-agent-kit init
+```
 
 ---
 
