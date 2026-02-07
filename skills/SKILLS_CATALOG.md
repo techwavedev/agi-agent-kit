@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-02-07 22:47
+> **Auto-generated Documentation** — Last updated: 2026-02-07 23:35
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -46,6 +46,7 @@ This document provides comprehensive documentation on available skills, how to u
   - [Nextjs Best Practices](#nextjs-best-practices)
   - [Nodejs Best Practices](#nodejs-best-practices)
   - [Notebooklm Mcp](#notebooklm-mcp)
+  - [Notebooklm Rag](#notebooklm-rag)
   - [Opensearch](#opensearch)
   - [Parallel Agents](#parallel-agents)
   - [Pdf Reader](#pdf-reader)
@@ -605,7 +606,7 @@ skill-name/
 | **Location** | `skills/notebooklm-mcp/` |
 | **Type** | Standalone |
 
-**Description:** "Connects to Google NotebookLM via Model Context Protocol (MCP) to access notebooks, sources, and query content. Triggers when the user asks to summarize, query, or interact with NotebookLM content."
+**Description:** "Connects to Google NotebookLM via MCP using PleasePrompto/notebooklm-mcp. Browser-automated auth, zero-hallucination research, smart library management. Triggers when user asks to research docs, query NotebookLM, or manage notebook libraries."
 
 **Scripts:**
 
@@ -616,6 +617,29 @@ skill-name/
 
 **References:**
 - `references/api_reference.md`
+
+---
+
+### Notebooklm Rag
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `notebooklm-rag` |
+| **Location** | `skills/notebooklm-rag/` |
+| **Type** | Standalone |
+
+**Description:** "Deep-search RAG knowledge layer powered by Google NotebookLM + Gemini 2.5. Use when explicitly asked to research, investigate, plan with docs, or query knowledge bases. Complement to qdrant-memory (token saver). Triggers on: '@notebooklm', 'research my docs', 'check my notebooks', 'deep search', 'investigate with docs'."
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/preflight_check.py` | *[See script for details]* |
+| `scripts/research_query.py` | *[See script for details]* |
+| `scripts/research_report.py` | *[See script for details]* |
+
+**References:**
+- `references/research_patterns.md`
 
 ---
 
