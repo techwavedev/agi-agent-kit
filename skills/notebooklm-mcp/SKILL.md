@@ -72,14 +72,15 @@ Say: `"Re-authenticate NotebookLM"` — this closes all sessions, clears auth, a
 claude mcp add notebooklm npx notebooklm-mcp@latest
 ```
 
-**Opencode / Generic MCP:**
+**Opencode:**
 
 ```json
 {
-  "mcpServers": {
+  "mcp": {
     "notebooklm": {
-      "command": "npx",
-      "args": ["notebooklm-mcp@latest"]
+      "type": "local",
+      "command": ["npx", "-y", "notebooklm-mcp@latest"],
+      "enabled": true
     }
   }
 }
