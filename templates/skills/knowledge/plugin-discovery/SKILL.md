@@ -259,21 +259,228 @@ cat ~/.config/opencode/config.json 2>/dev/null
 
 ## Kiro: Powers Discovery
 
-> **Note**: Kiro uses "Powers" instead of plugins/skills. This is a different system documented separately.
+> Kiro uses **Powers** — unified bundles of MCP tools + steering knowledge + hooks that load dynamically based on context keywords. Available in Kiro IDE 0.7+.
 
 ### What Kiro Powers Are
 
-Powers are Kiro's way of extending agent capabilities. They integrate with Kiro's hook system and agent framework.
+Powers are Kiro's extension system. Unlike traditional MCP setups that load all tools upfront (causing context rot), Powers activate **on-demand** when the conversation mentions relevant keywords. A Power bundles:
+
+1. **`POWER.md`** — Entry point with frontmatter (activation keywords) + onboarding steps + steering instructions
+2. **`mcp.json`** — MCP server configuration for tool integrations (optional)
+3. **`steering/`** — Workflow-specific guidance files loaded on-demand (optional)
 
 ### How to Detect Kiro
 
-Check for:
+| Signal                               | Confidence |
+| ------------------------------------ | ---------- |
+| `.kiro/` directory in workspace      | ✅ High    |
+| `POWER.md` files in project          | ✅ High    |
+| Kiro-specific hooks (`.kiro/hooks/`) | ✅ High    |
+| Kiro agent context markers           | ✅ High    |
 
-- `powers/` directory in project root
-- Kiro-specific configuration files
-- Kiro agent context markers
+### Power Structure
 
-> **Full Kiro support**: See separate task/skill for complete Kiro Powers integration.
+```
+power-name/
+├── POWER.md          # Metadata, onboarding, steering mappings (required)
+├── mcp.json          # MCP server configuration (optional)
+└── steering/         # Workflow-specific guidance (optional)
+    ├── workflow-a.md
+    ├── workflow-b.md
+    └── patterns.md
+```
+
+### POWER.md Anatomy
+
+The `POWER.md` has two parts: **frontmatter** (when to activate) and **body** (instructions).
+
+#### Frontmatter: Keywords-Based Activation
+
+```yaml
+---
+name: "supabase"
+displayName: "Supabase with local CLI"
+description: "Build fullstack applications with Supabase's Postgres database, auth, storage, and real-time subscriptions"
+keywords:
+  [
+    "database",
+    "postgres",
+    "auth",
+    "storage",
+    "realtime",
+    "backend",
+    "supabase",
+    "rls",
+  ]
+---
+```
+
+When someone says "Let's set up the database," Kiro detects "database" in the keywords and activates the Supabase power — loading its MCP tools and `POWER.md` steering into context. Other powers deactivate to save context.
+
+#### Onboarding Section (runs once)
+
+```markdown
+# Onboarding
+
+## Step 1: Validate tools work
+
+- **Docker Desktop**: Verify with `docker --version`
+- **Supabase CLI**: Verify with `supabase --version`
+
+## Step 2: Add hooks
+
+Add a hook to `.kiro/hooks/review-advisors.kiro.hook`
+```
+
+#### Steering Section (maps workflows to files)
+
+**Simple approach** — all guidance in `POWER.md`:
+
+```markdown
+# Best Practices
+
+## Database Schema Design
+
+- Use UUIDs for primary keys
+- Always add timestamps
+- Enable RLS on all tables with user data
+```
+
+**Advanced approach** — separate steering files:
+
+```markdown
+# When to Load Steering Files
+
+- Setting up a database → `database-setup-workflow.md`
+- Creating RLS policies → `supabase-database-rls-policies.md`
+- Creating PostgreSQL functions → `supabase-database-functions.md`
+- Working with Edge Functions → `supabase-edge-functions.md`
+```
+
+### MCP Server Configuration (mcp.json)
+
+```json
+{
+  "mcpServers": {
+    "supabase-local": {
+      "command": "npx",
+      "args": ["-y", "@supabase/mcp-server-supabase"],
+      "env": {
+        "SUPABASE_URL": "${SUPABASE_URL}",
+        "SUPABASE_ANON_KEY": "${SUPABASE_ANON_KEY}"
+      }
+    }
+  }
+}
+```
+
+Kiro auto-namespaces server names to avoid conflicts (e.g., `supabase-local` → `power-supabase-supabase-local`).
+
+### Kiro Hooks System
+
+Powers can install hooks into `.kiro/hooks/`. Hooks are JSON files that define automated behaviors:
+
+```json
+{
+  "enabled": true,
+  "name": "Review Database Performance & Security",
+  "description": "Verify database follows performance/security best practices",
+  "version": "1",
+  "when": { "type": "userTriggered" },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Execute `get_advisors` via MCP to check for performance and security concerns"
+  }
+}
+```
+
+### Kiro Autonomous Agent
+
+Kiro also has an **autonomous agent** that works at the team level:
+
+- **Runs in isolated sandbox environments** — opens PRs for review
+- **Maintains context** across tasks, repos, and pull requests
+- **Learns from code reviews** — adapts to team patterns over time
+- **Works across repos** — coordinates multi-repo changes into related PRs
+- **Protects focus time** — handles routine fixes, follow-ups, status updates
+
+> The autonomous agent is complementary to Powers. Powers provide the expertise, the autonomous agent provides the execution.
+
+### Available Kiro Powers (Curated Partners)
+
+| Power         | Category       | What It Does                      |
+| ------------- | -------------- | --------------------------------- |
+| **Figma**     | Design         | Design to code                    |
+| **Supabase**  | Backend        | Database, auth, storage, realtime |
+| **Stripe**    | Payments       | Payment integration               |
+| **Neon**      | Database       | Serverless Postgres               |
+| **Netlify**   | Deployment     | Web app deployment                |
+| **Postman**   | API Testing    | API testing and docs              |
+| **Strands**   | Agent Dev      | Build agents                      |
+| **Datadog**   | Observability  | Monitoring & observability        |
+| **Dynatrace** | Observability  | APM & monitoring                  |
+| **AWS CDK**   | Infrastructure | AWS IaC with CDK/CloudFormation   |
+| **Terraform** | Infrastructure | Multi-cloud IaC                   |
+| **Aurora**    | Database       | AWS Aurora PostgreSQL/DSQL        |
+
+### Installing Powers
+
+```
+# From the Kiro IDE Powers panel:
+1. Open Powers panel → Browse curated powers
+2. Click "Install" on any power
+
+# From GitHub:
+1. Powers panel → "Add power from GitHub"
+2. Enter repository URL
+
+# From local directory:
+1. Powers panel → "Add power from Local Path"
+2. Select your power directory
+```
+
+### Kiro Setup Checklist
+
+```markdown
+## Kiro Setup Checklist
+
+- [ ] **Install essential Powers**: Figma, Supabase/Neon, deployment tool
+- [ ] **Configure hooks**: Quality gates in `.kiro/hooks/`
+- [ ] **Set up autonomous agent**: For team-level async task execution
+- [ ] **Create project-specific powers**: Package team patterns as Powers
+- [ ] **Share powers**: Push to GitHub for team-wide access
+```
+
+---
+
+## Antigravity ↔ Kiro Powers: Mapping Guide
+
+Our Antigravity skills can be adapted to Kiro Powers with minimal changes:
+
+| Antigravity          | Kiro Powers                             | Mapping Notes                                               |
+| -------------------- | --------------------------------------- | ----------------------------------------------------------- |
+| `SKILL.md`           | `POWER.md`                              | Rename + adjust frontmatter (add `keywords`, `displayName`) |
+| `skills/skill-name/` | `power-name/`                           | Same directory structure                                    |
+| `references/`        | `steering/`                             | Rename directory                                            |
+| `scripts/`           | Keep as `scripts/` or integrate via MCP | Scripts stay or wrap in MCP                                 |
+| `SKILLS_CATALOG.md`  | Kiro Powers panel                       | Kiro handles discovery natively                             |
+| `.agent/agents/`     | Kiro agents                             | Different agent system                                      |
+| `execution/`         | Wrap as MCP tools                       | Kiro prefers MCP for tool access                            |
+| `GEMINI.md` rules    | `.kiro/settings` + hooks                | Different configuration approach                            |
+
+### Converting a Skill to a Power
+
+```bash
+# Example: Convert webcrawler skill to Kiro Power
+mkdir power-webcrawler
+cp skills/webcrawler/SKILL.md power-webcrawler/POWER.md
+# Edit POWER.md frontmatter:
+#   Add: keywords: ["scrape", "crawl", "website", "docs", "harvest"]
+#   Add: displayName: "Web Crawler"
+# Move references/ → steering/
+cp -r skills/webcrawler/references/ power-webcrawler/steering/ 2>/dev/null
+# If skill uses MCP, create mcp.json
+```
 
 ---
 
@@ -330,16 +537,18 @@ Would you like me to install the recommended extensions? (y/n)
 
 ## Cross-Platform Compatibility Map
 
-| Feature                 | Claude Code          | Gemini        | Opencode      | Kiro          |
-| ----------------------- | -------------------- | ------------- | ------------- | ------------- |
-| **Plugins/Marketplace** | ✅ `/plugin`         | ❌            | ❌            | ❌ (Powers)   |
-| **Skills**              | ✅ `.claude/skills/` | ✅ `skills/`  | ✅ `skills/`  | ❌ (Powers)   |
-| **Subagents**           | ✅ `.claude/agents/` | ⚠️ Personas   | ⚠️ Personas   | ✅ Agents     |
-| **Agent Teams**         | ✅ Experimental      | ❌            | ❌            | ❌            |
-| **MCP Servers**         | ✅ Native            | ✅ Via config | ✅ Via config | ✅ Via config |
-| **LSP Integration**     | ✅ Plugins           | ❌            | ❌            | ✅ Native     |
-| **Hooks**               | ✅ Native            | ❌            | ❌            | ✅ Native     |
-| **Persistent Memory**   | ✅ Agent memory      | ⚠️ KI system  | ⚠️ Limited    | ❌            |
+| Feature                 | Claude Code          | Gemini         | Opencode       | Kiro                        |
+| ----------------------- | -------------------- | -------------- | -------------- | --------------------------- |
+| **Plugins/Marketplace** | ✅ `/plugin`         | ❌             | ❌             | ✅ Powers panel             |
+| **Skills/Powers**       | ✅ `.claude/skills/` | ✅ `skills/`   | ✅ `skills/`   | ✅ `POWER.md`               |
+| **Subagents**           | ✅ `.claude/agents/` | ⚠️ Personas    | ⚠️ Personas    | ✅ Agents                   |
+| **Agent Teams**         | ✅ Experimental      | ❌             | ❌             | ✅ Autonomous Agent (async) |
+| **MCP Servers**         | ✅ Native            | ✅ Via config  | ✅ Via config  | ✅ Dynamic via Powers       |
+| **Dynamic MCP Loading** | ❌ All upfront       | ❌ All upfront | ❌ All upfront | ✅ On-demand per Power      |
+| **LSP Integration**     | ✅ Plugins           | ❌             | ❌             | ✅ Native                   |
+| **Hooks**               | ✅ Native            | ❌             | ❌             | ✅ `.kiro/hooks/`           |
+| **Persistent Memory**   | ✅ Agent memory      | ⚠️ KI system   | ⚠️ Limited     | ✅ Cross-task learning      |
+| **Cross-Repo Tasks**    | ❌                   | ❌             | ❌             | ✅ Autonomous Agent         |
 
 ---
 
@@ -350,3 +559,4 @@ Would you like me to install the recommended extensions? (y/n)
 3. **Don't over-install** — Recommend only what's relevant to the current project
 4. **Respect scopes** — Use project scope for team tools, user scope for personal preferences
 5. **Proactive but not pushy** — Suggest once per session, don't repeat
+6. **Cross-platform awareness** — When a skill exists as both Antigravity SKILL.md and Kiro POWER.md, use the native format for the detected platform

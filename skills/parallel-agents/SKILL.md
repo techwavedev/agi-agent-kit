@@ -16,6 +16,7 @@ This skill enables coordinating multiple specialized agents across different AI 
 | ------------------------------------- | ------------------- | ------------------- | ------------------------------ |
 | **Claude Code** (with Agent Teams)    | Native Agent Teams  | ✅ True parallel    | tmux/in-process sessions       |
 | **Claude Code** (without Agent Teams) | Subagents           | ✅ Background tasks | `Task()` tool, `context: fork` |
+| **Kiro IDE**                          | Autonomous Agent    | ✅ Async parallel   | Sandbox environments, PRs      |
 | **Gemini / Antigravity**              | Sequential Personas | ❌ Sequential       | Persona switching via `@agent` |
 | **Opencode / Other**                  | Sequential Personas | ❌ Sequential       | Persona switching via `@agent` |
 
@@ -30,6 +31,8 @@ IF environment has CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
   → Use Agent Teams (Strategy A)
 ELSE IF environment is Claude Code (has Task tool, /agents command)
   → Use Subagents (Strategy B)
+ELSE IF environment is Kiro IDE (.kiro/, POWER.md, autonomous agent available)
+  → Use Autonomous Agent (Strategy D)
 ELSE
   → Use Sequential Personas (Strategy C)
 ```
@@ -264,6 +267,56 @@ Based on those findings, have the test-engineer generate component tests.
 
 ---
 
+## Strategy D: Kiro Autonomous Agent (On Kiro IDE)
+
+> Kiro's Autonomous Agent provides async parallel task execution in sandboxed environments — the team-level equivalent of Claude Code's Agent Teams, but asynchronous and PR-based.
+
+### How It Works
+
+Unlike Claude Code Agent Teams (which are real-time interactive sessions), Kiro's Autonomous Agent:
+
+- **Runs tasks in isolated sandbox environments** — full dev setup, no local impact
+- **Opens pull requests** for each completed task — you review asynchronously
+- **Maintains context** across tasks, repos, and PRs
+- **Learns from your code reviews** — adapts to team patterns over time
+- **Works across multiple repos** — coordinates related changes into linked PRs
+
+### When to Use
+
+✅ **Best for:**
+
+- Async workflows where multiple tasks can run overnight or during focus time
+- Cross-repo changes (e.g., update API contract + client SDK + documentation)
+- Routine fixes, follow-ups, and status updates
+- Tasks that benefit from sandboxed execution (no risk to local environment)
+
+❌ **Not ideal for:**
+
+- Real-time interactive collaboration (use Agent Teams on Claude Code instead)
+- Quick single-file fixes (use direct agent invocation)
+
+### Example: Multi-Task Delegation
+
+```
+Create a Kiro task:
+  - "Refactor authentication module to use JWT refresh tokens"
+  - Repository: backend-api
+  - Let Kiro plan the implementation, execute in sandbox, and open a PR
+
+Create another Kiro task:
+  - "Update the React login flow to handle JWT refresh"
+  - Repository: frontend-app
+  - Reference the backend PR for API contract changes
+```
+
+Both tasks run in parallel in isolated environments. When complete, you get two linked PRs to review.
+
+### Integration with Kiro Powers
+
+The Autonomous Agent automatically uses installed Powers for expertise. If the Supabase Power is installed and the task involves database changes, the agent activates the Supabase Power for best-practice guidance.
+
+---
+
 ## Orchestration Patterns (Platform-Independent)
 
 These patterns work across all strategies. The platform dictates whether they run in parallel or sequentially.
@@ -283,6 +336,7 @@ Agents: explorer → [domain-agents] → synthesis
 
 **On Claude Code Agent Teams**: Steps 2-5 run as parallel teammates
 **On Claude Code Subagents**: Steps 2-5 run as background subagents
+**On Kiro IDE**: Steps 2-5 dispatched as autonomous agent tasks (async, PR-based)
 **On Other Platforms**: Steps 1-5 run sequentially with context passing
 
 ### Pattern 2: Feature Review

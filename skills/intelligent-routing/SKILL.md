@@ -36,6 +36,14 @@ IF "Claude Code" is detected (has Task tool, /agents, Bash, etc.)
        "/plugin marketplace add anthropics/claude-code" for official plugins
        Check if LSP plugins, commit-commands, etc. would benefit the project
 
+ELSE IF "Kiro IDE" is detected (.kiro/ directory, POWER.md files, Kiro agent context)
+  → Platform: Kiro IDE
+  → Strategy: Powers-driven orchestration + Autonomous Agent for async tasks
+  → 💡 RECOMMEND Powers if not installed:
+       Check project tech stack and suggest relevant Powers (Supabase, Stripe, Figma, etc.)
+       "Open Powers panel → Browse curated powers"
+  → 💡 RECOMMEND Autonomous Agent for multi-repo or async parallel work
+
 ELSE IF "Gemini" or "Antigravity" is detected (GEMINI.md loaded, Google model)
   → Platform: Gemini / Antigravity
   → Strategy: Sequential persona switching via @agent
@@ -65,7 +73,18 @@ END IF
 - Skills: Project skills auto-discovered from `.claude/skills/` and `skills/`
 ```
 
-**On non-Claude platforms**, no special announcement is needed — use standard persona switching.
+**If Kiro IDE is detected**, proactively announce:
+
+```markdown
+💡 **Platform detected: Kiro IDE**
+
+- Powers: [N installed — open Powers panel to browse/install more]
+- Autonomous Agent: Available for async task execution across repos
+- Hooks: Configure quality gates in `.kiro/hooks/`
+- MCP Servers: Dynamically loaded per Power — no upfront context cost
+```
+
+**On Gemini/Opencode/other platforms**, no special announcement is needed — use standard persona switching.
 
 ---
 
