@@ -248,6 +248,24 @@ function copyBaseFiles(targetPath, templatesPath, options) {
     }
   }
   
+  // Copy execution scripts (memory system)
+  const srcExecution = path.join(templatesPath, 'base', 'execution');
+  const destExecution = path.join(targetPath, 'execution');
+  
+  if (fs.existsSync(srcExecution)) {
+    copyDirSync(srcExecution, destExecution);
+    log.success('Installed execution/ (memory system scripts)');
+  }
+  
+  // Copy directives
+  const srcDirectives = path.join(templatesPath, 'base', 'directives');
+  const destDirectives = path.join(targetPath, 'directives');
+  
+  if (fs.existsSync(srcDirectives)) {
+    copyDirSync(srcDirectives, destDirectives);
+    log.success('Installed directives/');
+  }
+  
   // Copy skill-creator
   const srcSkillCreator = path.join(templatesPath, 'base', 'skill-creator');
   const destSkillCreator = path.join(targetPath, 'skill-creator');
@@ -355,8 +373,10 @@ Next steps:
   1. Review ${colors.cyan}AGENTS.md${colors.reset} for architecture overview
   2. Install Python dependencies:
      ${colors.yellow}pip install requests beautifulsoup4 html2text lxml qdrant-client${colors.reset}
-  3. Check ${colors.cyan}skills/${colors.reset} for available capabilities
-  4. Create ${colors.cyan}.env${colors.reset} with your API keys
+  3. Boot the memory system (optional, requires Qdrant + Ollama):
+     ${colors.yellow}python3 execution/session_boot.py --auto-fix${colors.reset}
+  4. Check ${colors.cyan}skills/${colors.reset} for available capabilities
+  5. Create ${colors.cyan}.env${colors.reset} with your API keys
   
 Happy coding! 🎉
 `);
@@ -428,6 +448,14 @@ async function update(options) {
   if (fs.existsSync(srcSC)) {
       copyDirSync(srcSC, destSC);
       console.log(`  ${colors.green}✔${colors.reset} Updated skill-creator/`);
+  }
+
+  // 3b. Update Execution Scripts (memory system)
+  const srcExec = path.join(templatesPath, 'base', 'execution');
+  const destExec = path.join(options.path, 'execution');
+  if (fs.existsSync(srcExec)) {
+      copyDirSync(srcExec, destExec);
+      console.log(`  ${colors.green}✔${colors.reset} Updated execution/ (memory system scripts)`);
   }
 
   // 4. Update Core Documentation if needed

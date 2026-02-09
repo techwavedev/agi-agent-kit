@@ -4,6 +4,20 @@
 
 ---
 
+## ⚡ Session Boot Protocol (MANDATORY)
+
+**Run this ONCE at the start of every session, before any other work:**
+
+```bash
+python3 execution/session_boot.py --auto-fix
+```
+
+This single command checks Qdrant, Ollama, embedding models, and collections. If anything is missing, `--auto-fix` repairs it automatically. If the output shows `"memory_ready": true`, proceed normally. If it shows issues, follow the printed instructions.
+
+**Why this matters:** The memory system provides 80-100% token savings on repeated work. Skipping this step means every query pays full token cost.
+
+---
+
 ## Getting Started
 
 ### Installation
@@ -154,10 +168,10 @@ python execution/scrape_single_site.py \
 #### Session Start (MANDATORY — run once per session)
 
 ```bash
-python3 execution/memory_manager.py health
+python3 execution/session_boot.py --auto-fix
 ```
 
-If `"ready": true`, proceed. If false, run `python3 execution/session_init.py` to initialize.
+If `"memory_ready": true`, proceed. If false, follow the printed instructions.
 
 #### Before Every Complex Task
 
