@@ -1,6 +1,6 @@
 {
   "name": "@techwavedev/agi-agent-kit",
-  "version": "1.1.7",
+  "version": "1.2.0",
   "description": "Enterprise-Grade Agentic Framework - Modular skill-based AI assistant toolkit with deterministic execution and semantic memory.",
   "bin": {
     "agi-agent-kit": "./bin/init.js"
@@ -17,9 +17,12 @@
     "skills",
     "claude",
     "gemini",
+    "kiro",
+    "opencode",
     "llm",
     "semantic-cache",
-    "qdrant"
+    "qdrant",
+    "platform-adaptive"
   ],
   "author": "Elton Machado@techwave",
   "license": "Apache-2.0",

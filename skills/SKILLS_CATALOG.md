@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-02-09 12:46
+> **Auto-generated Documentation** — Last updated: 2026-02-09 13:07
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -739,6 +739,12 @@ skill-name/
 | **Type** | Standalone |
 
 **Description:** Platform-adaptive plugin and extension auto-discovery. Detects the runtime environment (Claude Code, Gemini, Opencode, Kiro) and recommends or installs relevant plugins, extensions, MCP servers, and marketplace integrations. Use when setting up a project, onboarding, or when the user asks about available tools/plugins.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/platform_setup.py` | *[See script for details]* |
 
 ---
 
