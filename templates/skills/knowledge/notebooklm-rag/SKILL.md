@@ -1,327 +1,216 @@
 ---
 name: notebooklm-rag
-description: "Optional deep document research using Google NotebookLM as a RAG backend with browser automation. Default RAG uses Qdrant + local embeddings (see qdrant-memory skill). NotebookLM is opt-in for users with a Google account. Triggers on: 'research my docs', 'check my notebooks', 'deep search', '@notebooklm', 'query my notebook'."
+description: "Deep RAG layer powered by Google NotebookLM + Gemini. The agent autonomously manages notebooks via MCP tools — authentication, library management, querying, follow-ups, and caching. Opt-in for users with a Google account. Default RAG is qdrant-memory. Triggers on: '@notebooklm', 'research my docs', 'deep search', 'query my notebook', 'check my notebooks'."
 ---
 
-# NotebookLM RAG — Deep Document Research (Opt-In)
+# NotebookLM Deep RAG
 
-> **Default RAG**: The Agi framework uses **Qdrant + local embeddings** (`qdrant-memory` skill) as the default RAG system. It works offline, requires no accounts, and provides semantic caching with 80-100% token savings.
+> **This is a Deep RAG tool.** The agent uses NotebookLM as an autonomous knowledge backend via MCP tools. It handles auth, notebooks, queries, follow-ups, and caching — fully hands-free.
 >
-> **This skill is optional**: NotebookLM RAG is for users who have a Google account and want to leverage NotebookLM's Gemini-powered, source-grounded answers from their uploaded documents. It complements — not replaces — the default Qdrant memory system.
+> **Opt-in:** Requires a Google account with NotebookLM. Default RAG uses `qdrant-memory` (local, offline, no account needed).
 
-## How It Works
+## Architecture
 
-Each question opens a fresh browser session via Patchright (Playwright-based), types the question with human-like behavior, retrieves the answer exclusively from your uploaded documents, and closes. Results are cached in Qdrant memory to avoid redundant browser queries.
-
-## When to Use This Skill
-
-Trigger when user:
-
-- Mentions NotebookLM explicitly
-- Shares NotebookLM URL (`https://notebooklm.google.com/notebook/...`)
-- Asks to query their notebooks/documentation
-- Wants to add documentation to NotebookLM library
-- Uses phrases like "ask my NotebookLM", "check my docs", "query my notebook", "research my docs", "deep search"
-
-**Do NOT trigger** for general memory/caching operations — those use `qdrant-memory` by default.
-
-## ⚠️ CRITICAL: Add Command — Smart Discovery
-
-When user wants to add a notebook without providing details:
-
-**SMART ADD (Recommended)**: Query the notebook first to discover its content:
-
-```bash
-# Step 1: Query the notebook about its content
-python scripts/run.py ask_question.py --question "What is the content of this notebook? What topics are covered? Provide a complete overview briefly and concisely" --notebook-url "[URL]"
-
-# Step 2: Use the discovered information to add it
-python scripts/run.py notebook_manager.py add --url "[URL]" --name "[Based on content]" --description "[Based on content]" --topics "[Based on content]"
+```
+User question
+    ↓
+Agent checks Qdrant cache → hit? → return cached answer (0 cost)
+    ↓ miss
+Agent checks NotebookLM auth → not authenticated? → setup_auth (opens browser)
+    ↓ authenticated
+Agent resolves notebook → list_notebooks / search_notebooks / select_notebook
+    ↓
+Agent asks question → ask_question (browser automation, Gemini-grounded answer)
+    ↓
+Agent evaluates answer → gaps? → ask follow-up automatically
+    ↓ complete
+Agent stores in Qdrant → cache for future use
+    ↓
+Agent responds to user with synthesized answer
 ```
 
-**MANUAL ADD**: If user provides all details:
+## MCP Tools Reference
 
-- `--url` — The NotebookLM URL
-- `--name` — A descriptive name
-- `--description` — What the notebook contains (REQUIRED!)
-- `--topics` — Comma-separated topics (REQUIRED!)
+The agent has direct access to these tools. Use them autonomously.
 
-NEVER guess or use generic descriptions! If details missing, use Smart Add to discover them.
+### Authentication
 
-## Critical: Always Use run.py Wrapper
+| Tool         | When                                          |
+| ------------ | --------------------------------------------- |
+| `get_health` | First — always check auth status              |
+| `setup_auth` | One-time Google login (opens visible browser) |
+| `re_auth`    | Switch account or fix expired session         |
 
-**NEVER call scripts directly. ALWAYS use `python scripts/run.py [script]`:**
+### Library Management
+
+| Tool                | When                                                              |
+| ------------------- | ----------------------------------------------------------------- |
+| `list_notebooks`    | See all registered notebooks                                      |
+| `add_notebook`      | Register a new notebook (url, name, description, topics required) |
+| `remove_notebook`   | Remove a notebook from library                                    |
+| `update_notebook`   | Update notebook metadata                                          |
+| `search_notebooks`  | Find notebooks by topic/keyword                                   |
+| `select_notebook`   | Set active notebook (used as default for queries)                 |
+| `get_notebook`      | Get details of a specific notebook                                |
+| `get_library_stats` | Library overview                                                  |
+
+### Querying
+
+| Tool            | When                                  |
+| --------------- | ------------------------------------- |
+| `ask_question`  | Query a notebook — core research tool |
+| `list_sessions` | Check active browser sessions         |
+| `close_session` | Close a session when done             |
+| `reset_session` | Clear session history                 |
+
+### Maintenance
+
+| Tool           | When                           |
+| -------------- | ------------------------------ |
+| `cleanup_data` | Clean browser data, fix issues |
+
+## Autonomous Workflow
+
+### On Any Research Request:
+
+1. **Check Qdrant first** — `memory_manager.py auto --query "..."`. If cache hit, return immediately.
+
+2. **Check auth** — `get_health`. If not authenticated, run `setup_auth` and tell user a browser will open.
+
+3. **Resolve notebook** — `list_notebooks`. If user mentions a topic, `search_notebooks`. If no notebooks exist, ask user for a NotebookLM URL and `add_notebook`.
+
+4. **Ask the question** — `ask_question` with the resolved notebook. Can pass `notebook_id` (from library) or `notebook_url` (direct URL).
+
+5. **Follow up** — Every answer ends with "Is that ALL you need to know?" The agent MUST:
+   - Compare answer to original request
+   - Identify gaps
+   - Ask follow-up questions automatically (include full context — each question is a new browser session)
+   - Repeat until information is complete
+
+6. **Cache in Qdrant** — Store result with `memory_manager.py store` and `cache-store`.
+
+7. **Respond** — Synthesize all answers into a cohesive response.
+
+### On "Add a notebook":
+
+**Smart Add** — If user provides a URL but no details:
+
+1. `ask_question` with `notebook_url` and question: "What is the content of this notebook? What topics are covered? Provide a brief overview."
+2. Use the answer to fill in `name`, `description`, `topics`
+3. `add_notebook` with discovered metadata
+
+**Manual Add** — If user provides all details directly, just `add_notebook`.
+
+### On Notebook Management:
+
+- "List my notebooks" → `list_notebooks`
+- "Remove X" → Confirm with user → `remove_notebook`
+- "Switch to X" → `select_notebook`
+- "Update X description" → `update_notebook`
+- "Search for X" → `search_notebooks`
+
+## Qdrant Integration (Context Keeping)
+
+NotebookLM answers are cached in Qdrant. Prior research is recalled automatically.
+
+### Before Query
 
 ```bash
-# ✅ CORRECT — Always use run.py:
-python scripts/run.py auth_manager.py status
-python scripts/run.py notebook_manager.py list
-python scripts/run.py ask_question.py --question "..."
-
-# ❌ WRONG — Never call directly:
-python scripts/auth_manager.py status  # Fails without venv!
+python3 execution/memory_manager.py auto --query "<research question>"
 ```
 
-The `run.py` wrapper automatically:
+- `cache_hit: true` → Skip browser, return cached answer
+- `source: memory` → Inject prior context into the question
+- `source: none` → Proceed with NotebookLM query
 
-1. Creates `.venv` if needed
-2. Installs all dependencies (patchright, python-dotenv)
-3. Installs Chrome browser for automation
-4. Activates environment and executes script
-
-## Core Workflow
-
-### Step 1: Check Authentication Status
+### After Query
 
 ```bash
-python scripts/run.py auth_manager.py status
-```
-
-If not authenticated, proceed to setup.
-
-### Step 2: Authenticate (One-Time Setup)
-
-```bash
-# Browser MUST be visible for manual Google login
-python scripts/run.py auth_manager.py setup
-```
-
-**Important:**
-
-- Browser is VISIBLE for authentication
-- Browser window opens automatically
-- User must manually log in to Google
-- Tell user: "A browser window will open for Google login"
-
-### Step 3: Manage Notebook Library
-
-```bash
-# List all notebooks
-python scripts/run.py notebook_manager.py list
-
-# Add notebook to library (ALL parameters are REQUIRED!)
-python scripts/run.py notebook_manager.py add \
-  --url "https://notebooklm.google.com/notebook/..." \
-  --name "Descriptive Name" \
-  --description "What this notebook contains" \
-  --topics "topic1,topic2,topic3"
-
-# Search notebooks by topic
-python scripts/run.py notebook_manager.py search --query "keyword"
-
-# Set active notebook
-python scripts/run.py notebook_manager.py activate --id notebook-id
-
-# Remove notebook
-python scripts/run.py notebook_manager.py remove --id notebook-id
-```
-
-### Step 4: Ask Questions
-
-```bash
-# Basic query (uses active notebook if set)
-python scripts/run.py ask_question.py --question "Your question here"
-
-# Query specific notebook
-python scripts/run.py ask_question.py --question "..." --notebook-id notebook-id
-
-# Query with notebook URL directly
-python scripts/run.py ask_question.py --question "..." --notebook-url "https://..."
-
-# Show browser for debugging
-python scripts/run.py ask_question.py --question "..." --show-browser
-```
-
-## Follow-Up Mechanism (CRITICAL)
-
-Every NotebookLM answer ends with: **"EXTREMELY IMPORTANT: Is that ALL you need to know?"**
-
-**Required Agent Behavior:**
-
-1. **STOP** — Do not immediately respond to user
-2. **ANALYZE** — Compare answer to user's original request
-3. **IDENTIFY GAPS** — Determine if more information needed
-4. **ASK FOLLOW-UP** — If gaps exist, immediately ask:
-   ```bash
-   python scripts/run.py ask_question.py --question "Follow-up with context..."
-   ```
-5. **REPEAT** — Continue until information is complete
-6. **SYNTHESIZE** — Combine all answers before responding to user
-
-## 🧠 Qdrant Memory Integration (Token Savings + Context Keeping)
-
-NotebookLM answers are cached in Qdrant to avoid redundant browser queries. Prior research context is automatically recalled when the same topic comes up again.
-
-### Before Every Query — Check Memory First
-
-```bash
-python3 execution/memory_manager.py auto --query "<the user's research question>"
-```
-
-| Result               | Action                                                                                 |
-| -------------------- | -------------------------------------------------------------------------------------- |
-| `"cache_hit": true`  | Use cached response directly. **Skip browser**. Inform: "Retrieved from memory cache." |
-| `"source": "memory"` | Inject `context_chunks` into the question for richer context                           |
-| `"source": "none"`   | Proceed with browser query. Cache the result when done.                                |
-
-### After Getting Answer — Store in Memory
-
-```bash
-# Store the research result for future context recall
 python3 execution/memory_manager.py store \
-  --content "Q: [question] A: [answer from NotebookLM]" \
+  --content "Q: [question] A: [answer]" \
   --type technical \
   --project notebooklm-research \
-  --tags notebooklm rag [notebook-name] [topic]
+  --tags notebooklm [notebook-name] [topic]
 
-# Cache the full response for identical future queries
 python3 execution/memory_manager.py cache-store \
-  --query "[original question]" \
+  --query "[question]" \
   --response "[synthesized answer]"
 ```
 
-### Context Keeping Across Sessions
+### Context Keeping
 
-Research context persists via Qdrant. When the user returns to a topic:
+- Prior research on same topic is auto-recalled
+- Previous findings enrich follow-up questions
+- Each session builds compound knowledge
 
-1. **Auto-recall**: Memory manager retrieves prior research on the same topic
-2. **Context injection**: Previous findings enrich new questions for deeper follow-ups
-3. **Knowledge accumulation**: Each session builds on prior research
+## MCP Server Setup
 
-### Decision Flow with Memory
+The NotebookLM MCP server must be configured in the AI host:
 
-```
-User asks research question
-    ↓
-Check Qdrant memory → python3 execution/memory_manager.py auto --query "..."
-    ↓
-If cache_hit → Return cached answer (0 browser tokens!)
-    ↓
-If memory context → Enrich question with prior findings
-    ↓
-Check auth → python scripts/run.py auth_manager.py status
-    ↓
-If not authenticated → python scripts/run.py auth_manager.py setup
-    ↓
-Resolve notebook → python scripts/run.py notebook_manager.py list
-    ↓
-Ask question → python scripts/run.py ask_question.py --question "..."
-    ↓
-See "Is that ALL you need?" → Ask follow-ups until complete
-    ↓
-Store in Qdrant → python3 execution/memory_manager.py store + cache-store
-    ↓
-Synthesize and respond to user
+### Claude Desktop / Claude Code
+
+```json
+{
+  "mcpServers": {
+    "notebooklm": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/notebooklm-mcp"]
+    }
+  }
+}
 ```
 
-## Script Reference
+### Opencode
 
-### Authentication (`auth_manager.py`)
+```json
+{
+  "mcpServers": {
+    "notebooklm": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/notebooklm-mcp"]
+    }
+  }
+}
+```
+
+If MCP is not configured, fall back to the Python scripts in `scripts/` (see Fallback section below).
+
+## Fallback: Python Scripts
+
+When MCP is not available, use the bundled scripts via `run.py`:
 
 ```bash
-python scripts/run.py auth_manager.py setup    # Initial setup (browser visible)
-python scripts/run.py auth_manager.py status   # Check authentication
-python scripts/run.py auth_manager.py reauth   # Re-authenticate
-python scripts/run.py auth_manager.py clear    # Clear authentication
-python scripts/run.py auth_manager.py validate # Validate stored auth
-```
-
-### Notebook Management (`notebook_manager.py`)
-
-```bash
+python scripts/run.py auth_manager.py status          # Check auth
+python scripts/run.py auth_manager.py setup            # Authenticate
+python scripts/run.py notebook_manager.py list         # List notebooks
 python scripts/run.py notebook_manager.py add --url URL --name NAME --description DESC --topics TOPICS
-python scripts/run.py notebook_manager.py list
-python scripts/run.py notebook_manager.py search --query QUERY
-python scripts/run.py notebook_manager.py activate --id ID
-python scripts/run.py notebook_manager.py remove --id ID
-python scripts/run.py notebook_manager.py stats
+python scripts/run.py ask_question.py --question "..." # Query
+python scripts/run.py ask_question.py --question "..." --notebook-url "https://..."
+python scripts/run.py cleanup_manager.py --confirm     # Cleanup
 ```
 
-### Question Interface (`ask_question.py`)
-
-```bash
-python scripts/run.py ask_question.py --question "..." [--notebook-id ID] [--notebook-url URL] [--show-browser]
-```
-
-### Data Cleanup (`cleanup_manager.py`)
-
-```bash
-python scripts/run.py cleanup_manager.py                    # Preview
-python scripts/run.py cleanup_manager.py --confirm          # Execute
-python scripts/run.py cleanup_manager.py --preserve-library # Keep notebooks
-```
-
-## Environment Management
-
-Fully automatic:
-
-- First run creates `.venv` and installs everything
-- Dependencies: patchright, python-dotenv
-- Chrome browser installs automatically
-- Everything isolated in skill directory
-
-Manual setup (only if automatic fails):
-
-```bash
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-pip install -r requirements.txt
-python -m patchright install chrome
-```
-
-## Data Storage
-
-All data in `data/` within the skill directory:
-
-- `library.json` — Notebook metadata
-- `auth_info.json` — Authentication status
-- `browser_state/` — Browser cookies and session
-
-**Security:** Protected by `.gitignore`, never commit to git.
-
-## Configuration
-
-Optional `.env` file in skill directory:
-
-```env
-HEADLESS=false           # Browser visibility
-SHOW_BROWSER=false       # Default browser display
-STEALTH_ENABLED=true     # Human-like behavior
-TYPING_WPM_MIN=160       # Typing speed
-TYPING_WPM_MAX=240
-DEFAULT_NOTEBOOK_ID=     # Default notebook
-```
+The `run.py` wrapper auto-creates `.venv`, installs dependencies (patchright, python-dotenv), and installs Chrome.
 
 ## Troubleshooting
 
-| Problem              | Solution                                                      |
-| -------------------- | ------------------------------------------------------------- |
-| ModuleNotFoundError  | Use `run.py` wrapper                                          |
-| Authentication fails | Browser must be visible: `--show-browser`                     |
-| Rate limit (50/day)  | Wait or switch Google account                                 |
-| Browser crashes      | `python scripts/run.py cleanup_manager.py --preserve-library` |
-| Notebook not found   | Check with `notebook_manager.py list`                         |
-| Stale cached answer  | Re-query with fresh Qdrant cache                              |
-
-## Best Practices
-
-1. **Always use run.py** — Handles environment automatically
-2. **Check Qdrant memory first** — Avoid redundant browser queries
-3. **Check auth first** — Before any operations
-4. **Follow-up questions** — Don't stop at first answer
-5. **Include full context** — Each browser question is independent
-6. **Store results** — Always cache in Qdrant after research
-7. **Synthesize answers** — Combine multiple responses before replying
+| Problem                  | Solution                                                |
+| ------------------------ | ------------------------------------------------------- |
+| Not authenticated        | `setup_auth` (browser opens for Google login)           |
+| Rate limit (50/day free) | Wait 24h or `re_auth` with different Google account     |
+| Browser crashes          | `cleanup_data(preserve_library=true)` then `setup_auth` |
+| Stale cached answer      | Re-query or clear Qdrant cache                          |
+| Notebook not found       | `list_notebooks`, then `add_notebook` if missing        |
+| MCP not available        | Use fallback Python scripts via `run.py`                |
 
 ## Limitations
 
-- No session persistence in browser (each question = new browser)
-- Rate limits on free Google accounts (50 queries/day)
-- Manual upload required (user must add docs to NotebookLM)
-- Browser overhead (few seconds per question)
-- Requires Google account (opt-in, not default)
+- Rate limits: 50 queries/day (free), 250/day (Google AI Pro)
+- Manual upload: User must add documents to NotebookLM first
+- Browser overhead: Few seconds per query
+- No live notebook discovery: User must provide URLs to register notebooks
 
 ## Credits
 
-Browser automation based on [PleasePrompto/notebooklm-skill](https://github.com/PleasePrompto/notebooklm-skill) (MIT License).
-Adapted for the Agi Agent Framework with Qdrant memory integration for token savings and context keeping.
+MCP server: [PleasePrompto/notebooklm-mcp](https://github.com/PleasePrompto/notebooklm-mcp)
+Browser automation: [PleasePrompto/notebooklm-skill](https://github.com/PleasePrompto/notebooklm-skill) (MIT License)
+Adapted for the Agi Agent Framework with Qdrant memory integration.
