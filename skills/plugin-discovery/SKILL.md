@@ -1,12 +1,32 @@
 ---
 name: plugin-discovery
 description: Platform-adaptive plugin and extension auto-discovery. Detects the runtime environment (Claude Code, Gemini, Opencode, Kiro) and recommends or installs relevant plugins, extensions, MCP servers, and marketplace integrations. Use when setting up a project, onboarding, or when the user asks about available tools/plugins.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Plugin & Extension Auto-Discovery
 
 > Detect the runtime platform and surface the best available extensions
+
+## Quick Start — One-Shot Setup
+
+Run the setup wizard to auto-detect your platform and configure everything:
+
+```bash
+# Interactive (asks one confirmation question)
+python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
+
+# Auto-apply everything
+python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir . --auto
+
+# Preview without changes
+python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir . --dry-run
+
+# JSON output (for agent consumption)
+python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir . --json
+```
+
+> **Trigger**: Also available via `/setup` workflow command.
 
 ## Overview
 
