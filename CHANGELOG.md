@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2026-02-09
+
+### Added
+
+- **Auto Python Virtual Environment**: `npx init` now auto-creates `.venv/` and installs all dependencies — eliminates the `externally-managed-environment` error on macOS.
+- **Auto Platform Setup**: `npx init` runs `platform_setup.py --auto` after venv creation, pre-configuring platform-specific settings (`.claude/settings.json`, `.claude/skills/`) and showing remaining manual steps.
+- **Activation Reference Table** (README): Comprehensive reference with 4 sections — 14 slash commands, 8 `@agent` mentions, 18 natural language trigger keyword categories, and 6 memory system commands.
+- **Semantic Memory Section** (README): Setup guide with Qdrant + Ollama commands, token savings table (90-100% savings), and usage examples.
+- **`pyright`** added to `requirements.txt` for Python type checking out of the box.
+
+### Changed
+
+- **`requirements.txt`**: Expanded from 6 to 12 packages across 5 organized sections (Core, Memory, Embeddings, Cloud, Testing & Auditing). Every dependency is documented with inline comments.
+- **`bin/init.js`**: Added `setupPythonEnv()` and `runPlatformSetup()` functions. Uses `child_process.execSync` for venv creation and `pip install`. Cross-platform support (macOS/Linux/Windows paths).
+- **README Prerequisites**: No longer tells users to `pip install` manually — now references auto-created `.venv` with activation command.
+- **Post-install message**: Step 1 is now "Activate the Python environment" instead of "Install Python dependencies."
+- **Templates synced**: `requirements.txt`, `README.md` copied to `templates/base/` for NPX distribution.
+- **Documentation SKILL.md**: `Last Updated` timestamp refreshed to 2026-02-09.
+- **SKILLS_CATALOG.md**: Regenerated with 56 skills.
+
+### Fixed
+
+- **`ModuleNotFoundError: No module named 'yaml'`**: `pyyaml` was missing from `requirements.txt` — `system_checkup.py` crashed on fresh installs. Now included in core dependencies.
+- **Missing dependencies**: `gitpython`, `ollama`, `sentence-transformers`, `playwright` were used by skills but not listed in `requirements.txt`. All now included.
+- **`--auto-apply` flag**: `init.js` called `platform_setup.py` with non-existent `--auto-apply` flag — fixed to use existing `--auto` flag.
+
 ## [1.2.2] - 2026-02-09
 
 ### Added
