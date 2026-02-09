@@ -84,8 +84,8 @@ Executable code (Python/Bash/etc.) for tasks that require deterministic reliabil
 Documentation and reference material intended to be loaded as needed into context to inform the agent's process and thinking.
 
 - **When to include**: For documentation that the agent should reference while working
-- **Examples**: `references/finance.md` for financial schemas, `references/mnda.md` for company NDA template, `references/policies.md` for company policies, `references/api_docs.md` for API specifications
-- **Use cases**: Database schemas, API documentation, domain knowledge, company policies, detailed workflow guides
+- **Examples**: `references/finance.md` for financial schemas, `references/api_docs.md` for API specifications, `references/style_guide.md` for coding standards
+- **Use cases**: Database schemas, API documentation, domain knowledge, style guides, detailed workflow guides
 - **Benefits**: Keeps SKILL.md lean, loaded only when the agent determines it's needed
 - **Best practice**: If files are large (>10k words), include grep search patterns in SKILL.md
 - **Avoid duplication**: Information should live in either SKILL.md or references files, not both. Prefer references files for detailed information unless it's truly core to the skill—this keeps SKILL.md lean while making information discoverable without hogging the context window. Keep only essential procedural instructions and workflow guidance in SKILL.md; move detailed reference material, schemas, and examples to references files.

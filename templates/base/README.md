@@ -275,26 +275,25 @@ Use these keywords, commands, and phrases to trigger specific capabilities:
 
 ### Skill Trigger Keywords (Natural Language)
 
-| Category           | Trigger Words / Phrases                                                | Skill Activated                     |
-| ------------------ | ---------------------------------------------------------------------- | ----------------------------------- |
-| **Memory**         | "don't use cache", "no cache", "skip memory", "fresh"                  | Memory opt-out                      |
-| **Research**       | "research my docs", "check my notebooks", "deep search", "@notebooklm" | `notebooklm-rag`                    |
-| **Documentation**  | "update docs", "regenerate catalog", "sync documentation"              | `documentation`                     |
-| **Quality**        | "lint", "format", "check", "validate", "static analysis"               | `lint-and-validate`                 |
-| **Testing**        | "write tests", "run tests", "TDD", "test coverage"                     | `testing-patterns` / `tdd-workflow` |
-| **Architecture**   | "design system", "architecture decision", "ADR", "trade-off"           | `architecture`                      |
-| **Security**       | "security scan", "vulnerability", "audit", "OWASP"                     | `red-team-tactics`                  |
-| **Performance**    | "lighthouse", "bundle size", "core web vitals", "profiling"            | `performance-profiling`             |
-| **Design**         | "design UI", "color scheme", "typography", "layout"                    | `frontend-design`                   |
-| **Deployment**     | "deploy", "rollback", "release", "CI/CD"                               | `deployment-procedures`             |
-| **API**            | "REST API", "GraphQL", "tRPC", "API design"                            | `api-patterns`                      |
-| **Database**       | "schema design", "migration", "query optimization"                     | `database-design`                   |
-| **Planning**       | "plan this", "break down", "task list", "requirements"                 | `plan-writing`                      |
-| **Brainstorming**  | "explore options", "what are the approaches", "pros and cons"          | `brainstorming`                     |
-| **Code Review**    | "review this", "code quality", "best practices"                        | `code-review-checklist`             |
-| **i18n**           | "translate", "localization", "RTL", "locale"                           | `i18n-localization`                 |
-| **AWS**            | "terraform", "EKS", "Lambda", "S3", "CloudFront"                       | `aws` / `aws-terraform`             |
-| **Infrastructure** | "Consul", "service mesh", "OpenSearch"                                 | `consul` / `opensearch`             |
+| Category          | Trigger Words / Phrases                                                | Skill Activated                     |
+| ----------------- | ---------------------------------------------------------------------- | ----------------------------------- |
+| **Memory**        | "don't use cache", "no cache", "skip memory", "fresh"                  | Memory opt-out                      |
+| **Research**      | "research my docs", "check my notebooks", "deep search", "@notebooklm" | `notebooklm-rag`                    |
+| **Documentation** | "update docs", "regenerate catalog", "sync documentation"              | `documentation`                     |
+| **Quality**       | "lint", "format", "check", "validate", "static analysis"               | `lint-and-validate`                 |
+| **Testing**       | "write tests", "run tests", "TDD", "test coverage"                     | `testing-patterns` / `tdd-workflow` |
+| **Architecture**  | "design system", "architecture decision", "ADR", "trade-off"           | `architecture`                      |
+| **Security**      | "security scan", "vulnerability", "audit", "OWASP"                     | `red-team-tactics`                  |
+| **Performance**   | "lighthouse", "bundle size", "core web vitals", "profiling"            | `performance-profiling`             |
+| **Design**        | "design UI", "color scheme", "typography", "layout"                    | `frontend-design`                   |
+| **Deployment**    | "deploy", "rollback", "release", "CI/CD"                               | `deployment-procedures`             |
+| **API**           | "REST API", "GraphQL", "tRPC", "API design"                            | `api-patterns`                      |
+| **Database**      | "schema design", "migration", "query optimization"                     | `database-design`                   |
+| **Planning**      | "plan this", "break down", "task list", "requirements"                 | `plan-writing`                      |
+| **Brainstorming** | "explore options", "what are the approaches", "pros and cons"          | `brainstorming`                     |
+| **Code Review**   | "review this", "code quality", "best practices"                        | `code-review-checklist`             |
+| **i18n**          | "translate", "localization", "RTL", "locale"                           | `i18n-localization`                 |
+| **AWS**           | "terraform", "EKS", "Lambda", "S3", "CloudFront"                       | `aws` / `aws-terraform`             |
 
 ### Memory System Commands
 

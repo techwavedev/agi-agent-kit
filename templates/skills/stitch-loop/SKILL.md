@@ -204,7 +204,7 @@ The loop can be driven by different orchestration layers:
 | ----------------- | ------------------------------------------------------ |
 | **CI/CD**         | GitHub Actions triggers on `next-prompt.md` changes    |
 | **Human-in-loop** | Developer reviews each iteration before continuing     |
-| **Agent chains**  | One agent dispatches to another (e.g., Jules API)      |
+| **Agent chains**  | One agent dispatches to another (e.g., CI/CD pipeline) |
 | **Manual**        | Developer runs the agent repeatedly with the same repo |
 
 The skill is orchestration-agnostic — focus on the pattern, not the trigger mechanism.
