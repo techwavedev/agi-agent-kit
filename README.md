@@ -234,6 +234,78 @@ python3 skill-creator/scripts/update_catalog.py --skills-dir skills/
 
 ---
 
+## 🎯 Activation Reference
+
+Use these keywords, commands, and phrases to trigger specific capabilities:
+
+### Slash Commands (Workflows)
+
+| Command         | What It Does                                     |
+| --------------- | ------------------------------------------------ |
+| `/setup`        | Auto-detect platform and configure environment   |
+| `/setup-memory` | Initialize Qdrant + Ollama memory system         |
+| `/create`       | Start interactive app builder dialogue           |
+| `/plan`         | Create a structured project plan (no code)       |
+| `/enhance`      | Add or update features in existing app           |
+| `/debug`        | Activate systematic debugging mode               |
+| `/test`         | Generate and run tests                           |
+| `/deploy`       | Pre-flight checks + deployment                   |
+| `/orchestrate`  | Multi-agent coordination for complex tasks       |
+| `/brainstorm`   | Structured brainstorming with multiple options   |
+| `/preview`      | Start/stop local dev server                      |
+| `/status`       | Show project progress and status board           |
+| `/update`       | Update AGI Agent Kit to latest version           |
+| `/checkup`      | Verify agents, workflows, skills, and core files |
+
+### Agent Mentions (`@agent`)
+
+| Mention                | Specialist              | When To Use                               |
+| ---------------------- | ----------------------- | ----------------------------------------- |
+| `@orchestrator`        | Multi-agent coordinator | Complex multi-domain tasks                |
+| `@project-planner`     | Planning specialist     | Roadmaps, task breakdowns, phase planning |
+| `@frontend-specialist` | UI/UX architect         | Web interfaces, React, Next.js            |
+| `@mobile-developer`    | Mobile specialist       | iOS, Android, React Native, Flutter       |
+| `@backend-specialist`  | API/DB engineer         | Server-side, databases, APIs              |
+| `@security-auditor`    | Security expert         | Vulnerability scanning, audits, hardening |
+| `@debugger`            | Debug specialist        | Complex bug investigation                 |
+| `@game-developer`      | Game dev specialist     | 2D/3D games, multiplayer, VR/AR           |
+
+### Skill Trigger Keywords (Natural Language)
+
+| Category           | Trigger Words / Phrases                                                | Skill Activated                     |
+| ------------------ | ---------------------------------------------------------------------- | ----------------------------------- |
+| **Memory**         | "don't use cache", "no cache", "skip memory", "fresh"                  | Memory opt-out                      |
+| **Research**       | "research my docs", "check my notebooks", "deep search", "@notebooklm" | `notebooklm-rag`                    |
+| **Documentation**  | "update docs", "regenerate catalog", "sync documentation"              | `documentation`                     |
+| **Quality**        | "lint", "format", "check", "validate", "static analysis"               | `lint-and-validate`                 |
+| **Testing**        | "write tests", "run tests", "TDD", "test coverage"                     | `testing-patterns` / `tdd-workflow` |
+| **Architecture**   | "design system", "architecture decision", "ADR", "trade-off"           | `architecture`                      |
+| **Security**       | "security scan", "vulnerability", "audit", "OWASP"                     | `red-team-tactics`                  |
+| **Performance**    | "lighthouse", "bundle size", "core web vitals", "profiling"            | `performance-profiling`             |
+| **Design**         | "design UI", "color scheme", "typography", "layout"                    | `frontend-design`                   |
+| **Deployment**     | "deploy", "rollback", "release", "CI/CD"                               | `deployment-procedures`             |
+| **API**            | "REST API", "GraphQL", "tRPC", "API design"                            | `api-patterns`                      |
+| **Database**       | "schema design", "migration", "query optimization"                     | `database-design`                   |
+| **Planning**       | "plan this", "break down", "task list", "requirements"                 | `plan-writing`                      |
+| **Brainstorming**  | "explore options", "what are the approaches", "pros and cons"          | `brainstorming`                     |
+| **Code Review**    | "review this", "code quality", "best practices"                        | `code-review-checklist`             |
+| **i18n**           | "translate", "localization", "RTL", "locale"                           | `i18n-localization`                 |
+| **AWS**            | "terraform", "EKS", "Lambda", "S3", "CloudFront"                       | `aws` / `aws-terraform`             |
+| **Infrastructure** | "Consul", "service mesh", "OpenSearch"                                 | `consul` / `opensearch`             |
+
+### Memory System Commands
+
+| What You Want                | Command / Phrase                                                                 |
+| ---------------------------- | -------------------------------------------------------------------------------- |
+| **Boot memory**              | `python3 execution/session_boot.py --auto-fix`                                   |
+| **Check before a task**      | `python3 execution/memory_manager.py auto --query "..."`                         |
+| **Store a decision**         | `python3 execution/memory_manager.py store --content "..." --type decision`      |
+| **Cache a response**         | `python3 execution/memory_manager.py cache-store --query "..." --response "..."` |
+| **Health check**             | `python3 execution/memory_manager.py health`                                     |
+| **Skip cache for this task** | Say "fresh", "no cache", or "skip memory" in your prompt                         |
+
+---
+
 ## 📚 Documentation
 
 - **[AGENTS.md](./AGENTS.md)** - Complete architecture and operating principles
