@@ -123,7 +123,6 @@ Claude Code provides an official marketplace with pre-built plugins. To set up:
 | Plugin     | What It Does              | Install                                           |
 | ---------- | ------------------------- | ------------------------------------------------- |
 | `github`   | GitHub issues, PRs, repos | `/plugin install github@anthropics-claude-code`   |
-| `gitlab`   | GitLab integration        | `/plugin install gitlab@anthropics-claude-code`   |
 | `linear`   | Issue tracking            | `/plugin install linear@anthropics-claude-code`   |
 | `slack`    | Slack messaging           | `/plugin install slack@anthropics-claude-code`    |
 | `sentry`   | Error monitoring          | `/plugin install sentry@anthropics-claude-code`   |
