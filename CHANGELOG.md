@@ -49,6 +49,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Proactive feature recommendations: suggests Agent Teams, plugins, Powers, Autonomous Agent when not enabled.
   - Multi-domain task routing adapts to best available parallelism strategy.
 
+- **Memory System Integration** (`session_boot.py` — NEW SCRIPT):
+  - `execution/session_boot.py` — Single entry point for session initialization. Checks Qdrant, Ollama, embedding models, and collections in one command. `--auto-fix` flag auto-pulls missing models and creates collections.
+  - **Session Boot Protocol** added as the **first section** in `AGENTS.md` — agents run `python3 execution/session_boot.py --auto-fix` before any work begins.
+  - `AGENTS.md` Memory-First section rewritten with explicit CLI commands: `memory_manager.py auto`, `store`, `cache-store` with decision tree table.
+  - `platform_setup.py` now detects full memory system: Qdrant status, Ollama status, embedding model presence, collection existence, point counts.
+  - Memory recommendations engine: suggests starting Qdrant/Ollama, pulling embedding model, or initializing collections when issues are detected.
+  - Memory report section (🧠) in platform setup output shows live system status.
+
 ### Changed
 
 - **`parallel-agents`**: Rewritten from v1.0 to v2.0 — now platform-adaptive with 4 orchestration strategies instead of 1.
@@ -57,6 +65,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`package.json`**: Added `kiro`, `opencode`, and `platform-adaptive` keywords for NPM discoverability.
 - **Templates**: All modified skills (`parallel-agents`, `intelligent-routing`, `plugin-discovery`) and scripts (`platform_setup.py`) synced to `templates/skills/knowledge/` for NPX distribution.
 - **SKILLS_CATALOG.md**: Regenerated with 56 skills, including the new `plugin-discovery` skill.
+- **`bin/init.js`**: NPX init now copies `execution/` scripts (session_boot.py, session_init.py, memory_manager.py) and `directives/` (memory_integration.md) to scaffolded projects. Update function also refreshes these files.
+- **Post-install message**: Now shows `session_boot.py --auto-fix` as step 3 after installation.
+- **`/setup-memory` workflow**: Fixed stale references, now uses correct scripts (session_init.py, memory_manager.py).
+- **`/setup` workflow**: Added memory system troubleshooting section with Docker/Ollama/collection init commands.
+
+### Fixed
+
+- **Stale script references**: `/setup-memory` workflow referenced non-existent `init_memory_system.py` and `memory_middleware.py` — now correctly uses `session_init.py` and `memory_manager.py`.
+- **Memory system unused**: Despite being installed, no agent instructions explicitly told agents WHEN to call the memory scripts. Now enforced via Session Boot Protocol at top of AGENTS.md.
+- **`platform_setup.py` missing memory**: Setup wizard reported platform features but ignored Qdrant/Ollama status — now detects and recommends fixes.
+- **`info` action missing**: Platform setup wizard didn't handle informational recommendations (e.g., "collections are empty") — added `info` action type with ℹ️ status icon.
+- **Templates missing execution scripts**: NPX init created the `execution/` directory but didn't copy any scripts into it — now ships session_boot.py, session_init.py, and memory_manager.py.
 
 ## [1.1.7] - 2026-02-07
 

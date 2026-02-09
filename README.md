@@ -33,6 +33,14 @@ python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
 
 This detects your platform, scans the project stack, and configures everything with a single confirmation.
 
+Then **boot the memory system** for automatic token savings:
+
+```bash
+python3 execution/session_boot.py --auto-fix
+```
+
+This checks Qdrant, Ollama, embedding models, and collections — auto-fixing any issues.
+
 ---
 
 ## ✨ Key Features
@@ -91,7 +99,11 @@ your-project/
 │   ├── self-update/       # Framework self-update capability
 │   └── ...                # 48 more specialized skills
 ├── directives/            # SOPs in Markdown
+│   └── memory_integration.md  # Memory protocol reference
 ├── execution/             # Deterministic Python scripts
+│   ├── session_boot.py    # Session startup (Qdrant + Ollama check)
+│   ├── session_init.py    # Collection initializer
+│   └── memory_manager.py  # Store/retrieve/cache operations
 ├── skill-creator/         # Tools to create new skills
 └── .agent/                # (full pack) Agents, workflows, rules
     └── workflows/         # /setup, /deploy, /test, /debug, etc.
@@ -118,6 +130,45 @@ The system operates on three layers:
 ```
 
 **Why?** LLMs are probabilistic. 90% accuracy per step = 59% success over 5 steps. By pushing complexity into deterministic scripts, we achieve reliable execution.
+
+---
+
+## 🧠 Semantic Memory
+
+Built-in Qdrant-powered memory with automatic token savings:
+
+| Scenario              | Without Memory | With Memory | Savings  |
+| --------------------- | -------------- | ----------- | -------- |
+| Repeated question     | ~2000 tokens   | 0 tokens    | **100%** |
+| Similar architecture  | ~5000 tokens   | ~500 tokens | **90%**  |
+| Past error resolution | ~3000 tokens   | ~300 tokens | **90%**  |
+
+**Setup** (requires [Qdrant](https://qdrant.tech/) + [Ollama](https://ollama.com/)):
+
+```bash
+# Start Qdrant
+docker run -d -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant
+
+# Start Ollama + pull embedding model
+ollama serve &
+ollama pull nomic-embed-text
+
+# Boot memory system (auto-creates collections)
+python3 execution/session_boot.py --auto-fix
+```
+
+Agents automatically run `session_boot.py` at session start (first instruction in `AGENTS.md`). Memory operations:
+
+```bash
+# Auto-query (check cache + retrieve context)
+python3 execution/memory_manager.py auto --query "your task summary"
+
+# Store a decision
+python3 execution/memory_manager.py store --content "what was decided" --type decision
+
+# Health check
+python3 execution/memory_manager.py health
+```
 
 ---
 
@@ -155,6 +206,12 @@ python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
 npx @techwavedev/agi-agent-kit@latest init --pack=full
 # or use the built-in skill:
 python3 skills/self-update/scripts/update_kit.py
+```
+
+### Boot memory system
+
+```bash
+python3 execution/session_boot.py --auto-fix
 ```
 
 ### System health check
