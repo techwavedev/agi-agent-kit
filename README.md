@@ -174,14 +174,17 @@ python3 execution/memory_manager.py health
 
 ## ⚡ Prerequisites
 
+The `npx init` command automatically creates a `.venv` and installs all dependencies. Just activate it:
+
 ```bash
-pip install requests beautifulsoup4 html2text lxml qdrant-client
+source .venv/bin/activate   # macOS/Linux
+# .venv\Scripts\activate    # Windows
 ```
 
-Optional (for semantic memory with local embeddings):
+If you need to reinstall or update dependencies:
 
 ```bash
-pip install ollama sentence-transformers
+.venv/bin/pip install -r requirements.txt
 ```
 
 ---

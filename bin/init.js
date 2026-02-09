@@ -19,6 +19,7 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
+const { execSync } = require('child_process');
 
 // Color utilities for terminal output
 const colors = {
@@ -322,6 +323,80 @@ function copyAgentStructure(targetPath, templatesPath) {
   }
 }
 
+// Setup Python virtual environment and install dependencies
+function setupPythonEnv(targetPath) {
+  log.header('Setting up Python environment...');
+  
+  const venvPath = path.join(targetPath, '.venv');
+  const requirementsPath = path.join(targetPath, 'requirements.txt');
+  
+  // Skip if venv already exists
+  if (fs.existsSync(venvPath)) {
+    log.info('Python .venv already exists, skipping creation');
+    return;
+  }
+  
+  // Check if requirements.txt exists
+  if (!fs.existsSync(requirementsPath)) {
+    log.warn('requirements.txt not found, skipping Python setup');
+    return;
+  }
+  
+  // Detect Python
+  let pythonCmd = null;
+  for (const cmd of ['python3', 'python']) {
+    try {
+      execSync(`${cmd} --version`, { stdio: 'pipe' });
+      pythonCmd = cmd;
+      break;
+    } catch (e) {
+      // try next
+    }
+  }
+  
+  if (!pythonCmd) {
+    log.warn('Python not found. Install Python 3.8+ and run:');
+    console.log(`     ${colors.yellow}python3 -m venv .venv${colors.reset}`);
+    console.log(`     ${colors.yellow}source .venv/bin/activate${colors.reset}`);
+    console.log(`     ${colors.yellow}pip install -r requirements.txt${colors.reset}`);
+    return;
+  }
+  
+  // Create venv
+  try {
+    log.info(`Creating .venv with ${pythonCmd}...`);
+    execSync(`${pythonCmd} -m venv "${venvPath}"`, { stdio: 'pipe' });
+    log.success('Created .venv/');
+  } catch (e) {
+    log.warn(`Failed to create venv: ${e.message}`);
+    console.log(`     Try manually: ${colors.yellow}${pythonCmd} -m venv .venv${colors.reset}`);
+    return;
+  }
+  
+  // Determine pip path (cross-platform)
+  const isWindows = process.platform === 'win32';
+  const pipPath = isWindows
+    ? path.join(venvPath, 'Scripts', 'pip')
+    : path.join(venvPath, 'bin', 'pip');
+  
+  // Install dependencies
+  try {
+    log.info('Installing Python dependencies...');
+    execSync(`"${pipPath}" install -r "${requirementsPath}"`, {
+      stdio: 'pipe',
+      timeout: 300000 // 5 min timeout
+    });
+    log.success('All Python dependencies installed');
+  } catch (e) {
+    log.warn('Some dependencies may have failed to install');
+    console.log(`     Run manually: ${colors.yellow}${isWindows ? '.venv\\Scripts\\pip' : '.venv/bin/pip'} install -r requirements.txt${colors.reset}`);
+  }
+  
+  // Show activation hint
+  const activateCmd = isWindows ? '.venv\\Scripts\\activate' : 'source .venv/bin/activate';
+  log.info(`Activate with: ${colors.yellow}${activateCmd}${colors.reset}`);
+}
+
 // Main init function
 async function init(options) {
   log.header('🚀 AGI Agent Kit Initializer');
@@ -366,13 +441,16 @@ async function init(options) {
     copyAgentStructure(options.path, templatesPath);
   }
   
+  // Setup Python environment
+  setupPythonEnv(options.path);
+  
   // Final message
   log.header('✨ Installation complete!');
   console.log(`
 Next steps:
-  1. Review ${colors.cyan}AGENTS.md${colors.reset} for architecture overview
-  2. Install Python dependencies:
-     ${colors.yellow}pip install requests beautifulsoup4 html2text lxml qdrant-client${colors.reset}
+  1. Activate the Python environment:
+     ${colors.yellow}source .venv/bin/activate${colors.reset}
+  2. Review ${colors.cyan}AGENTS.md${colors.reset} for architecture overview
   3. Boot the memory system (optional, requires Qdrant + Ollama):
      ${colors.yellow}python3 execution/session_boot.py --auto-fix${colors.reset}
   4. Check ${colors.cyan}skills/${colors.reset} for available capabilities
