@@ -13,10 +13,10 @@ This workflow initializes the full memory integration for automatic token optimi
 1. Start Qdrant (if not running)
 
 ```bash
-docker run -d --name qdrant -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant
+docker run -d --name qdrant -p 6333:6333 -p 6334:6334 -v qdrant_storage:/qdrant/storage qdrant/qdrant
 ```
 
-2. Start Ollama embedding server
+2. Start Ollama and pull embedding model
 
 ```bash
 ollama serve &
@@ -25,38 +25,50 @@ ollama pull nomic-embed-text
 
 ## Initialize Collections
 
-3. Run the memory system initialization
+3. Run session initialization (creates agent_memory + semantic_cache with 768d vectors)
 
 ```bash
-python3 execution/init_memory_system.py --dimension 768
-```
-
-4. Verify the middleware is working
-
-```bash
-python3 execution/memory_middleware.py --test
+python3 execution/session_init.py
 ```
 
 ## Validation
 
-5. Check Qdrant has the collections
+4. Verify health (Qdrant + Ollama + collections)
 
 ```bash
-curl -s http://localhost:6333/collections | jq '.result.collections[].name'
+python3 execution/memory_manager.py health
 ```
 
-Expected output:
+Expected JSON output should show:
 
-- semantic_cache
-- agent_memory
+- `"qdrant": "ok"`
+- `"embeddings": {"status": "ok"}`
+- `"missing_collections": []`
+- `"ready": true`
+
+5. Test store + retrieve cycle
+
+```bash
+python3 execution/memory_manager.py store --content "Test memory: setup verified" --type technical --project test
+python3 execution/memory_manager.py auto --query "setup verified"
+```
 
 ## Usage
 
-Memory is now **automatic** for all operations:
+Memory is **automatic** when the agent follows the protocol in `directives/memory_integration.md`:
 
-- **Cache hits**: Similar queries return cached responses (100% token savings)
-- **Context retrieval**: Relevant memories injected into prompts (80-95% reduction)
-- **Auto-storage**: Decisions, code patterns, and errors saved automatically
+- **Session start**: Agent runs `python3 execution/session_init.py` (once per session)
+- **Before complex tasks**: Agent runs `python3 execution/memory_manager.py auto --query "<summary>"`
+- **After key decisions**: Agent runs `python3 execution/memory_manager.py store --content "..." --type decision`
+- **After completing tasks**: Agent runs `python3 execution/memory_manager.py cache-store --query "..." --response "..."`
+
+### Token Savings
+
+| Scenario              | Without Memory | With Memory | Savings |
+| --------------------- | -------------- | ----------- | ------- |
+| Repeated question     | ~2000 tokens   | 0 tokens    | 100%    |
+| Similar architecture  | ~5000 tokens   | ~500 tokens | 90%     |
+| Past error resolution | ~3000 tokens   | ~300 tokens | 90%     |
 
 ### Opt-out
 
@@ -69,8 +81,13 @@ To skip memory for a specific query, use:
 
 ## Monitoring
 
-View metrics with:
-
 ```bash
-python3 execution/memory_middleware.py --metrics
+# Health check
+python3 execution/memory_manager.py health
+
+# List stored memories
+python3 execution/memory_manager.py list --limit 20
+
+# Clear stale cache (older than 7 days)
+python3 execution/memory_manager.py cache-clear --older-than 7
 ```
