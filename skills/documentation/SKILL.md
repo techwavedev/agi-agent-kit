@@ -7,7 +7,7 @@ description: "Automated documentation maintenance and generation skill. Triggers
 
 Intelligent documentation maintenance agent that automatically detects code changes across skills and the repository, then updates, upgrades, or generates documentation to keep everything synchronized.
 
-> **Last Updated:** 2026-02-07
+> **Last Updated:** 2026-02-09
 
 ---
 
