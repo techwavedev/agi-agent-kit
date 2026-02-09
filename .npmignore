@@ -12,3 +12,6 @@ node_modules/
 *.skill
 scripts/
 verify_public_release.py
+__pycache__/
+*.pyc
+data/
