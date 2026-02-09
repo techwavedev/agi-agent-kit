@@ -38,5 +38,4 @@ jobs:
       # 2. Under "Publishing access", add this repo as a trusted publisher
       - name: Publish to NPM with Provenance
         run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
