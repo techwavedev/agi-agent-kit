@@ -397,6 +397,46 @@ function setupPythonEnv(targetPath) {
   log.info(`Activate with: ${colors.yellow}${activateCmd}${colors.reset}`);
 }
 
+// Auto-run platform setup wizard to pre-configure environment
+function runPlatformSetup(targetPath) {
+  const setupScript = path.join(targetPath, 'skills', 'plugin-discovery', 'scripts', 'platform_setup.py');
+  
+  if (!fs.existsSync(setupScript)) {
+    return; // Skill not installed (e.g. core pack)
+  }
+  
+  log.header('Running platform setup wizard...');
+  
+  // Use venv python if available, otherwise system python
+  const isWindows = process.platform === 'win32';
+  const venvPython = isWindows
+    ? path.join(targetPath, '.venv', 'Scripts', 'python')
+    : path.join(targetPath, '.venv', 'bin', 'python3');
+  const pythonCmd = fs.existsSync(venvPython) ? `"${venvPython}"` : 'python3';
+  
+  try {
+    const output = execSync(
+      `${pythonCmd} "${setupScript}" --project-dir "${targetPath}" --auto-apply`,
+      { stdio: 'pipe', timeout: 30000 }
+    ).toString();
+    
+    // Show output
+    console.log(output);
+  } catch (e) {
+    // If --auto-apply flag is not supported, try without it
+    try {
+      const output = execSync(
+        `${pythonCmd} "${setupScript}" --project-dir "${targetPath}"`,
+        { stdio: 'pipe', timeout: 30000, input: 'y\n' }
+      ).toString();
+      console.log(output);
+    } catch (e2) {
+      log.warn('Platform setup wizard could not auto-run');
+      console.log(`     Run manually: ${colors.yellow}python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .${colors.reset}`);
+    }
+  }
+}
+
 // Main init function
 async function init(options) {
   log.header('🚀 AGI Agent Kit Initializer');
@@ -443,6 +483,9 @@ async function init(options) {
   
   // Setup Python environment
   setupPythonEnv(options.path);
+  
+  // Auto-run platform setup wizard
+  runPlatformSetup(options.path);
   
   // Final message
   log.header('✨ Installation complete!');
