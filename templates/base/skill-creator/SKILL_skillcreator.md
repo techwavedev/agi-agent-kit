@@ -293,7 +293,7 @@ When editing the (newly-generated or existing) skill, remember that the skill is
 
 #### Learn Proven Design Patterns
 
-Consult these helpful guides based on your skill's needs:
+Review these helpful guides based on your skill's needs:
 
 - **Multi-step processes**: See references/workflows.md for sequential workflows and conditional logic
 - **Specific output formats or quality standards**: See references/output-patterns.md for template and example patterns

@@ -73,7 +73,7 @@ Parse `next-prompt.md` to extract:
 - **Page name** from the `page` frontmatter field
 - **Prompt content** from the markdown body
 
-### Step 2: Consult Context Files
+### Step 2: Check Context Files
 
 Before generating, read these files:
 
@@ -82,7 +82,7 @@ Before generating, read these files:
 | `SITE.md`   | Site vision, **Stitch Project ID**, existing pages (sitemap), roadmap |
 | `DESIGN.md` | Required visual style for Stitch prompts                              |
 
-### Step 2.5: Consult Memory (Optional)
+### Step 2.5: Check Memory (Optional)
 
 If the **Qdrant Memory Skill** is available, retrieve relevant context to ensure consistency:
 
