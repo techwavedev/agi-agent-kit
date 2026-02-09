@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-02-07 23:40
+> **Auto-generated Documentation** — Last updated: 2026-02-09 12:46
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -52,6 +52,7 @@ This document provides comprehensive documentation on available skills, how to u
   - [Pdf Reader](#pdf-reader)
   - [Performance Profiling](#performance-profiling)
   - [Plan Writing](#plan-writing)
+  - [Plugin Discovery](#plugin-discovery)
   - [Powershell Windows](#powershell-windows)
   - [Python Patterns](#python-patterns)
   - [Qdrant Memory](#qdrant-memory)
@@ -492,7 +493,7 @@ skill-name/
 | **Location** | `skills/intelligent-routing/` |
 | **Type** | Standalone |
 
-**Description:** Automatic agent selection and intelligent task routing. Analyzes user requests and automatically selects the best specialist agent(s) without requiring explicit user mentions.
+**Description:** Automatic agent selection, intelligent task routing, and platform-adaptive orchestration. Analyzes user requests and automatically selects the best specialist agent(s). Detects the runtime platform (Claude Code, Gemini, Opencode) and proactively recommends enabling platform-specific features like Agent Teams and Plugins.
 
 ---
 
@@ -674,7 +675,7 @@ skill-name/
 | **Location** | `skills/parallel-agents/` |
 | **Type** | Standalone |
 
-**Description:** Multi-agent orchestration patterns. Use when multiple independent tasks can run with different domain expertise or when comprehensive analysis requires multiple perspectives.
+**Description:** Platform-adaptive multi-agent orchestration. Uses Claude Code Agent Teams when available, subagents as fallback, and sequential persona switching on other platforms. Use when multiple independent tasks can run with different domain expertise or when comprehensive analysis requires multiple perspectives.
 
 ---
 
@@ -726,6 +727,18 @@ skill-name/
 | **Type** | Standalone |
 
 **Description:** Structured task planning with clear breakdowns, dependencies, and verification criteria. Use when implementing features, refactoring, or any multi-step work.
+
+---
+
+### Plugin Discovery
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `plugin-discovery` |
+| **Location** | `skills/plugin-discovery/` |
+| **Type** | Standalone |
+
+**Description:** Platform-adaptive plugin and extension auto-discovery. Detects the runtime environment (Claude Code, Gemini, Opencode, Kiro) and recommends or installs relevant plugins, extensions, MCP servers, and marketplace integrations. Use when setting up a project, onboarding, or when the user asks about available tools/plugins.
 
 ---
 
