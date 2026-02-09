@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-09
+
+### Added
+
+- **Platform-Adaptive Multi-Agent Orchestration** (`parallel-agents` v2.0):
+  - **Strategy A: Claude Code Agent Teams** — True parallel multi-agent orchestration via tmux/in-process sessions. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
+  - **Strategy B: Claude Code Subagents** — Background/foreground task orchestration via `Task()` tool with `context: fork`.
+  - **Strategy C: Sequential Personas** — Universal fallback for Gemini, Opencode, and other platforms using `@agent` persona switching.
+  - **Strategy D: Kiro Autonomous Agent** — Async parallel task execution in sandboxed environments with PR-based delivery and cross-repo coordination.
+  - Automatic platform detection and strategy selection.
+  - Subagent configuration reference (frontmatter, tools, permissions, model, memory).
+  - Full Claude Code subagent lifecycle documentation (create, configure, invoke, manage).
+
+- **Kiro IDE Powers & Autonomous Agent Support**:
+  - Full Kiro Powers documentation: `POWER.md` anatomy, frontmatter keywords activation, onboarding sections, steering files, `mcp.json` configuration with auto-namespacing.
+  - Kiro Hooks system (`.kiro/hooks/`) with JSON structure and automated behaviors.
+  - Kiro Autonomous Agent: sandboxed execution, PR-based reviews, cross-repo coordination, learning from code reviews.
+  - 12 curated launch partner Powers documented (Figma, Supabase, Stripe, Neon, Netlify, Postman, Strands, Datadog, Dynatrace, AWS CDK, Terraform, Aurora).
+  - **Antigravity ↔ Kiro mapping guide**: Skill-to-Power conversion workflow, directory mapping, frontmatter translation.
+
+- **Plugin & Extension Auto-Discovery** (`plugin-discovery` v1.1.0 — NEW SKILL):
+  - Cross-platform extension auto-discovery for Claude Code, Kiro IDE, Gemini, and Opencode.
+  - Claude Code: Plugin marketplace guide (official + custom), LSP plugins by language, service integrations, scopes, subagent/skill discovery.
+  - Kiro: Full Powers discovery, installation guide (IDE, kiro.dev, GitHub, local path), setup checklist.
+  - Gemini/Opencode: Skills catalog discovery, MCP server detection.
+  - Cross-platform compatibility map (11 features × 4 platforms).
+
+- **One-Shot Platform Setup Wizard** (`platform_setup.py`):
+  - Auto-detects platform: Claude Code, Kiro IDE, Gemini, Opencode.
+  - Scans project tech stack: languages (JS/TS/Python/Go/Rust/Ruby), frameworks (Next.js/React/Vue/Express/Angular/Svelte/Astro/React Native), services (GitHub/GitLab/Docker/Vercel/Netlify/Stripe/Supabase/Firebase/Terraform).
+  - Generates prioritized recommendations with `🔴 High` / `🟡 Medium` / `🟢 Low` indicators.
+  - Auto-applies configurable settings (Agent Teams, directory creation, hook setup) with single `Y/n` confirmation.
+  - Shows manual instructions for platform-only actions (plugin installs, Power installs).
+  - 4 modes: interactive, `--auto`, `--dry-run`, `--json`.
+  - New `/setup` workflow with `// turbo` annotation for auto-run.
+
+- **Intelligent Routing v2.0** (`intelligent-routing` v2.0):
+  - Platform detection at session start (Claude Code, Kiro IDE, Gemini, Opencode).
+  - Proactive capability announcements per platform.
+  - Team Leader mode for Claude Code with Agent Teams enabled.
+  - Powers-driven orchestration mode for Kiro IDE.
+  - Proactive feature recommendations: suggests Agent Teams, plugins, Powers, Autonomous Agent when not enabled.
+  - Multi-domain task routing adapts to best available parallelism strategy.
+
+### Changed
+
+- **`parallel-agents`**: Rewritten from v1.0 to v2.0 — now platform-adaptive with 4 orchestration strategies instead of 1.
+- **`intelligent-routing`**: Rewritten from v1.0 to v2.0 — now includes platform detection, proactive recommendations, and Kiro support.
+- **Cross-Platform Compatibility Map**: Updated with 2 new rows (Dynamic MCP Loading, Cross-Repo Tasks) and accurate Kiro feature coverage.
+- **`package.json`**: Added `kiro`, `opencode`, and `platform-adaptive` keywords for NPM discoverability.
+- **Templates**: All modified skills (`parallel-agents`, `intelligent-routing`, `plugin-discovery`) and scripts (`platform_setup.py`) synced to `templates/skills/knowledge/` for NPX distribution.
+- **SKILLS_CATALOG.md**: Regenerated with 56 skills, including the new `plugin-discovery` skill.
+
 ## [1.1.7] - 2026-02-07
 
 ### Added
