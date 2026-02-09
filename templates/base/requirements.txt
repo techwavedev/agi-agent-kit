@@ -42,3 +42,4 @@ gitpython                   # Git integration — change detection, changelog ge
 # Testing & Auditing
 # ---------------------
 playwright                  # Browser automation — E2E testing, Lighthouse audits
+pyright                     # Python type checker — static analysis & diagnostics

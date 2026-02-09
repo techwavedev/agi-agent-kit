@@ -416,14 +416,14 @@ function runPlatformSetup(targetPath) {
   
   try {
     const output = execSync(
-      `${pythonCmd} "${setupScript}" --project-dir "${targetPath}" --auto-apply`,
+      `${pythonCmd} "${setupScript}" --project-dir "${targetPath}" --auto`,
       { stdio: 'pipe', timeout: 30000 }
     ).toString();
     
     // Show output
     console.log(output);
   } catch (e) {
-    // If --auto-apply flag is not supported, try without it
+    // If --auto flag fails, try with piped stdin
     try {
       const output = execSync(
         `${pythonCmd} "${setupScript}" --project-dir "${targetPath}"`,
