@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-02-07 23:46
+> **Auto-generated Documentation** — Last updated: 2026-02-09 13:07
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -18,11 +18,15 @@ This document provides comprehensive documentation on available skills, how to u
   - [Api Patterns](#api-patterns)
   - [App Builder](#app-builder)
   - [Architecture](#architecture)
+  - [AWS (Hub)](#aws-hub)
+  - [Aws Terraform](#aws-terraform)
   - [Bash Linux](#bash-linux)
   - [Behavioral Modes](#behavioral-modes)
   - [Brainstorming](#brainstorming)
   - [Clean Code](#clean-code)
   - [Code Review Checklist](#code-review-checklist)
+  - [Confluent Kafka](#confluent-kafka)
+  - [Consul](#consul)
   - [Database Design](#database-design)
   - [Deployment Procedures](#deployment-procedures)
   - [Design Md](#design-md)
@@ -31,18 +35,24 @@ This document provides comprehensive documentation on available skills, how to u
   - [Frontend Design](#frontend-design)
   - [Game Development](#game-development)
   - [Geo Fundamentals](#geo-fundamentals)
+  - [Gitlab](#gitlab)
   - [I18N Localization](#i18n-localization)
   - [Intelligent Routing](#intelligent-routing)
+  - [Jira](#jira)
+  - [Karpenter](#karpenter)
   - [Lint And Validate](#lint-and-validate)
   - [Mcp Builder](#mcp-builder)
   - [Mobile Design](#mobile-design)
   - [Nextjs Best Practices](#nextjs-best-practices)
   - [Nodejs Best Practices](#nodejs-best-practices)
   - [Notebooklm Mcp](#notebooklm-mcp)
+  - [Notebooklm Rag](#notebooklm-rag)
+  - [Opensearch](#opensearch)
   - [Parallel Agents](#parallel-agents)
   - [Pdf Reader](#pdf-reader)
   - [Performance Profiling](#performance-profiling)
   - [Plan Writing](#plan-writing)
+  - [Plugin Discovery](#plugin-discovery)
   - [Powershell Windows](#powershell-windows)
   - [Python Patterns](#python-patterns)
   - [Qdrant Memory](#qdrant-memory)
@@ -57,6 +67,7 @@ This document provides comprehensive documentation on available skills, how to u
   - [Tailwind Patterns](#tailwind-patterns)
   - [Tdd Workflow](#tdd-workflow)
   - [Testing Patterns](#testing-patterns)
+  - [Victoriametrics](#victoriametrics)
   - [Vulnerability Scanner](#vulnerability-scanner)
   - [Webapp Testing](#webapp-testing)
   - [Webcrawler](#webcrawler)
@@ -83,6 +94,126 @@ skill-name/
 ---
 
 ## Available Skills
+
+### AWS (Hub)
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `aws` |
+| **Location** | `skills/aws/` |
+| **Type** | Router / Hub |
+
+**Description:** Comprehensive AWS MCP skill covering ALL AWS services. Use for any AWS-related task - infrastructure, databases, AI/ML, observability, networking, serverless, and more. This single skill provides access to 60+ AWS MCP servers organized by category.
+
+**References:**
+- `references/common_patterns.md`
+- `references/mcp_servers.md`
+
+---
+
+### Confluent Kafka
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `confluent-kafka` |
+| **Location** | `skills/confluent-kafka/` |
+| **Parent** | [Aws](#aws) |
+
+**Description:** Confluent Kafka specialist for tarball/Ansible custom installations. Expert in updating, maintaining, checking health, troubleshooting, documenting, analyzing metrics, and upgrading Confluent Kafka deployments from 7.x to 8.x versions. Covers KRaft mode (ZooKeeper-less), broker configuration, Schema Registry, Connect, ksqlDB, Control Center, and production-grade operations. Use when working with Confluent Platform installations, migrations to KRaft, performance tuning, health monitoring, and infrastructure-as-code with Ansible.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/kafka_health_check.py` | *[See script for details]* |
+| `scripts/upgrade_preflight.py` | *[See script for details]* |
+| `scripts/validate_config.py` | *[See script for details]* |
+
+**References:**
+- `references/ansible_playbooks.md`
+- `references/ec_deployment.md`
+- `references/kraft_migration.md`
+- `references/troubleshooting.md`
+- `references/upgrade_7x_to_8x.md`
+
+---
+
+### Consul
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `consul` |
+| **Location** | `skills/consul/` |
+| **Parent** | [Aws](#aws) |
+
+**Description:** HashiCorp Consul specialist for EKS clusters. Use for Consul service mesh installation, configuration, HA setup, maintenance, updates, upgrades, troubleshooting, and optimization. Covers Consul Connect, intentions, health checks, ACLs, gossip encryption, TLS configuration, federation, and Kubernetes integration via consul-k8s Helm chart. Requires kubectl and helm access to target EKS cluster.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/consul_health_report.py` | *[See script for details]* |
+| `scripts/consul_status.py` | *[See script for details]* |
+| `scripts/generate_values.py` | *[See script for details]* |
+
+**References:**
+- `references/acl_setup.md`
+- `references/ha_config.md`
+- `references/troubleshooting.md`
+- `references/upgrades.md`
+
+---
+
+### Gitlab
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `gitlab` |
+| **Location** | `skills/gitlab/` |
+| **Parent** | [Aws](#aws) |
+
+**Description:** GitLab specialist for Kubernetes agent management on EKS clusters. Use for GitLab agent (agentk) installation, configuration, upgrades, GitOps with Flux, CI/CD pipeline integration, project management via API, token management, and troubleshooting connectivity issues. Covers agent registration, Helm deployments, KAS configuration (self-managed on-prem), impersonation, and multi-cluster setups. Requires kubectl/helm access to target EKS cluster and GitLab API token.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/generate_agent_values.py` | *[See script for details]* |
+| `scripts/gitlab_agent_status.py` | *[See script for details]* |
+
+**References:**
+- `references/agent_installation.md`
+- `references/api_reference.md`
+- `references/gitops_flux.md`
+- `references/troubleshooting.md`
+
+---
+
+### Karpenter
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `karpenter` |
+| **Location** | `skills/karpenter/` |
+| **Parent** | [Aws](#aws) |
+
+**Description:** Karpenter Kubernetes autoscaler specialist for EKS clusters. Use for troubleshooting, documenting, managing, creating, updating, upgrading Karpenter deployments, and obtaining live cluster information. Covers NodePool/EC2NodeClass configuration, cost optimization, node consolidation, drift detection, Spot interruption handling, and migration from Cluster Autoscaler. Requires kubectl access to target EKS cluster.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/generate_ec2nodeclass.py` | *[See script for details]* |
+| `scripts/generate_nodepool.py` | *[See script for details]* |
+| `scripts/karpenter_status.py` | *[See script for details]* |
+
+**References:**
+- `references/ec2nodeclasses.md`
+- `references/migration.md`
+- `references/nodepools.md`
+- `references/troubleshooting.md`
+
+---
 
 ### Api Patterns
 
@@ -123,6 +254,28 @@ skill-name/
 | **Type** | Standalone |
 
 **Description:** Architectural decision-making framework. Requirements analysis, trade-off evaluation, ADR documentation. Use when making architecture decisions or analyzing system design.
+
+---
+
+### Aws Terraform
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `aws-terraform` |
+| **Location** | `skills/aws-terraform/` |
+| **Type** | Standalone |
+
+**Description:** AWS infrastructure deployments using Terraform and Terragrunt. Use for any task involving: (1) Writing, validating, or deploying Terraform/HCL code for AWS, (2) Security scanning with Checkov, (3) AWS provider documentation lookup, (4) Terraform Registry module analysis, (5) Terragrunt multi-environment orchestration, (6) Infrastructure as Code best practices for AWS. Parent skill: aws.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/configure_mcp.py` | *[See script for details]* |
+
+**References:**
+- `references/best_practices.md`
+- `references/checkov_reference.md`
 
 ---
 
@@ -340,7 +493,36 @@ skill-name/
 | **Location** | `skills/intelligent-routing/` |
 | **Type** | Standalone |
 
-**Description:** Automatic agent selection and intelligent task routing. Analyzes user requests and automatically selects the best specialist agent(s) without requiring explicit user mentions.
+**Description:** Automatic agent selection, intelligent task routing, and platform-adaptive orchestration. Analyzes user requests and automatically selects the best specialist agent(s). Detects the runtime platform (Claude Code, Gemini, Opencode) and proactively recommends enabling platform-specific features like Agent Teams and Plugins.
+
+---
+
+### Jira
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `jira` |
+| **Location** | `skills/jira/` |
+| **Type** | Standalone |
+
+**Description:** "Jira ticket management skill for creating, updating, and managing issues. Use for: (1) Creating new tickets/issues with custom fields, (2) Updating existing tickets (status, assignee, priority, labels), (3) Adding and updating comments, (4) Logging work time and time tracking, (5) Searching issues with JQL, (6) Managing transitions and workflows, (7) Bulk operations on multiple tickets, (8) Sprint and board management. Supports both MCP server integration and direct REST API calls. Requires JIRA_API_TOKEN and JIRA_URL environment variables."
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/add_comment.py` | *[See script for details]* |
+| `scripts/bulk_log_work.py` | *[See script for details]* |
+| `scripts/create_ticket.py` | *[See script for details]* |
+| `scripts/get_ticket.py` | *[See script for details]* |
+| `scripts/jira_client.py` | *[See script for details]* |
+| `scripts/log_work.py` | *[See script for details]* |
+| `scripts/search_tickets.py` | *[See script for details]* |
+| `scripts/update_comment.py` | *[See script for details]* |
+| `scripts/update_ticket.py` | *[See script for details]* |
+
+**References:**
+- `references/jql_reference.md`
 
 ---
 
@@ -427,8 +609,61 @@ skill-name/
 
 **Description:** "Connects to Google NotebookLM via MCP using PleasePrompto/notebooklm-mcp. Browser-automated auth, zero-hallucination research, smart library management. Triggers when user asks to research docs, query NotebookLM, or manage notebook libraries."
 
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/auth_helper.py` | *[See script for details]* |
+| `scripts/list_notebooks_cli.py` | *[See script for details]* |
+
 **References:**
 - `references/api_reference.md`
+
+---
+
+### Notebooklm Rag
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `notebooklm-rag` |
+| **Location** | `skills/notebooklm-rag/` |
+| **Type** | Standalone |
+
+**Description:** "Deep-search RAG knowledge layer powered by Google NotebookLM + Gemini 2.5. Use when explicitly asked to research, investigate, plan with docs, or query knowledge bases. Complement to qdrant-memory (token saver). Triggers on: '@notebooklm', 'research my docs', 'check my notebooks', 'deep search', 'investigate with docs'."
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/preflight_check.py` | *[See script for details]* |
+| `scripts/research_query.py` | *[See script for details]* |
+| `scripts/research_report.py` | *[See script for details]* |
+
+**References:**
+- `references/research_patterns.md`
+
+---
+
+### Opensearch
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `opensearch` |
+| **Location** | `skills/opensearch/` |
+| **Type** | Standalone |
+
+**Description:** OpenSearch specialist covering querying (Query DSL, SQL), performance optimization, cluster management, monitoring, OpenSearch Dashboards, ML/AI (neural search, embeddings, ML Commons), data ingestion (Logstash, Fluent Bit, Data Prepper), OpenSearch Operator for Kubernetes, and MCP integration. Use for any task involving: (1) Writing or optimizing OpenSearch queries, (2) Index design and mapping, (3) Cluster health and performance tuning, (4) OpenSearch Dashboards visualization, (5) Neural/semantic search with vectors, (6) Log and data ingestion pipelines, (7) Kubernetes deployments with OpenSearch Operator.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/configure_mcp.py` | *[See script for details]* |
+
+**References:**
+- `references/ml_neural_search.md`
+- `references/operator.md`
+- `references/query_dsl.md`
 
 ---
 
@@ -440,7 +675,7 @@ skill-name/
 | **Location** | `skills/parallel-agents/` |
 | **Type** | Standalone |
 
-**Description:** Multi-agent orchestration patterns. Use when multiple independent tasks can run with different domain expertise or when comprehensive analysis requires multiple perspectives.
+**Description:** Platform-adaptive multi-agent orchestration. Uses Claude Code Agent Teams when available, subagents as fallback, and sequential persona switching on other platforms. Use when multiple independent tasks can run with different domain expertise or when comprehensive analysis requires multiple perspectives.
 
 ---
 
@@ -492,6 +727,24 @@ skill-name/
 | **Type** | Standalone |
 
 **Description:** Structured task planning with clear breakdowns, dependencies, and verification criteria. Use when implementing features, refactoring, or any multi-step work.
+
+---
+
+### Plugin Discovery
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `plugin-discovery` |
+| **Location** | `skills/plugin-discovery/` |
+| **Type** | Standalone |
+
+**Description:** Platform-adaptive plugin and extension auto-discovery. Detects the runtime environment (Claude Code, Gemini, Opencode, Kiro) and recommends or installs relevant plugins, extensions, MCP servers, and marketplace integrations. Use when setting up a project, onboarding, or when the user asks about available tools/plugins.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/platform_setup.py` | *[See script for details]* |
 
 ---
 
@@ -696,6 +949,23 @@ skill-name/
 | Script | Purpose |
 | ------ | ------- |
 | `scripts/test_runner.py` | *[See script for details]* |
+
+---
+
+### Victoriametrics
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `victoriametrics` |
+| **Location** | `skills/victoriametrics/` |
+| **Type** | Standalone |
+
+**Description:** VictoriaMetrics time-series database specialist covering deployment (bare metal, Docker, EKS/Kubernetes), cluster architecture (vminsert/vmselect/vmstorage), vmagent configuration, performance optimization, capacity planning, troubleshooting, monitoring, and Prometheus migration/compatibility. Use for any task involving: (1) Installing or upgrading VictoriaMetrics (single-node or cluster), (2) vmagent scraping and remote write configuration, (3) Capacity planning and resource optimization, (4) Prometheus to VictoriaMetrics migration with vmctl, (5) High availability and replication setup, (6) Kubernetes/EKS deployments with Helm or Operator, (7) MetricsQL queries and optimization, (8) Troubleshooting performance issues.
+
+**References:**
+- `references/kubernetes.md`
+- `references/prometheus_migration.md`
+- `references/troubleshooting.md`
 
 ---
 

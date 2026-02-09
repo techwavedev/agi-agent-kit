@@ -1,6 +1,52 @@
 # Agent Instructions
 
-> `CLAUDE.md` and `GEMINI.md` are symlinks to this file, so the same instructions load in any AI environment.
+> `CLAUDE.md`, `GEMINI.md`, and `OPENCODE.md` are symlinks to this file, so the same instructions load in any AI environment.
+
+---
+
+## ⚡ Session Boot Protocol (MANDATORY)
+
+**Run this ONCE at the start of every session, before any other work:**
+
+```bash
+python3 execution/session_boot.py --auto-fix
+```
+
+This single command checks Qdrant, Ollama, embedding models, and collections. If anything is missing, `--auto-fix` repairs it automatically. If the output shows `"memory_ready": true`, proceed normally. If it shows issues, follow the printed instructions.
+
+**Why this matters:** The memory system provides 80-100% token savings on repeated work. Skipping this step means every query pays full token cost.
+
+---
+
+## Getting Started
+
+### Installation
+
+Run this command in any directory where you want to scaffold a new AI agent:
+
+```bash
+npx @techwavedev/agi-agent-kit init
+```
+
+### Dependencies
+
+This toolkit relies on Python scripts for deterministic execution. Ensure you have the following installed:
+
+1. **Python 3.8+**: `python3 --version`
+2. **Pip Dependencies**:
+   ```bash
+   pip install requests beautifulsoup4 html2text lxml qdrant-client
+   ```
+
+### Updates
+
+To update the kit to the latest version:
+
+```bash
+# Clear npx cache to force latest version download
+rm -rf ~/.npm/_npx
+npx @techwavedev/agi-agent-kit init
+```
 
 ---
 
@@ -151,34 +197,51 @@ python execution/scrape_single_site.py \
 
 **All operations use the Qdrant-powered memory system by default.**
 
+#### Session Start (MANDATORY — run once per session)
+
+```bash
+python3 execution/session_boot.py --auto-fix
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  QUERY RECEIVED                                              │
-│  ↓                                                           │
-│  1. Check for opt-out flags ("no cache", "fresh", etc.)     │
-│  ↓                                                           │
-│  2. SEMANTIC CACHE CHECK (similarity > 0.92)                │
-│     └─ Hit? → Return cached response (100% token savings)   │
-│  ↓                                                           │
-│  3. CONTEXT RETRIEVAL (top 5 relevant memories)             │
-│     └─ Inject decisions, patterns, solutions (80-95% saved) │
-│  ↓                                                           │
-│  4. EXECUTE QUERY with enriched context                      │
-│  ↓                                                           │
-│  5. STORE RESPONSE for future cache hits                    │
-└─────────────────────────────────────────────────────────────┘
+
+If `"memory_ready": true`, proceed. If false, follow the printed instructions.
+
+#### Before Every Complex Task
+
+```bash
+python3 execution/memory_manager.py auto --query "<one-line summary of the task>"
+```
+
+**Decision tree based on output:**
+
+| Result               | Action                                                                    |
+| -------------------- | ------------------------------------------------------------------------- |
+| `"cache_hit": true`  | Use cached response directly. Inform user: "Retrieved from memory cache." |
+| `"source": "memory"` | Inject `context_chunks` into your reasoning. Cite them.                   |
+| `"source": "none"`   | Proceed normally. Store the result when done.                             |
+
+#### After Key Decisions or Solutions
+
+```bash
+python3 execution/memory_manager.py store \
+  --content "Description of what was decided/solved" \
+  --type decision \
+  --project <project-name> \
+  --tags relevant-tag1 relevant-tag2
+```
+
+Memory types: `decision`, `code`, `error`, `technical`, `conversation`
+
+#### After Completing a Complex Task
+
+```bash
+python3 execution/memory_manager.py cache-store \
+  --query "The original user question" \
+  --response "The complete response that was generated"
 ```
 
 **Opt-out:** User says "don't use cache", "no cache", "skip memory", or "fresh"
 
-**Auto-stored memories:**
-
-- `decision` — Architecture choices, design decisions
-- `code` — Script patterns, reusable implementations
-- `error` — Bug resolutions with root cause
-- `technical` — Documentation, API knowledge
-
-> See `directives/memory_integration.md` for full details.
+> See `directives/memory_integration.md` for full protocol and token savings reference.
 
 ### 2. Check for Existing Tools First
 

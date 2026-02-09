@@ -7,7 +7,7 @@ description: "Documentation harvesting agent for crawling and extracting content
 
 Intelligent documentation harvesting agent that recursively crawls documentation websites and extracts structured content about specific subjects.
 
-> **Last Updated:** 2026-01-23
+> **Last Updated:** 2026-02-07
 
 ---
 

@@ -1,39 +1,115 @@
 ---
 name: intelligent-routing
-description: Automatic agent selection and intelligent task routing. Analyzes user requests and automatically selects the best specialist agent(s) without requiring explicit user mentions.
-version: 1.0.0
+description: Automatic agent selection, intelligent task routing, and platform-adaptive orchestration. Analyzes user requests and automatically selects the best specialist agent(s). Detects the runtime platform (Claude Code, Gemini, Opencode) and proactively recommends enabling platform-specific features like Agent Teams and Plugins.
+version: 2.0.0
 ---
 
 # Intelligent Agent Routing
 
-**Purpose**: Automatically analyze user requests and route them to the most appropriate specialist agent(s) without requiring explicit user mentions.
+**Purpose**: Automatically analyze user requests, detect the runtime platform, and route them to the most appropriate specialist agent(s) using the best available orchestration strategy.
 
 ## Core Principle
 
-> **The AI should act as an intelligent Project Manager**, analyzing each request and automatically selecting the best specialist(s) for the job.
+> **The AI should act as an intelligent Project Manager and Team Leader**, analyzing each request, detecting platform capabilities, and automatically selecting the best specialist(s) and orchestration strategy for the job.
 
-## How It Works
+---
 
-### 1. Request Analysis
+## TIER 0 — Platform Detection (ALWAYS ACTIVE)
+
+### Detect Runtime Platform at Session Start
+
+Before any task routing, detect the current environment and announce capabilities:
+
+```
+IF "Claude Code" is detected (has Task tool, /agents, Bash, etc.)
+  IF CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS is enabled
+    → Platform: Claude Code + Agent Teams ✅
+    → Strategy: Team Leader mode (true parallel teammates)
+  ELSE
+    → Platform: Claude Code (standard)
+    → Strategy: Subagents (background/foreground)
+    → 💡 RECOMMEND: "Agent Teams is available but not enabled. Enable it for true parallel orchestration:
+         Add to settings.json: { "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" } }"
+  END IF
+
+  → 💡 RECOMMEND plugins if not installed:
+       "/plugin marketplace add anthropics/claude-code" for official plugins
+       Check if LSP plugins, commit-commands, etc. would benefit the project
+
+ELSE IF "Kiro IDE" is detected (.kiro/ directory, POWER.md files, Kiro agent context)
+  → Platform: Kiro IDE
+  → Strategy: Powers-driven orchestration + Autonomous Agent for async tasks
+  → 💡 RECOMMEND Powers if not installed:
+       Check project tech stack and suggest relevant Powers (Supabase, Stripe, Figma, etc.)
+       "Open Powers panel → Browse curated powers"
+  → 💡 RECOMMEND Autonomous Agent for multi-repo or async parallel work
+
+ELSE IF "Gemini" or "Antigravity" is detected (GEMINI.md loaded, Google model)
+  → Platform: Gemini / Antigravity
+  → Strategy: Sequential persona switching via @agent
+  → No Agent Teams or subagent support
+
+ELSE IF "Opencode" is detected (OPENCODE.md loaded)
+  → Platform: Opencode
+  → Strategy: Sequential persona switching via @agent
+  → No Agent Teams or subagent support
+
+ELSE
+  → Platform: Unknown
+  → Strategy: Sequential persona switching (universal fallback)
+END IF
+```
+
+### Proactive Capability Announcements
+
+**On first interaction in a session**, if Claude Code is detected, proactively announce:
+
+```markdown
+💡 **Platform detected: Claude Code**
+
+- Agent Teams: [Enabled ✅ / Not enabled — enable with `{"env":{"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS":"1"}}` in settings.json]
+- Plugins: Run `/plugin` to discover available plugins for this project
+- Subagents: Available for background tasks (`/agents` to manage)
+- Skills: Project skills auto-discovered from `.claude/skills/` and `skills/`
+```
+
+**If Kiro IDE is detected**, proactively announce:
+
+```markdown
+💡 **Platform detected: Kiro IDE**
+
+- Powers: [N installed — open Powers panel to browse/install more]
+- Autonomous Agent: Available for async task execution across repos
+- Hooks: Configure quality gates in `.kiro/hooks/`
+- MCP Servers: Dynamically loaded per Power — no upfront context cost
+```
+
+**On Gemini/Opencode/other platforms**, no special announcement is needed — use standard persona switching.
+
+---
+
+## TIER 1 — Request Analysis (ALWAYS ACTIVE)
 
 Before responding to ANY user request, perform automatic analysis:
 
 ```mermaid
 graph TD
-    A[User Request: Add login] --> B[ANALYZE]
+    A[User Request] --> B[ANALYZE]
     B --> C[Keywords]
     B --> D[Domains]
     B --> E[Complexity]
     C --> F[SELECT AGENT]
     D --> F
     E --> F
-    F --> G[security-auditor + backend-specialist]
-    G --> H[AUTO-INVOKE with context]
+    F --> G{Multi-Domain?}
+    G -->|Single| H[Direct Agent]
+    G -->|Multiple| I{Platform?}
+    I -->|Claude Code + Teams| J[Spawn Agent Team]
+    I -->|Claude Code| K[Spawn Subagents]
+    I -->|Other| L[Sequential Personas]
 ```
 
-### 2. Agent Selection Matrix
-
-**Use this matrix to automatically select agents:**
+### Agent Selection Matrix
 
 | User Intent         | Keywords                                   | Selected Agent(s)                           | Auto-invoke? |
 | ------------------- | ------------------------------------------ | ------------------------------------------- | ------------ |
@@ -50,50 +126,95 @@ graph TD
 | **New Feature**     | "build", "create", "implement", "new app"  | `orchestrator` → multi-agent                | ⚠️ ASK FIRST |
 | **Complex Task**    | Multiple domains detected                  | `orchestrator` → multi-agent                | ⚠️ ASK FIRST |
 
-### 3. Automatic Routing Protocol
-
-## TIER 0 - Automatic Analysis (ALWAYS ACTIVE)
-
-Before responding to ANY request:
+### Automatic Routing Protocol
 
 ```javascript
 // Pseudo-code for decision tree
 function analyzeRequest(userMessage) {
-    // 1. Classify request type
-    const requestType = classifyRequest(userMessage);
+  // 1. Classify request type
+  const requestType = classifyRequest(userMessage);
 
-    // 2. Detect domains
-    const domains = detectDomains(userMessage);
+  // 2. Detect domains
+  const domains = detectDomains(userMessage);
 
-    // 3. Determine complexity
-    const complexity = assessComplexity(domains);
+  // 3. Determine complexity
+  const complexity = assessComplexity(domains);
 
-    // 4. Select agent(s)
-    if (complexity === "SIMPLE" && domains.length === 1) {
-        return selectSingleAgent(domains[0]);
-    } else if (complexity === "MODERATE" && domains.length <= 2) {
-        return selectMultipleAgents(domains);
+  // 4. Select strategy based on platform
+  const platform = detectPlatform();
+
+  // 5. Route
+  if (complexity === "SIMPLE" && domains.length === 1) {
+    return selectSingleAgent(domains[0]);
+  } else if (complexity === "MODERATE" && domains.length <= 2) {
+    if (platform === "claude-code-teams") {
+      return spawnTeam(domains); // True parallel
+    } else if (platform === "claude-code") {
+      return spawnSubagents(domains); // Background parallel
     } else {
-        return "orchestrator"; // Complex task
+      return selectMultipleAgents(domains); // Sequential
     }
+  } else {
+    // Complex task — orchestrate
+    if (platform === "claude-code-teams") {
+      return actAsTeamLeader(domains); // Team Leader mode
+    } else {
+      return "orchestrator"; // Sequential orchestration
+    }
+  }
 }
 ```
 
-## 4. Response Format
+---
 
-**When auto-selecting an agent, inform the user concisely:**
+## TIER 2 — Multi-Agent Orchestration (Platform-Adaptive)
+
+### On Claude Code with Agent Teams: Team Leader Mode
+
+When a complex multi-domain task is detected and Agent Teams is enabled, the AI acts as **Team Leader**:
 
 ```markdown
-🤖 **Applying knowledge of `@security-auditor` + `@backend-specialist`...**
+🤖 **Team Leader mode activated** (Claude Code Agent Teams detected)
 
-[Proceed with specialized response]
+Spawning team for: "Build a secure user dashboard with real-time notifications"
+
+**Teammates:**
+
+- 🔒 security-reviewer: Auth module audit
+- ⚙️ backend-developer: API + WebSocket endpoints
+- 🎨 frontend-developer: Dashboard UI components
+- 🧪 test-engineer: Full-stack test suite
+
+Monitoring progress... I'll synthesize findings when the team completes.
 ```
 
-**Benefits:**
+### On Claude Code without Agent Teams: Subagent Mode
 
-- ✅ User sees which expertise is being applied
-- ✅ Transparent decision-making
-- ✅ Still automatic (no /commands needed)
+```markdown
+🤖 **Subagent orchestration** (Claude Code detected, Agent Teams not enabled)
+
+Running in background:
+
+- security-reviewer subagent → auth audit
+- backend-specialist subagent → API review
+
+💡 Tip: Enable Agent Teams for true parallel orchestration:
+Add to settings.json: { "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" } }
+```
+
+### On Other Platforms: Sequential Persona Mode
+
+```markdown
+🤖 **Applying knowledge of `@security-auditor`...**
+
+[Security analysis results]
+
+🤖 **Applying knowledge of `@backend-specialist`...**
+
+[API analysis, informed by security findings]
+```
+
+---
 
 ## Domain Detection Rules
 
@@ -113,16 +234,19 @@ function analyzeRequest(userMessage) {
 | **SEO**         | seo, meta, analytics, sitemap, robots      | `seo-specialist`        |
 | **Game**        | unity, godot, phaser, game, multiplayer    | `game-developer`        |
 
-### Multi-Domain Tasks (Auto-invoke Orchestrator)
+### Multi-Domain Tasks (Platform-Adaptive Orchestration)
 
-If request matches **2+ domains from different categories**, automatically use `orchestrator`:
+If request matches **2+ domains from different categories**:
 
 ```text
 Example: "Create a secure login system with dark mode UI"
 → Detected: Security + Frontend
-→ Auto-invoke: orchestrator
-→ Orchestrator will handle: security-auditor, frontend-specialist, test-engineer
+→ On Claude Code Teams: Spawn security + frontend teammates
+→ On Claude Code: Spawn security + frontend subagents
+→ On Other: Sequential security-auditor → frontend-specialist
 ```
+
+---
 
 ## Complexity Assessment
 
@@ -133,7 +257,7 @@ Example: "Create a secure login system with dark mode UI"
 - One domain only
 - Example: "Fix the login button style"
 
-**Action**: Auto-invoke respective agent
+**Action**: Auto-invoke respective agent (all platforms)
 
 ### MODERATE (2-3 agents)
 
@@ -142,51 +266,90 @@ Example: "Create a secure login system with dark mode UI"
 - 2 domains max
 - Example: "Add API endpoint for user profile"
 
-**Action**: Auto-invoke relevant agents sequentially
+**Action**:
 
-### COMPLEX (Orchestrator required)
+- Claude Code Teams → Spawn 2-3 teammates
+- Claude Code → Background subagents
+- Other → Sequential agent invocation
+
+### COMPLEX (Orchestrator / Team Leader)
 
 - Multiple files/domains
 - Architectural decisions needed
 - Unclear requirements
 - Example: "Build a social media app"
 
-**Action**: Auto-invoke `orchestrator` → will ask Socratic questions
+**Action**:
+
+- Claude Code Teams → Act as Team Leader, spawn full team
+- Claude Code → Chain subagents with orchestrator persona
+- Other → Auto-invoke orchestrator → Socratic questions first
+
+---
 
 ## Implementation Rules
 
 ### Rule 1: Silent Analysis
 
-#### DO NOT announce "I'm analyzing your request..."
-
 - ✅ Analyze silently
-- ✅ Inform which agent is being applied
-- ❌ Avoid verbose meta-commentary
+- ✅ Inform which agent/strategy is being applied
+- ❌ Avoid verbose meta-commentary ("I'm analyzing your request...")
 
-### Rule 2: Inform Agent Selection
-
-**DO inform which expertise is being applied:**
+### Rule 2: Inform Agent Selection + Platform
 
 ```markdown
-🤖 **Applying knowledge of `@frontend-specialist`...**
+🤖 **Applying knowledge of `@frontend-specialist`...** (via Agent Team)
 
 I will create the component with the following characteristics:
 [Continue with specialized response]
 ```
 
-### Rule 3: Seamless Experience
+### Rule 3: Proactive Platform Recommendations
 
-**The user should not notice a difference from talking to the right specialist directly.**
+When Claude Code is detected but Agent Teams is disabled, remind the user **once per session**:
 
-### Rule 4: Override Capability
+```markdown
+💡 **Tip**: You're on Claude Code. Enable Agent Teams for parallel orchestration:
+`{ "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" } }` in settings.json
+```
 
-**User can still explicitly mention agents:**
+### Rule 4: Seamless Experience
+
+The user should not notice a difference from talking to the right specialist directly.
+
+### Rule 5: Override Capability
+
+User can still explicitly mention agents:
 
 ```text
 User: "Use @backend-specialist to review this"
 → Override auto-selection
 → Use explicitly mentioned agent
 ```
+
+---
+
+## Integration with Existing Workflows
+
+### With /orchestrate Command
+
+- **User types `/orchestrate`**: Explicit orchestration mode
+- **AI detects complex task**: Auto-invoke orchestrator (same result)
+- **On Claude Code**: Orchestrator acts as Team Leader when possible
+
+### With Socratic Gate
+
+- Auto-routing does NOT bypass Socratic Gate
+- If task is unclear, still ask questions first
+- Then route to appropriate agent with best available strategy
+
+### With GEMINI.md / CLAUDE.md Rules
+
+- **Priority**: Platform rules (GEMINI.md/CLAUDE.md) > intelligent-routing
+- If platform rules specify explicit routing, follow them
+- Intelligent routing is the DEFAULT when no explicit rule exists
+
+---
 
 ## Edge Cases
 
@@ -195,8 +358,8 @@ User: "Use @backend-specialist to review this"
 ```text
 User: "How does React work?"
 → Type: QUESTION
-→ No agent needed
-→ Respond directly with explanation
+→ No agent needed, no team needed
+→ Respond directly
 ```
 
 ### Case 2: Extremely Vague Request
@@ -205,7 +368,7 @@ User: "How does React work?"
 User: "Make it better"
 → Complexity: UNCLEAR
 → Action: Ask clarifying questions first
-→ Then route to appropriate agent
+→ Then route with best strategy
 ```
 
 ### Case 3: Contradictory Patterns
@@ -217,118 +380,28 @@ User: "Add mobile support to the web app"
 → Then route accordingly
 ```
 
-## Integration with Existing Workflows
-
-### With /orchestrate Command
-
-- **User types `/orchestrate`**: Explicit orchestration mode
-- **AI detects complex task**: Auto-invoke orchestrator (same result)
-
-**Difference**: User doesn't need to know the command exists.
-
-### With Socratic Gate
-
-- **Auto-routing does NOT bypass Socratic Gate**
-- If task is unclear, still ask questions first
-- Then route to appropriate agent
-
-### With GEMINI.md Rules
-
-- **Priority**: GEMINI.md rules > intelligent-routing
-- If GEMINI.md specifies explicit routing, follow it
-- Intelligent routing is the DEFAULT when no explicit rule exists
-
-## Testing the System
-
-### Test Cases
-
-#### Test 1: Simple Frontend Task
+### Case 4: Claude Code Feature Not Enabled
 
 ```text
-User: "Create a dark mode toggle button"
-Expected: Auto-invoke frontend-specialist
-Verify: Response shows "Using @frontend-specialist"
+User: "Run these 5 reviews in parallel"
+→ Platform: Claude Code, Agent Teams OFF
+→ Action: Suggest enabling Agent Teams, use subagents as fallback
 ```
-
-#### Test 2: Security Task
-
-```text
-User: "Review the authentication flow for vulnerabilities"
-Expected: Auto-invoke security-auditor
-Verify: Security-focused analysis
-```
-
-#### Test 3: Complex Multi-Domain
-
-```text
-User: "Build a chat application with real-time notifications"
-Expected: Auto-invoke orchestrator
-Verify: Multiple agents coordinated (backend, frontend, test)
-```
-
-#### Test 4: Bug Fix
-
-```text
-User: "Login is not working, getting 401 error"
-Expected: Auto-invoke debugger
-Verify: Systematic debugging approach
-```
-
-## Performance Considerations
-
-### Token Usage
-
-- Analysis adds ~50-100 tokens per request
-- Tradeoff: Better accuracy vs slight overhead
-- Overall SAVES tokens by reducing back-and-forth
-
-### Response Time
-
-- Analysis is instant (pattern matching)
-- No additional API calls required
-- Agent selection happens before first response
-
-## User Education
-
-### Optional: First-Time Explanation
-
-If this is the first interaction in a project:
-
-```markdown
-💡 **Tip**: I am configured with automatic specialist agent selection.
-I will always choose the most suitable specialist for your task. You can
-still mention agents explicitly with `@agent-name` if you prefer.
-```
-
-## Debugging Agent Selection
-
-### Enable Debug Mode (for development)
-
-Add to GEMINI.md temporarily:
-
-```markdown
-## DEBUG: Intelligent Routing
-
-Show selection reasoning:
-
-- Detected domains: [list]
-- Selected agent: [name]
-- Reasoning: [why]
-```
-
-## Summary
-
-**intelligent-routing skill enables:**
-
-✅ Zero-command operation (no need for `/orchestrate`)  
-✅ Automatic specialist selection based on request analysis  
-✅ Transparent communication of which expertise is being applied  
-✅ Seamless integration with existing workflows  
-✅ Override capability for explicit agent mentions  
-✅ Fallback to orchestrator for complex tasks
-
-**Result**: User gets specialist-level responses without needing to know the system architecture.
 
 ---
 
-**Next Steps**: Integrate this skill into GEMINI.md TIER 0 rules.
+## Summary
+
+**intelligent-routing v2.0 enables:**
+
+✅ Zero-command operation (no need for `/orchestrate`)
+✅ Automatic specialist selection based on request analysis
+✅ Platform detection with proactive feature recommendations
+✅ Team Leader mode on Claude Code with Agent Teams
+✅ Subagent fallback on Claude Code without Agent Teams
+✅ Sequential persona switching on Gemini/Opencode/other
+✅ Transparent communication of which expertise and strategy is being applied
+✅ Override capability for explicit agent mentions
+✅ Fallback to orchestrator for complex tasks
+
+**Result**: User gets specialist-level responses with the best available parallelism, regardless of platform.
