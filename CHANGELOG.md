@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **notebooklm-rag**: Deep document research skill using NotebookLM as a RAG backend with structured research workflows, cross-source synthesis, and evidence-based Q&A.
+- **notebooklm-rag**: Full NotebookLM RAG skill adapted from [PleasePrompto/notebooklm-skill](https://github.com/PleasePrompto/notebooklm-skill) (MIT). Includes browser automation (Patchright), auth management, notebook library, question interface, and Qdrant memory integration for token savings and context keeping. Opt-in for users with Google accounts — default RAG remains Qdrant + local embeddings.
+
+### Removed
+
+- **notebooklm-mcp**: Merged into `notebooklm-rag`. The comprehensive RAG skill supersedes the basic MCP connector.
 
 ## [1.2.5] - 2026-02-09
 

@@ -1,164 +1,327 @@
 ---
 name: notebooklm-rag
-description: "Deep research and retrieval-augmented generation using Google NotebookLM. Triggers on: 'research my docs', 'check my notebooks', 'deep search', '@notebooklm'. Provides structured research workflows for document analysis, knowledge synthesis, and evidence-based answers."
+description: "Optional deep document research using Google NotebookLM as a RAG backend with browser automation. Default RAG uses Qdrant + local embeddings (see qdrant-memory skill). NotebookLM is opt-in for users with a Google account. Triggers on: 'research my docs', 'check my notebooks', 'deep search', '@notebooklm', 'query my notebook'."
 ---
 
-# NotebookLM RAG - Deep Document Research
+# NotebookLM RAG — Deep Document Research (Opt-In)
 
-## Overview
+> **Default RAG**: The Agi framework uses **Qdrant + local embeddings** (`qdrant-memory` skill) as the default RAG system. It works offline, requires no accounts, and provides semantic caching with 80-100% token savings.
+>
+> **This skill is optional**: NotebookLM RAG is for users who have a Google account and want to leverage NotebookLM's Gemini-powered, source-grounded answers from their uploaded documents. It complements — not replaces — the default Qdrant memory system.
 
-This skill enables deep research workflows using Google NotebookLM as a Retrieval-Augmented Generation (RAG) backend. It goes beyond simple queries by providing structured research patterns, multi-source synthesis, and evidence-based answer generation from your uploaded documents.
+## How It Works
 
-## When to Use
+Each question opens a fresh browser session via Patchright (Playwright-based), types the question with human-like behavior, retrieves the answer exclusively from your uploaded documents, and closes. Results are cached in Qdrant memory to avoid redundant browser queries.
 
-| Trigger             | Example                                                   |
-| ------------------- | --------------------------------------------------------- |
-| **Research docs**   | "Research my docs for deployment patterns"                |
-| **Check notebooks** | "Check my notebooks for API design decisions"             |
-| **Deep search**     | "Deep search for authentication best practices"           |
-| **@notebooklm**     | "@notebooklm find all references to caching strategies"   |
-| **Synthesize**      | "Synthesize what my documents say about error handling"   |
-| **Evidence-based**  | "What do my sources say about microservices vs monolith?" |
+## When to Use This Skill
 
-## Prerequisites
+Trigger when user:
 
-This skill requires the `notebooklm-mcp` skill to be configured and authenticated. See `skills/notebooklm-mcp/SKILL.md` for setup instructions.
+- Mentions NotebookLM explicitly
+- Shares NotebookLM URL (`https://notebooklm.google.com/notebook/...`)
+- Asks to query their notebooks/documentation
+- Wants to add documentation to NotebookLM library
+- Uses phrases like "ask my NotebookLM", "check my docs", "query my notebook", "research my docs", "deep search"
 
-Ensure the MCP server is running and you have at least one notebook with uploaded sources.
+**Do NOT trigger** for general memory/caching operations — those use `qdrant-memory` by default.
 
-## Research Workflows
+## ⚠️ CRITICAL: Add Command — Smart Discovery
 
-### 1. Single-Source Deep Dive
+When user wants to add a notebook without providing details:
 
-Extract comprehensive knowledge from a single document or notebook.
-
-**Steps:**
-
-1. Identify the target notebook using `list_notebooks()`
-2. Review available sources with `get_notebook(notebook_id)`
-3. Execute a series of focused queries to extract key themes
-4. Synthesize findings into a structured summary
-
-**Example Prompt:**
-
-```
-Research my architecture docs notebook for all deployment patterns mentioned.
-Summarize each pattern with pros, cons, and when to use.
-```
-
-### 2. Cross-Source Synthesis
-
-Compare and synthesize information across multiple sources within a notebook.
-
-**Steps:**
-
-1. Query the notebook with a broad topic question
-2. Follow up with specific comparison questions
-3. Identify agreements and contradictions across sources
-4. Produce a unified synthesis with source attribution
-
-**Example Prompt:**
-
-```
-Check my notebooks for what different sources say about database scaling.
-Compare the approaches and highlight any contradictions.
-```
-
-### 3. Evidence-Based Q&A
-
-Answer specific questions with citations from uploaded documents.
-
-**Steps:**
-
-1. Formulate a precise question
-2. Query the notebook for relevant passages
-3. Extract direct quotes and page references
-4. Construct an answer grounded in source material
-
-**Example Prompt:**
-
-```
-@notebooklm What are the exact security requirements mentioned in the compliance docs?
-Include direct quotes.
-```
-
-### 4. Knowledge Gap Analysis
-
-Identify what your documents do NOT cover.
-
-**Steps:**
-
-1. Define the expected knowledge domain
-2. Query for each expected subtopic
-3. Flag topics with no or weak source coverage
-4. Report gaps for further research
-
-**Example Prompt:**
-
-```
-Deep search my project docs. Do they cover: error handling, logging, monitoring,
-alerting, rollback procedures? List what's missing.
-```
-
-## Research Report Format
-
-When producing research outputs, use this structure:
-
-```markdown
-# Research Report: [Topic]
-
-## Query
-
-[Original research question]
-
-## Key Findings
-
-1. **Finding 1** — [Summary] (Source: [document name])
-2. **Finding 2** — [Summary] (Source: [document name])
-
-## Supporting Evidence
-
-> "Direct quote from source" — [Source, Page/Section]
-
-## Synthesis
-
-[Unified analysis combining all findings]
-
-## Gaps & Limitations
-
-- [Topics not covered by available sources]
-
-## Recommendations
-
-- [Actionable next steps based on findings]
-```
-
-## Integration with Memory System
-
-When the `qdrant-memory` skill is available, research results are automatically cached:
+**SMART ADD (Recommended)**: Query the notebook first to discover its content:
 
 ```bash
-# Research results are stored for future retrieval
-python3 execution/memory_manager.py store \
-  --content "Research findings on [topic]" \
-  --type technical \
-  --tags notebooklm research [topic]
+# Step 1: Query the notebook about its content
+python scripts/run.py ask_question.py --question "What is the content of this notebook? What topics are covered? Provide a complete overview briefly and concisely" --notebook-url "[URL]"
+
+# Step 2: Use the discovered information to add it
+python scripts/run.py notebook_manager.py add --url "[URL]" --name "[Based on content]" --description "[Based on content]" --topics "[Based on content]"
 ```
 
-This prevents redundant queries and enables cross-session knowledge persistence.
+**MANUAL ADD**: If user provides all details:
+
+- `--url` — The NotebookLM URL
+- `--name` — A descriptive name
+- `--description` — What the notebook contains (REQUIRED!)
+- `--topics` — Comma-separated topics (REQUIRED!)
+
+NEVER guess or use generic descriptions! If details missing, use Smart Add to discover them.
+
+## Critical: Always Use run.py Wrapper
+
+**NEVER call scripts directly. ALWAYS use `python scripts/run.py [script]`:**
+
+```bash
+# ✅ CORRECT — Always use run.py:
+python scripts/run.py auth_manager.py status
+python scripts/run.py notebook_manager.py list
+python scripts/run.py ask_question.py --question "..."
+
+# ❌ WRONG — Never call directly:
+python scripts/auth_manager.py status  # Fails without venv!
+```
+
+The `run.py` wrapper automatically:
+
+1. Creates `.venv` if needed
+2. Installs all dependencies (patchright, python-dotenv)
+3. Installs Chrome browser for automation
+4. Activates environment and executes script
+
+## Core Workflow
+
+### Step 1: Check Authentication Status
+
+```bash
+python scripts/run.py auth_manager.py status
+```
+
+If not authenticated, proceed to setup.
+
+### Step 2: Authenticate (One-Time Setup)
+
+```bash
+# Browser MUST be visible for manual Google login
+python scripts/run.py auth_manager.py setup
+```
+
+**Important:**
+
+- Browser is VISIBLE for authentication
+- Browser window opens automatically
+- User must manually log in to Google
+- Tell user: "A browser window will open for Google login"
+
+### Step 3: Manage Notebook Library
+
+```bash
+# List all notebooks
+python scripts/run.py notebook_manager.py list
+
+# Add notebook to library (ALL parameters are REQUIRED!)
+python scripts/run.py notebook_manager.py add \
+  --url "https://notebooklm.google.com/notebook/..." \
+  --name "Descriptive Name" \
+  --description "What this notebook contains" \
+  --topics "topic1,topic2,topic3"
+
+# Search notebooks by topic
+python scripts/run.py notebook_manager.py search --query "keyword"
+
+# Set active notebook
+python scripts/run.py notebook_manager.py activate --id notebook-id
+
+# Remove notebook
+python scripts/run.py notebook_manager.py remove --id notebook-id
+```
+
+### Step 4: Ask Questions
+
+```bash
+# Basic query (uses active notebook if set)
+python scripts/run.py ask_question.py --question "Your question here"
+
+# Query specific notebook
+python scripts/run.py ask_question.py --question "..." --notebook-id notebook-id
+
+# Query with notebook URL directly
+python scripts/run.py ask_question.py --question "..." --notebook-url "https://..."
+
+# Show browser for debugging
+python scripts/run.py ask_question.py --question "..." --show-browser
+```
+
+## Follow-Up Mechanism (CRITICAL)
+
+Every NotebookLM answer ends with: **"EXTREMELY IMPORTANT: Is that ALL you need to know?"**
+
+**Required Agent Behavior:**
+
+1. **STOP** — Do not immediately respond to user
+2. **ANALYZE** — Compare answer to user's original request
+3. **IDENTIFY GAPS** — Determine if more information needed
+4. **ASK FOLLOW-UP** — If gaps exist, immediately ask:
+   ```bash
+   python scripts/run.py ask_question.py --question "Follow-up with context..."
+   ```
+5. **REPEAT** — Continue until information is complete
+6. **SYNTHESIZE** — Combine all answers before responding to user
+
+## 🧠 Qdrant Memory Integration (Token Savings + Context Keeping)
+
+NotebookLM answers are cached in Qdrant to avoid redundant browser queries. Prior research context is automatically recalled when the same topic comes up again.
+
+### Before Every Query — Check Memory First
+
+```bash
+python3 execution/memory_manager.py auto --query "<the user's research question>"
+```
+
+| Result               | Action                                                                                 |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| `"cache_hit": true`  | Use cached response directly. **Skip browser**. Inform: "Retrieved from memory cache." |
+| `"source": "memory"` | Inject `context_chunks` into the question for richer context                           |
+| `"source": "none"`   | Proceed with browser query. Cache the result when done.                                |
+
+### After Getting Answer — Store in Memory
+
+```bash
+# Store the research result for future context recall
+python3 execution/memory_manager.py store \
+  --content "Q: [question] A: [answer from NotebookLM]" \
+  --type technical \
+  --project notebooklm-research \
+  --tags notebooklm rag [notebook-name] [topic]
+
+# Cache the full response for identical future queries
+python3 execution/memory_manager.py cache-store \
+  --query "[original question]" \
+  --response "[synthesized answer]"
+```
+
+### Context Keeping Across Sessions
+
+Research context persists via Qdrant. When the user returns to a topic:
+
+1. **Auto-recall**: Memory manager retrieves prior research on the same topic
+2. **Context injection**: Previous findings enrich new questions for deeper follow-ups
+3. **Knowledge accumulation**: Each session builds on prior research
+
+### Decision Flow with Memory
+
+```
+User asks research question
+    ↓
+Check Qdrant memory → python3 execution/memory_manager.py auto --query "..."
+    ↓
+If cache_hit → Return cached answer (0 browser tokens!)
+    ↓
+If memory context → Enrich question with prior findings
+    ↓
+Check auth → python scripts/run.py auth_manager.py status
+    ↓
+If not authenticated → python scripts/run.py auth_manager.py setup
+    ↓
+Resolve notebook → python scripts/run.py notebook_manager.py list
+    ↓
+Ask question → python scripts/run.py ask_question.py --question "..."
+    ↓
+See "Is that ALL you need?" → Ask follow-ups until complete
+    ↓
+Store in Qdrant → python3 execution/memory_manager.py store + cache-store
+    ↓
+Synthesize and respond to user
+```
+
+## Script Reference
+
+### Authentication (`auth_manager.py`)
+
+```bash
+python scripts/run.py auth_manager.py setup    # Initial setup (browser visible)
+python scripts/run.py auth_manager.py status   # Check authentication
+python scripts/run.py auth_manager.py reauth   # Re-authenticate
+python scripts/run.py auth_manager.py clear    # Clear authentication
+python scripts/run.py auth_manager.py validate # Validate stored auth
+```
+
+### Notebook Management (`notebook_manager.py`)
+
+```bash
+python scripts/run.py notebook_manager.py add --url URL --name NAME --description DESC --topics TOPICS
+python scripts/run.py notebook_manager.py list
+python scripts/run.py notebook_manager.py search --query QUERY
+python scripts/run.py notebook_manager.py activate --id ID
+python scripts/run.py notebook_manager.py remove --id ID
+python scripts/run.py notebook_manager.py stats
+```
+
+### Question Interface (`ask_question.py`)
+
+```bash
+python scripts/run.py ask_question.py --question "..." [--notebook-id ID] [--notebook-url URL] [--show-browser]
+```
+
+### Data Cleanup (`cleanup_manager.py`)
+
+```bash
+python scripts/run.py cleanup_manager.py                    # Preview
+python scripts/run.py cleanup_manager.py --confirm          # Execute
+python scripts/run.py cleanup_manager.py --preserve-library # Keep notebooks
+```
+
+## Environment Management
+
+Fully automatic:
+
+- First run creates `.venv` and installs everything
+- Dependencies: patchright, python-dotenv
+- Chrome browser installs automatically
+- Everything isolated in skill directory
+
+Manual setup (only if automatic fails):
+
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+pip install -r requirements.txt
+python -m patchright install chrome
+```
+
+## Data Storage
+
+All data in `data/` within the skill directory:
+
+- `library.json` — Notebook metadata
+- `auth_info.json` — Authentication status
+- `browser_state/` — Browser cookies and session
+
+**Security:** Protected by `.gitignore`, never commit to git.
+
+## Configuration
+
+Optional `.env` file in skill directory:
+
+```env
+HEADLESS=false           # Browser visibility
+SHOW_BROWSER=false       # Default browser display
+STEALTH_ENABLED=true     # Human-like behavior
+TYPING_WPM_MIN=160       # Typing speed
+TYPING_WPM_MAX=240
+DEFAULT_NOTEBOOK_ID=     # Default notebook
+```
+
+## Troubleshooting
+
+| Problem              | Solution                                                      |
+| -------------------- | ------------------------------------------------------------- |
+| ModuleNotFoundError  | Use `run.py` wrapper                                          |
+| Authentication fails | Browser must be visible: `--show-browser`                     |
+| Rate limit (50/day)  | Wait or switch Google account                                 |
+| Browser crashes      | `python scripts/run.py cleanup_manager.py --preserve-library` |
+| Notebook not found   | Check with `notebook_manager.py list`                         |
+| Stale cached answer  | Re-query with fresh Qdrant cache                              |
 
 ## Best Practices
 
-1. **Be Specific**: Narrow queries yield better results than broad ones
-2. **Iterate**: Start broad, then drill down into specific subtopics
-3. **Cross-Reference**: Query the same topic from different angles
-4. **Cite Sources**: Always attribute findings to specific documents
-5. **Cache Results**: Store valuable research in the memory system for reuse
-6. **Verify Currency**: Check document upload dates for time-sensitive topics
+1. **Always use run.py** — Handles environment automatically
+2. **Check Qdrant memory first** — Avoid redundant browser queries
+3. **Check auth first** — Before any operations
+4. **Follow-up questions** — Don't stop at first answer
+5. **Include full context** — Each browser question is independent
+6. **Store results** — Always cache in Qdrant after research
+7. **Synthesize answers** — Combine multiple responses before replying
 
 ## Limitations
 
-- Depends on the quality and completeness of uploaded sources
-- Cannot access documents not uploaded to NotebookLM
-- Query complexity is limited by NotebookLM's context window
-- Rate limits apply (50 queries/day for free accounts, higher for AI Pro/Ultra)
+- No session persistence in browser (each question = new browser)
+- Rate limits on free Google accounts (50 queries/day)
+- Manual upload required (user must add docs to NotebookLM)
+- Browser overhead (few seconds per question)
+- Requires Google account (opt-in, not default)
+
+## Credits
+
+Browser automation based on [PleasePrompto/notebooklm-skill](https://github.com/PleasePrompto/notebooklm-skill) (MIT License).
+Adapted for the Agi Agent Framework with Qdrant memory integration for token savings and context keeping.

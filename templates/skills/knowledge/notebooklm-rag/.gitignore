@@ -1,0 +1,6 @@
+# NotebookLM RAG Skill - Sensitive Data
+data/
+.venv/
+.env
+*.pyc
+__pycache__/
