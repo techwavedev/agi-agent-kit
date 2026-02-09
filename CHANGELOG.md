@@ -9,11 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **notebooklm-rag**: Full NotebookLM RAG skill adapted from [PleasePrompto/notebooklm-skill](https://github.com/PleasePrompto/notebooklm-skill) (MIT). Includes browser automation (Patchright), auth management, notebook library, question interface, and Qdrant memory integration for token savings and context keeping. Opt-in for users with Google accounts — default RAG remains Qdrant + local embeddings.
+- **notebooklm-rag (Deep RAG)**: MCP-first autonomous knowledge backend powered by Google NotebookLM + Gemini. The agent fully manages NotebookLM via MCP tools — authentication, library CRUD, querying with auto follow-ups, and Qdrant caching for token savings and cross-session context keeping. Includes fallback Python scripts (Patchright browser automation) when MCP is unavailable. Opt-in for users with Google accounts; default RAG remains `qdrant-memory`. Based on [PleasePrompto/notebooklm-skill](https://github.com/PleasePrompto/notebooklm-skill) (MIT).
 
 ### Removed
 
-- **notebooklm-mcp**: Merged into `notebooklm-rag`. The comprehensive RAG skill supersedes the basic MCP connector.
+- **notebooklm-mcp**: Merged into `notebooklm-rag`. The comprehensive Deep RAG skill supersedes the basic MCP connector.
+
+### Fixed
+
+- **npmignore**: Fixed deep-path glob patterns (`**/__pycache__/`, `**/*.pyc`, `**/data/`) preventing compiled Python files and sensitive data from leaking into the published NPM package.
 
 ## [1.2.5] - 2026-02-09
 
