@@ -106,11 +106,28 @@ def scan_file(filepath, api_key):
         print(f"[*] Status: {status}... waiting 10s")
         time.sleep(10)
 
+def load_env():
+    """Simple .env loader to avoid external dependencies"""
+    if os.path.exists(".env"):
+        with open(".env") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"): continue
+                if "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ[key.strip()] = value.strip()
+
 def main():
+    load_env()
+    
     parser = argparse.ArgumentParser(description="VirusTotal File Scanner")
     parser.add_argument("--file", required=True, help="File to scan")
-    parser.add_argument("--api-key", required=True, help="VirusTotal API Key")
+    parser.add_argument("--api-key", required=False, default=os.environ.get("VT_API_KEY"), help="VirusTotal API Key (optional if VT_API_KEY env var is set)")
     args = parser.parse_args()
+
+    if not args.api_key:
+        print("[!] Error: No API Key provided. Pass --api-key or set VT_API_KEY in .env")
+        sys.exit(1)
 
     if not os.path.exists(args.file):
         print(f"[!] File not found: {args.file}")
