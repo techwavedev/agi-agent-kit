@@ -29,4 +29,9 @@ This framework includes built-in security mechanisms:
 - **Credential Exclusion:** `.gitignore` blocks `.env`, `credentials.json`, `token.json`, `*.pem`, and `*.key` from version control.
 - **Deterministic Execution:** Limits the agent's ability to hallucinate dangerous commands by restricting it to pre-approved scripts.
 - **Vulnerability Scanner Skill:** Built-in `vulnerability-scanner` skill with `security_scan.py` detects API keys, private keys, and hardcoded secrets in codebases.
+- **Automated GitHub Scanning:** comprehensive CI/CD security pipeline including:
+  - **Dependabot:** Automated dependency updates for NPM, Pip, and Actions.
+  - **CodeQL:** Static application security testing (SAST) for Python and JavaScript.
+  - **Trivy:** Container and filesystem vulnerability scanning for secrets and CVEs.
+  - **VirusTotal:** Release artifact scanning for malware/viruses.
 - **Provenance:** We use NPM provenance to verify build integrity.
