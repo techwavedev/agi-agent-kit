@@ -7,7 +7,7 @@
 
 `@techwavedev/agi-agent-kit` is a modular, deterministic framework designed to bridge the gap between LLM reasoning and reliable production execution. It scaffolds a "3-Layer Architecture" (Intent → Orchestration → Execution) that forces agents to use tested scripts rather than hallucinating code.
 
-**v1.2.1** — Now with platform-adaptive orchestration and integrated semantic memory across Claude Code, Kiro IDE, Gemini, and Opencode.
+**v1.2.2** — Now with platform-adaptive orchestration and integrated semantic memory across Claude Code, Kiro IDE, Gemini, and Opencode.
 
 ---
 
