@@ -1,6 +1,6 @@
 {
   "name": "@techwavedev/agi-agent-kit",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Enterprise-Grade Agentic Framework - Modular skill-based AI assistant toolkit with deterministic execution, semantic memory, and platform-adaptive orchestration",
   "bin": {
     "agi-agent-kit": "./bin/init.js"
