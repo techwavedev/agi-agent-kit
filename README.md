@@ -7,6 +7,8 @@
 
 `@techwavedev/agi-agent-kit` is a modular, deterministic framework designed to bridge the gap between LLM reasoning and reliable production execution. It scaffolds a "3-Layer Architecture" (Intent → Orchestration → Execution) that forces agents to use tested scripts rather than hallucinating code.
 
+**v1.2.0** — Now with platform-adaptive orchestration across Claude Code, Kiro IDE, Gemini, and Opencode.
+
 ---
 
 ## 🚀 Quick Start
@@ -23,18 +25,53 @@ You'll be prompted to choose a pack:
 - **knowledge** - Core + 36 specialized skills (API, Security, Design, Architecture)
 - **full** - Complete suite with `.agent/` structure (agents, workflows, rules)
 
+After installation, run the **one-shot setup wizard** to auto-configure your environment:
+
+```bash
+python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
+```
+
+This detects your platform, scans the project stack, and configures everything with a single confirmation.
+
 ---
 
 ## ✨ Key Features
 
-| Feature                     | Description                                                                |
-| --------------------------- | -------------------------------------------------------------------------- |
-| **Deterministic Execution** | Separates business logic (Python scripts) from AI reasoning (Directives)   |
-| **Modular Skill System**    | Plug-and-play capabilities that can be added or removed instantly          |
-| **Semantic Memory**         | Built-in Qdrant-powered memory with 95% token savings via caching          |
-| **Universal Compatibility** | Works with Claude, Gemini, and OpenAI via standardized context files       |
-| **Self-Healing Workflows**  | Agents read error logs, patch scripts, and update directives automatically |
-| **Self-Update**             | Update to the latest version with a single command                         |
+| Feature                       | Description                                                                 |
+| ----------------------------- | --------------------------------------------------------------------------- |
+| **Deterministic Execution**   | Separates business logic (Python scripts) from AI reasoning (Directives)    |
+| **Modular Skill System**      | 56 plug-and-play skills that can be added or removed instantly              |
+| **Platform-Adaptive**         | Auto-detects and optimizes for Claude Code, Kiro IDE, Gemini, and Opencode  |
+| **Multi-Agent Orchestration** | Agent Teams, subagents, Powers, or sequential personas — adapts to platform |
+| **Semantic Memory**           | Built-in Qdrant-powered memory with 95% token savings via caching           |
+| **Self-Healing Workflows**    | Agents read error logs, patch scripts, and update directives automatically  |
+| **One-Shot Setup**            | Platform detection + project stack scan + auto-configuration in one command |
+
+---
+
+## 🌐 Platform Support
+
+The framework automatically detects your AI coding environment and activates the best available features:
+
+| Platform        | Orchestration Strategy              | Key Features                                 |
+| --------------- | ----------------------------------- | -------------------------------------------- |
+| **Claude Code** | Agent Teams (parallel) or Subagents | Plugins, marketplace, LSP, hooks             |
+| **Kiro IDE**    | Powers + Autonomous Agent (async)   | Dynamic MCP loading, hooks, cross-repo tasks |
+| **Gemini**      | Sequential personas via `@agent`    | Skills, MCP servers, execution scripts       |
+| **Opencode**    | Sequential personas via `@agent`    | Skills, MCP servers, providers               |
+
+Run `/setup` to auto-detect and configure your platform, or use the setup script directly:
+
+```bash
+# Interactive (one Y/n question)
+python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
+
+# Auto-apply everything
+python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir . --auto
+
+# Preview without changes
+python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir . --dry-run
+```
 
 ---
 
@@ -43,16 +80,21 @@ You'll be prompted to choose a pack:
 ```
 your-project/
 ├── AGENTS.md              # Master instruction file (symlinked to GEMINI.md, CLAUDE.md)
-├── skills/                # Pre-built tools
+├── skills/                # 56 pre-built tools
 │   ├── webcrawler/        # Documentation harvesting
 │   ├── pdf-reader/        # PDF text extraction
 │   ├── qdrant-memory/     # Semantic caching & memory
 │   ├── documentation/     # Auto-documentation maintenance
-│   └── self-update/       # Framework self-update capability
+│   ├── plugin-discovery/  # Platform detection & setup wizard
+│   ├── parallel-agents/   # Multi-agent orchestration
+│   ├── intelligent-routing/ # Smart agent selection & routing
+│   ├── self-update/       # Framework self-update capability
+│   └── ...                # 48 more specialized skills
 ├── directives/            # SOPs in Markdown
 ├── execution/             # Deterministic Python scripts
 ├── skill-creator/         # Tools to create new skills
 └── .agent/                # (full pack) Agents, workflows, rules
+    └── workflows/         # /setup, /deploy, /test, /debug, etc.
 ```
 
 ---
@@ -68,6 +110,7 @@ The system operates on three layers:
 ├─────────────────────────────────────────────────────────┤
 │  Layer 2: ORCHESTRATION (Agent)                         │
 │  └─ LLM reads directive, decides which tool to call     │
+│  └─ Platform-adaptive: Teams, Subagents, or Personas    │
 ├─────────────────────────────────────────────────────────┤
 │  Layer 3: EXECUTION (Code)                              │
 │  └─ Pure Python scripts (execution/) do the actual work │
@@ -98,6 +141,12 @@ pip install ollama sentence-transformers
 
 ```bash
 npx @techwavedev/agi-agent-kit init --pack=full
+```
+
+### Auto-detect platform and configure environment
+
+```bash
+python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
 ```
 
 ### Update to latest version
@@ -131,14 +180,14 @@ python3 skill-creator/scripts/update_catalog.py --skills-dir skills/
 ## 📚 Documentation
 
 - **[AGENTS.md](./AGENTS.md)** - Complete architecture and operating principles
-- **[skills/SKILLS_CATALOG.md](./skills/SKILLS_CATALOG.md)** - All available skills
+- **[skills/SKILLS_CATALOG.md](./skills/SKILLS_CATALOG.md)** - All 56 available skills
 - **[CHANGELOG.md](./CHANGELOG.md)** - Version history
 
 ---
 
 ## 🛡️ Security
 
-This package includes a pre-flight security scanner (`verify_public_release.py`) that checks for private terms before publishing. All templates are sanitized for public use.
+This package includes a pre-flight security scanner that checks for private terms before publishing. All templates are sanitized for public use.
 
 ---
 
