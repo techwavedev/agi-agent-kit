@@ -26,7 +26,10 @@ import os
 import sys
 import glob
 import shutil
+import subprocess
 from pathlib import Path
+from urllib.request import Request, urlopen
+from urllib.error import URLError, HTTPError
 
 
 # ── Platform Detection ──────────────────────────────────────────────
@@ -85,6 +88,9 @@ def detect_platform(project_dir: Path) -> dict:
 
     # Detect project tech stack
     result["project_stack"] = detect_project_stack(project_dir)
+
+    # Detect memory system (Qdrant + Ollama)
+    result["memory"] = detect_memory_system(project_dir)
 
     # Generate recommendations
     result["recommendations"] = generate_recommendations(result)
@@ -286,6 +292,87 @@ def detect_opencode_features(project_dir: Path) -> dict:
     return features
 
 
+# ── Memory System Detection ─────────────────────────────────────────
+
+
+def detect_memory_system(project_dir: Path) -> dict:
+    """Detect Qdrant + Ollama memory system status."""
+    memory = {
+        "qdrant": {"status": "unknown", "url": "http://localhost:6333"},
+        "ollama": {"status": "unknown", "url": "http://localhost:11434"},
+        "collections": {},
+        "ready": False,
+    }
+
+    qdrant_url = os.environ.get("QDRANT_URL", "http://localhost:6333")
+    ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+    memory["qdrant"]["url"] = qdrant_url
+    memory["ollama"]["url"] = ollama_url
+
+    # Check Qdrant
+    try:
+        req = Request(f"{qdrant_url}/collections", method="GET")
+        with urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode())
+            collections = [
+                c["name"] for c in data.get("result", {}).get("collections", [])
+            ]
+            memory["qdrant"]["status"] = "ok"
+            memory["qdrant"]["collections"] = collections
+
+            # Check point counts for key collections
+            for col_name in ["agent_memory", "semantic_cache"]:
+                if col_name in collections:
+                    try:
+                        col_req = Request(f"{qdrant_url}/collections/{col_name}", method="GET")
+                        with urlopen(col_req, timeout=5) as col_resp:
+                            col_data = json.loads(col_resp.read().decode())
+                            points = col_data.get("result", {}).get("points_count", 0)
+                            memory["collections"][col_name] = {
+                                "exists": True,
+                                "points": points,
+                            }
+                    except Exception:
+                        memory["collections"][col_name] = {"exists": True, "points": -1}
+                else:
+                    memory["collections"][col_name] = {"exists": False, "points": 0}
+    except (URLError, HTTPError, Exception):
+        memory["qdrant"]["status"] = "not_running"
+
+    # Check Ollama
+    try:
+        req = Request(f"{ollama_url}/api/tags", method="GET")
+        with urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode())
+            models = [m["name"] for m in data.get("models", [])]
+            memory["ollama"]["status"] = "ok"
+            memory["ollama"]["models"] = models
+            # Check for embedding model
+            has_embed = any("nomic-embed-text" in m for m in models)
+            memory["ollama"]["has_embedding_model"] = has_embed
+    except (URLError, HTTPError, Exception):
+        memory["ollama"]["status"] = "not_running"
+
+    # Check if session_init.py exists
+    session_init = project_dir / "execution" / "session_init.py"
+    memory["has_session_init"] = session_init.exists()
+
+    # Check if memory_manager.py exists
+    memory_mgr = project_dir / "execution" / "memory_manager.py"
+    memory["has_memory_manager"] = memory_mgr.exists()
+
+    # Overall readiness
+    memory["ready"] = (
+        memory["qdrant"]["status"] == "ok"
+        and memory["ollama"]["status"] == "ok"
+        and memory["ollama"].get("has_embedding_model", False)
+        and memory["collections"].get("agent_memory", {}).get("exists", False)
+        and memory["collections"].get("semantic_cache", {}).get("exists", False)
+    )
+
+    return memory
+
+
 # ── Project Stack Detection ─────────────────────────────────────────
 
 
@@ -393,6 +480,7 @@ def generate_recommendations(detection: dict) -> list:
     platform = detection["platform"]
     features = detection["features"]
     stack = detection["project_stack"]
+    memory = detection.get("memory", {})
 
     if platform == "claude-code":
         recs.extend(generate_claude_recommendations(features, stack))
@@ -402,6 +490,82 @@ def generate_recommendations(detection: dict) -> list:
         recs.extend(generate_gemini_recommendations(features, stack))
     elif platform == "opencode":
         recs.extend(generate_opencode_recommendations(features, stack))
+
+    # Memory system recommendations (all platforms)
+    recs.extend(generate_memory_recommendations(memory))
+
+    return recs
+
+
+def generate_memory_recommendations(memory: dict) -> list:
+    """Generate memory system recommendations."""
+    recs = []
+
+    qdrant = memory.get("qdrant", {})
+    ollama = memory.get("ollama", {})
+    collections = memory.get("collections", {})
+
+    # Qdrant not running
+    if qdrant.get("status") == "not_running":
+        recs.append({
+            "id": "memory_qdrant",
+            "priority": "medium",
+            "category": "memory",
+            "title": "Start Qdrant vector database",
+            "description": "Required for semantic memory and cache",
+            "action": "run_command",
+            "command": "docker run -d -p 6333:6333 -p 6334:6334 -v qdrant_storage:/qdrant/storage qdrant/qdrant",
+        })
+        return recs  # No point checking further if Qdrant is down
+
+    # Ollama not running
+    if ollama.get("status") == "not_running":
+        recs.append({
+            "id": "memory_ollama",
+            "priority": "medium",
+            "category": "memory",
+            "title": "Start Ollama for local embeddings",
+            "description": "Required for semantic memory (zero-cost embeddings)",
+            "action": "run_command",
+            "command": "brew install ollama && ollama serve",
+        })
+        return recs
+
+    # Ollama running but missing embedding model
+    if not ollama.get("has_embedding_model", False):
+        recs.append({
+            "id": "memory_embed_model",
+            "priority": "high",
+            "category": "memory",
+            "title": "Pull embedding model",
+            "description": "nomic-embed-text (274MB) for semantic search",
+            "action": "run_command",
+            "command": "ollama pull nomic-embed-text",
+        })
+
+    # Collections missing or empty
+    agent_mem = collections.get("agent_memory", {})
+    sem_cache = collections.get("semantic_cache", {})
+
+    if not agent_mem.get("exists") or not sem_cache.get("exists"):
+        recs.append({
+            "id": "memory_init_collections",
+            "priority": "high",
+            "category": "memory",
+            "title": "Initialize memory collections",
+            "description": "Create agent_memory and semantic_cache with correct dimensions",
+            "action": "init_memory",
+            "command": "python3 execution/session_init.py",
+        })
+    elif agent_mem.get("points", 0) == 0 and sem_cache.get("points", 0) == 0:
+        recs.append({
+            "id": "memory_empty",
+            "priority": "low",
+            "category": "memory",
+            "title": "Memory collections are empty",
+            "description": "Agent should store decisions and cache responses during sessions",
+            "action": "info",
+        })
 
     return recs
 
@@ -653,6 +817,34 @@ def apply_recommendation(rec: dict, project_dir: Path, dry_run: bool = False) ->
             result["status"] = "applied"
             result["detail"] = f"Created {target}"
 
+    elif action == "init_memory":
+        cmd = rec.get("command", "python3 execution/session_init.py")
+        if dry_run:
+            result["status"] = "dry_run"
+            result["detail"] = f"Would run: {cmd}"
+        else:
+            try:
+                proc = subprocess.run(
+                    cmd.split(),
+                    cwd=str(project_dir),
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                if proc.returncode == 0:
+                    result["status"] = "applied"
+                    result["detail"] = f"Memory initialized: {cmd}"
+                else:
+                    result["status"] = "error"
+                    result["detail"] = f"Failed: {proc.stderr.strip() or proc.stdout.strip()}"
+            except Exception as e:
+                result["status"] = "error"
+                result["detail"] = f"Error running {cmd}: {e}"
+
+    elif action == "info":
+        result["status"] = "info"
+        result["detail"] = rec.get("description", "")
+
     return result
 
 
@@ -732,6 +924,26 @@ def print_report(detection: dict, results: list = None):
         mcp = features.get("mcp_servers", {})
         print(f"   MCP Servers:  {len(mcp.get('configured', []))} configured")
 
+    # Memory System (all platforms)
+    memory = detection.get("memory", {})
+    if memory:
+        qdrant = memory.get("qdrant", {})
+        ollama = memory.get("ollama", {})
+        collections = memory.get("collections", {})
+        print()
+        print("🧠 Memory System:")
+        print(f"   Qdrant:       {'✅ Running' if qdrant.get('status') == 'ok' else '❌ Not running'}")
+        print(f"   Ollama:       {'✅ Running' if ollama.get('status') == 'ok' else '❌ Not running'}")
+        if ollama.get('status') == 'ok':
+            print(f"   Embed Model:  {'✅ nomic-embed-text' if ollama.get('has_embedding_model') else '❌ Missing'}")
+        agent_mem = collections.get('agent_memory', {})
+        sem_cache = collections.get('semantic_cache', {})
+        if agent_mem.get('exists') or sem_cache.get('exists'):
+            print(f"   agent_memory: {agent_mem.get('points', 0)} points")
+            print(f"   semantic_cache: {sem_cache.get('points', 0)} points")
+        elif qdrant.get('status') == 'ok':
+            print(f"   Collections:  ❌ Not initialized")
+
     print()
 
     # Recommendations
@@ -755,6 +967,7 @@ def print_report(detection: dict, results: list = None):
                 "skipped": "⏭️",
                 "dry_run": "🔍",
                 "error": "❌",
+                "info": "ℹ️",
             }.get(r["status"], "❓")
             print(f"   {status_icon} {r['detail']}")
         print()
@@ -813,8 +1026,9 @@ def main():
         sys.exit(0)
 
     # Filter to auto-applicable recommendations
-    auto_applicable = [r for r in recs if r["action"] in ("add_settings_json", "create_dir", "create_hooks")]
-    manual_only = [r for r in recs if r["action"] not in ("add_settings_json", "create_dir", "create_hooks")]
+    auto_applicable = [r for r in recs if r["action"] in ("add_settings_json", "create_dir", "create_hooks", "init_memory")]
+    manual_only = [r for r in recs if r["action"] not in ("add_settings_json", "create_dir", "create_hooks", "init_memory") and r["action"] != "info"]
+    info_only = [r for r in recs if r["action"] == "info"]
 
     if auto_applicable:
         if args.auto or args.dry_run:
@@ -840,17 +1054,26 @@ def main():
             result = apply_recommendation(rec, project_dir, dry_run=args.dry_run)
             results.append(result)
 
+        # Show info items
+        for rec in info_only:
+            result = apply_recommendation(rec, project_dir, dry_run=args.dry_run)
+            results.append(result)
+
         print_report(detection, results)
     else:
-        # Only manual recommendations
+        # Only manual or info recommendations
         results = []
         for rec in manual_only:
+            result = apply_recommendation(rec, project_dir, dry_run=args.dry_run)
+            results.append(result)
+        for rec in info_only:
             result = apply_recommendation(rec, project_dir, dry_run=args.dry_run)
             results.append(result)
         if results:
             print("👉 Manual actions required:")
             for r in results:
-                print(f"   • {r['detail']}")
+                status_icon = {"manual": "👉", "info": "ℹ️"}.get(r["status"], "•")
+                print(f"   {status_icon} {r['detail']}")
             print()
 
     sys.exit(0)
