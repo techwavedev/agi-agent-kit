@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.7] - 2026-02-11
+
+### Security & Maintenance
+
+- **Repository Sanitization**: Removed all internal development configurations (`.agent`, `.claude`, `.gemini`) and private skills from the public repository.
+- **Workflow Hardening**: Enforced fork-and-PR workflow in `CONTRIBUTING.md`.
+- **Community Standards**: Added issue templates and PR templates.
+
+## [1.2.6] - 2026-02-10
+
+### Added
+
+- **notebooklm-rag (Deep RAG)**: MCP-first autonomous knowledge backend powered by Google NotebookLM + Gemini. The agent fully manages NotebookLM via MCP tools — authentication, library CRUD, querying with auto follow-ups, and Qdrant caching for token savings and cross-session context keeping. Includes fallback Python scripts (Patchright browser automation) when MCP is unavailable. Opt-in for users with Google accounts; default RAG remains `qdrant-memory`. Based on [PleasePrompto/notebooklm-skill](https://github.com/PleasePrompto/notebooklm-skill) (MIT).
+
+### Removed
+
+- **notebooklm-mcp**: Merged into `notebooklm-rag`. The comprehensive Deep RAG skill supersedes the basic MCP connector.
+
+### Fixed
+
+- **npmignore**: Fixed deep-path glob patterns (`**/__pycache__/`, `**/*.pyc`, `**/data/`) preventing compiled Python files and sensitive data from leaking into the published NPM package.
+
+## [1.2.5] - 2026-02-09
+
+### Fixed
+
+- **Documentation Updates**: README updated to reflect current version and removed internal skill references.
+
+## [1.2.4] - 2026-02-09
+
+### Fixed
+
+- **Minor bug fixes**: Addressed issues from v1.2.3 release.
+
 ## [1.2.3] - 2026-02-09
 
 ### Added

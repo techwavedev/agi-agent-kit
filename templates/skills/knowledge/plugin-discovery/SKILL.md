@@ -120,16 +120,15 @@ Claude Code provides an official marketplace with pre-built plugins. To set up:
 
 #### With External Services
 
-| Plugin      | What It Does              | Install                                            |
-| ----------- | ------------------------- | -------------------------------------------------- |
-| `github`    | GitHub issues, PRs, repos | `/plugin install github@anthropics-claude-code`    |
-| `gitlab`    | GitLab integration        | `/plugin install gitlab@anthropics-claude-code`    |
-| `atlassian` | Jira/Confluence           | `/plugin install atlassian@anthropics-claude-code` |
-| `slack`     | Slack messaging           | `/plugin install slack@anthropics-claude-code`     |
-| `sentry`    | Error monitoring          | `/plugin install sentry@anthropics-claude-code`    |
-| `vercel`    | Deployment                | `/plugin install vercel@anthropics-claude-code`    |
-| `firebase`  | Firebase services         | `/plugin install firebase@anthropics-claude-code`  |
-| `figma`     | Design integration        | `/plugin install figma@anthropics-claude-code`     |
+| Plugin     | What It Does              | Install                                           |
+| ---------- | ------------------------- | ------------------------------------------------- |
+| `github`   | GitHub issues, PRs, repos | `/plugin install github@anthropics-claude-code`   |
+| `linear`   | Issue tracking            | `/plugin install linear@anthropics-claude-code`   |
+| `slack`    | Slack messaging           | `/plugin install slack@anthropics-claude-code`    |
+| `sentry`   | Error monitoring          | `/plugin install sentry@anthropics-claude-code`   |
+| `vercel`   | Deployment                | `/plugin install vercel@anthropics-claude-code`   |
+| `firebase` | Firebase services         | `/plugin install firebase@anthropics-claude-code` |
+| `figma`    | Design integration        | `/plugin install figma@anthropics-claude-code`    |
 
 ### Custom Marketplaces
 
@@ -522,7 +521,7 @@ Detecting runtime environment...
 Scanning project for technology stack...
 → Languages: [TypeScript, Python, etc.]
 → Frameworks: [Next.js, Express, etc.]
-→ Services: [GitHub, Jira, etc.]
+→ Services: [GitHub, Linear, etc.]
 ```
 
 ### Step 3: Recommend Extensions
