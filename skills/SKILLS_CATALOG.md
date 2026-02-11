@@ -3,6 +3,7 @@
 > **Auto-generated Documentation** — Last updated: 2026-02-09 14:14
 >
 > This catalog is automatically maintained. Update it by running:
+>
 > ```bash
 > python skill-creator/scripts/update_catalog.py --skills-dir skills/
 > ```
@@ -15,6 +16,7 @@ This document provides comprehensive documentation on available skills, how to u
 
 - [What Are Skills?](#what-are-skills)
 - [Available Skills](#available-skills)
+  - [Antigravity Designer](#antigravity-designer)
   - [Api Patterns](#api-patterns)
   - [App Builder](#app-builder)
   - [Architecture](#architecture)
@@ -97,15 +99,16 @@ skill-name/
 
 ### AWS (Hub)
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `aws` |
+| Property     | Value         |
+| ------------ | ------------- |
+| **Name**     | `aws`         |
 | **Location** | `skills/aws/` |
-| **Type** | Router / Hub |
+| **Type**     | Router / Hub  |
 
 **Description:** Comprehensive AWS MCP skill covering ALL AWS services. Use for any AWS-related task - infrastructure, databases, AI/ML, observability, networking, serverless, and more. This single skill provides access to 60+ AWS MCP servers organized by category.
 
 **References:**
+
 - `references/common_patterns.md`
 - `references/mcp_servers.md`
 
@@ -113,23 +116,24 @@ skill-name/
 
 ### Confluent Kafka
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `confluent-kafka` |
+| Property     | Value                     |
+| ------------ | ------------------------- |
+| **Name**     | `confluent-kafka`         |
 | **Location** | `skills/confluent-kafka/` |
-| **Parent** | [Aws](#aws) |
+| **Parent**   | [Aws](#aws)               |
 
 **Description:** Confluent Kafka specialist for tarball/Ansible custom installations. Expert in updating, maintaining, checking health, troubleshooting, documenting, analyzing metrics, and upgrading Confluent Kafka deployments from 7.x to 8.x versions. Covers KRaft mode (ZooKeeper-less), broker configuration, Schema Registry, Connect, ksqlDB, Control Center, and production-grade operations. Use when working with Confluent Platform installations, migrations to KRaft, performance tuning, health monitoring, and infrastructure-as-code with Ansible.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/kafka_health_check.py` | *[See script for details]* |
-| `scripts/upgrade_preflight.py` | *[See script for details]* |
-| `scripts/validate_config.py` | *[See script for details]* |
+| Script                          | Purpose                    |
+| ------------------------------- | -------------------------- |
+| `scripts/kafka_health_check.py` | _[See script for details]_ |
+| `scripts/upgrade_preflight.py`  | _[See script for details]_ |
+| `scripts/validate_config.py`    | _[See script for details]_ |
 
 **References:**
+
 - `references/ansible_playbooks.md`
 - `references/ec_deployment.md`
 - `references/kraft_migration.md`
@@ -140,23 +144,24 @@ skill-name/
 
 ### Consul
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `consul` |
+| Property     | Value            |
+| ------------ | ---------------- |
+| **Name**     | `consul`         |
 | **Location** | `skills/consul/` |
-| **Parent** | [Aws](#aws) |
+| **Parent**   | [Aws](#aws)      |
 
 **Description:** HashiCorp Consul specialist for EKS clusters. Use for Consul service mesh installation, configuration, HA setup, maintenance, updates, upgrades, troubleshooting, and optimization. Covers Consul Connect, intentions, health checks, ACLs, gossip encryption, TLS configuration, federation, and Kubernetes integration via consul-k8s Helm chart. Requires kubectl and helm access to target EKS cluster.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/consul_health_report.py` | *[See script for details]* |
-| `scripts/consul_status.py` | *[See script for details]* |
-| `scripts/generate_values.py` | *[See script for details]* |
+| Script                            | Purpose                    |
+| --------------------------------- | -------------------------- |
+| `scripts/consul_health_report.py` | _[See script for details]_ |
+| `scripts/consul_status.py`        | _[See script for details]_ |
+| `scripts/generate_values.py`      | _[See script for details]_ |
 
 **References:**
+
 - `references/acl_setup.md`
 - `references/ha_config.md`
 - `references/troubleshooting.md`
@@ -166,22 +171,23 @@ skill-name/
 
 ### Gitlab
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `gitlab` |
+| Property     | Value            |
+| ------------ | ---------------- |
+| **Name**     | `gitlab`         |
 | **Location** | `skills/gitlab/` |
-| **Parent** | [Aws](#aws) |
+| **Parent**   | [Aws](#aws)      |
 
 **Description:** GitLab specialist for Kubernetes agent management on EKS clusters. Use for GitLab agent (agentk) installation, configuration, upgrades, GitOps with Flux, CI/CD pipeline integration, project management via API, token management, and troubleshooting connectivity issues. Covers agent registration, Helm deployments, KAS configuration (self-managed on-prem), impersonation, and multi-cluster setups. Requires kubectl/helm access to target EKS cluster and GitLab API token.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/generate_agent_values.py` | *[See script for details]* |
-| `scripts/gitlab_agent_status.py` | *[See script for details]* |
+| Script                             | Purpose                    |
+| ---------------------------------- | -------------------------- |
+| `scripts/generate_agent_values.py` | _[See script for details]_ |
+| `scripts/gitlab_agent_status.py`   | _[See script for details]_ |
 
 **References:**
+
 - `references/agent_installation.md`
 - `references/api_reference.md`
 - `references/gitops_flux.md`
@@ -191,23 +197,24 @@ skill-name/
 
 ### Karpenter
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `karpenter` |
+| Property     | Value               |
+| ------------ | ------------------- |
+| **Name**     | `karpenter`         |
 | **Location** | `skills/karpenter/` |
-| **Parent** | [Aws](#aws) |
+| **Parent**   | [Aws](#aws)         |
 
 **Description:** Karpenter Kubernetes autoscaler specialist for EKS clusters. Use for troubleshooting, documenting, managing, creating, updating, upgrading Karpenter deployments, and obtaining live cluster information. Covers NodePool/EC2NodeClass configuration, cost optimization, node consolidation, drift detection, Spot interruption handling, and migration from Cluster Autoscaler. Requires kubectl access to target EKS cluster.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/generate_ec2nodeclass.py` | *[See script for details]* |
-| `scripts/generate_nodepool.py` | *[See script for details]* |
-| `scripts/karpenter_status.py` | *[See script for details]* |
+| Script                             | Purpose                    |
+| ---------------------------------- | -------------------------- |
+| `scripts/generate_ec2nodeclass.py` | _[See script for details]_ |
+| `scripts/generate_nodepool.py`     | _[See script for details]_ |
+| `scripts/karpenter_status.py`      | _[See script for details]_ |
 
 **References:**
+
 - `references/ec2nodeclasses.md`
 - `references/migration.md`
 - `references/nodepools.md`
@@ -215,31 +222,43 @@ skill-name/
 
 ---
 
+### Antigravity Designer
+
+| Property     | Value                          |
+| ------------ | ------------------------------ |
+| **Name**     | `antigravity-designer`         |
+| **Location** | `skills/antigravity-designer/` |
+| **Type**     | Standalone                     |
+
+**Description:** Elite website design specialist powered by NotebookLM Deep RAG. Queries the 'antigravity-designer' notebook for cutting-edge design patterns, UI/UX best practices, and visual excellence strategies. Triggers on: 'design website', 'UI patterns', 'visual design', 'web aesthetics', '@designer'.
+
+---
+
 ### Api Patterns
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `api-patterns` |
+| Property     | Value                  |
+| ------------ | ---------------------- |
+| **Name**     | `api-patterns`         |
 | **Location** | `skills/api-patterns/` |
-| **Type** | Standalone |
+| **Type**     | Standalone             |
 
 **Description:** API design principles and decision-making. REST vs GraphQL vs tRPC selection, response formats, versioning, pagination.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/api_validator.py` | *[See script for details]* |
+| Script                     | Purpose                    |
+| -------------------------- | -------------------------- |
+| `scripts/api_validator.py` | _[See script for details]_ |
 
 ---
 
 ### App Builder
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `app-builder` |
+| Property     | Value                 |
+| ------------ | --------------------- |
+| **Name**     | `app-builder`         |
 | **Location** | `skills/app-builder/` |
-| **Type** | Standalone |
+| **Type**     | Standalone            |
 
 **Description:** Main application building orchestrator. Creates full-stack applications from natural language requests. Determines project type, selects tech stack, coordinates agents.
 
@@ -247,11 +266,11 @@ skill-name/
 
 ### Architecture
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `architecture` |
+| Property     | Value                  |
+| ------------ | ---------------------- |
+| **Name**     | `architecture`         |
 | **Location** | `skills/architecture/` |
-| **Type** | Standalone |
+| **Type**     | Standalone             |
 
 **Description:** Architectural decision-making framework. Requirements analysis, trade-off evaluation, ADR documentation. Use when making architecture decisions or analyzing system design.
 
@@ -259,21 +278,22 @@ skill-name/
 
 ### Aws Terraform
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `aws-terraform` |
+| Property     | Value                   |
+| ------------ | ----------------------- |
+| **Name**     | `aws-terraform`         |
 | **Location** | `skills/aws-terraform/` |
-| **Type** | Standalone |
+| **Type**     | Standalone              |
 
 **Description:** AWS infrastructure deployments using Terraform and Terragrunt. Use for any task involving: (1) Writing, validating, or deploying Terraform/HCL code for AWS, (2) Security scanning with Checkov, (3) AWS provider documentation lookup, (4) Terraform Registry module analysis, (5) Terragrunt multi-environment orchestration, (6) Infrastructure as Code best practices for AWS. Parent skill: aws.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/configure_mcp.py` | *[See script for details]* |
+| Script                     | Purpose                    |
+| -------------------------- | -------------------------- |
+| `scripts/configure_mcp.py` | _[See script for details]_ |
 
 **References:**
+
 - `references/best_practices.md`
 - `references/checkov_reference.md`
 
@@ -281,11 +301,11 @@ skill-name/
 
 ### Bash Linux
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `bash-linux` |
+| Property     | Value                |
+| ------------ | -------------------- |
+| **Name**     | `bash-linux`         |
 | **Location** | `skills/bash-linux/` |
-| **Type** | Standalone |
+| **Type**     | Standalone           |
 
 **Description:** Bash/Linux terminal patterns. Critical commands, piping, error handling, scripting. Use when working on macOS or Linux systems.
 
@@ -293,11 +313,11 @@ skill-name/
 
 ### Behavioral Modes
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `behavioral-modes` |
+| Property     | Value                      |
+| ------------ | -------------------------- |
+| **Name**     | `behavioral-modes`         |
 | **Location** | `skills/behavioral-modes/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                 |
 
 **Description:** AI operational modes (brainstorm, implement, debug, review, teach, ship, orchestrate). Use to adapt behavior based on task type.
 
@@ -305,11 +325,11 @@ skill-name/
 
 ### Brainstorming
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `brainstorming` |
+| Property     | Value                   |
+| ------------ | ----------------------- |
+| **Name**     | `brainstorming`         |
 | **Location** | `skills/brainstorming/` |
-| **Type** | Standalone |
+| **Type**     | Standalone              |
 
 **Description:** Socratic questioning protocol + user communication. MANDATORY for complex requests, new features, or unclear requirements. Includes progress reporting and error handling.
 
@@ -317,11 +337,11 @@ skill-name/
 
 ### Clean Code
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `clean-code` |
+| Property     | Value                |
+| ------------ | -------------------- |
+| **Name**     | `clean-code`         |
 | **Location** | `skills/clean-code/` |
-| **Type** | Standalone |
+| **Type**     | Standalone           |
 
 **Description:** Pragmatic coding standards - concise, direct, no over-engineering, no unnecessary comments
 
@@ -329,11 +349,11 @@ skill-name/
 
 ### Code Review Checklist
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `code-review-checklist` |
+| Property     | Value                           |
+| ------------ | ------------------------------- |
+| **Name**     | `code-review-checklist`         |
 | **Location** | `skills/code-review-checklist/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                      |
 
 **Description:** Code review guidelines covering code quality, security, and best practices.
 
@@ -341,29 +361,29 @@ skill-name/
 
 ### Database Design
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `database-design` |
+| Property     | Value                     |
+| ------------ | ------------------------- |
+| **Name**     | `database-design`         |
 | **Location** | `skills/database-design/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                |
 
 **Description:** Database design principles and decision-making. Schema design, indexing strategy, ORM selection, serverless databases.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/schema_validator.py` | *[See script for details]* |
+| Script                        | Purpose                    |
+| ----------------------------- | -------------------------- |
+| `scripts/schema_validator.py` | _[See script for details]_ |
 
 ---
 
 ### Deployment Procedures
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `deployment-procedures` |
+| Property     | Value                           |
+| ------------ | ------------------------------- |
+| **Name**     | `deployment-procedures`         |
 | **Location** | `skills/deployment-procedures/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                      |
 
 **Description:** Production deployment principles and decision-making. Safe deployment workflows, rollback strategies, and verification. Teaches thinking, not scripts.
 
@@ -371,11 +391,11 @@ skill-name/
 
 ### Design Md
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `design-md` |
+| Property     | Value               |
+| ------------ | ------------------- |
+| **Name**     | `design-md`         |
 | **Location** | `skills/design-md/` |
-| **Type** | Standalone |
+| **Type**     | Standalone          |
 
 **Description:** Analyze Stitch projects and synthesize a semantic design system into DESIGN.md files
 
@@ -383,36 +403,37 @@ skill-name/
 
 ### Documentation
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `documentation` |
+| Property     | Value                   |
+| ------------ | ----------------------- |
+| **Name**     | `documentation`         |
 | **Location** | `skills/documentation/` |
-| **Type** | Standalone |
+| **Type**     | Standalone              |
 
 **Description:** "Automated documentation maintenance and generation skill. Triggers when: (1) Code is added, changed, updated, or deleted in any skill, (2) New scripts or references are created, (3) SKILL.md files are modified, (4) User requests documentation updates, (5) Skills catalog needs regeneration, (6) README or AGENTS.md need updates reflecting code changes. Use for generating technical documentation, updating docs after code changes, producing changelogs, ensuring documentation stays synchronized with the codebase, and maintaining the skills catalog."
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/analyze_code.py` | *[See script for details]* |
-| `scripts/detect_changes.py` | *[See script for details]* |
-| `scripts/generate_changelog.py` | *[See script for details]* |
-| `scripts/sync_docs.py` | *[See script for details]* |
-| `scripts/update_skill_docs.py` | *[See script for details]* |
+| Script                          | Purpose                    |
+| ------------------------------- | -------------------------- |
+| `scripts/analyze_code.py`       | _[See script for details]_ |
+| `scripts/detect_changes.py`     | _[See script for details]_ |
+| `scripts/generate_changelog.py` | _[See script for details]_ |
+| `scripts/sync_docs.py`          | _[See script for details]_ |
+| `scripts/update_skill_docs.py`  | _[See script for details]_ |
 
 **References:**
+
 - `references/best_practices.md`
 
 ---
 
 ### Documentation Templates
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `documentation-templates` |
+| Property     | Value                             |
+| ------------ | --------------------------------- |
+| **Name**     | `documentation-templates`         |
 | **Location** | `skills/documentation-templates/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                        |
 
 **Description:** Documentation templates and structure guidelines. README, API docs, code comments, and AI-friendly documentation.
 
@@ -420,30 +441,30 @@ skill-name/
 
 ### Frontend Design
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `frontend-design` |
+| Property     | Value                     |
+| ------------ | ------------------------- |
+| **Name**     | `frontend-design`         |
 | **Location** | `skills/frontend-design/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                |
 
 **Description:** Design thinking and decision-making for web UI. Use when designing components, layouts, color schemes, typography, or creating aesthetic interfaces. Teaches principles, not fixed values.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/accessibility_checker.py` | *[See script for details]* |
-| `scripts/ux_audit.py` | *[See script for details]* |
+| Script                             | Purpose                    |
+| ---------------------------------- | -------------------------- |
+| `scripts/accessibility_checker.py` | _[See script for details]_ |
+| `scripts/ux_audit.py`              | _[See script for details]_ |
 
 ---
 
 ### Game Development
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `game-development` |
+| Property     | Value                      |
+| ------------ | -------------------------- |
+| **Name**     | `game-development`         |
 | **Location** | `skills/game-development/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                 |
 
 **Description:** Game development orchestrator. Routes to platform-specific skills based on project needs.
 
@@ -451,47 +472,47 @@ skill-name/
 
 ### Geo Fundamentals
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `geo-fundamentals` |
+| Property     | Value                      |
+| ------------ | -------------------------- |
+| **Name**     | `geo-fundamentals`         |
 | **Location** | `skills/geo-fundamentals/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                 |
 
 **Description:** Generative Engine Optimization for AI search engines (ChatGPT, Claude, Perplexity).
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/geo_checker.py` | *[See script for details]* |
+| Script                   | Purpose                    |
+| ------------------------ | -------------------------- |
+| `scripts/geo_checker.py` | _[See script for details]_ |
 
 ---
 
 ### I18N Localization
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `i18n-localization` |
+| Property     | Value                       |
+| ------------ | --------------------------- |
+| **Name**     | `i18n-localization`         |
 | **Location** | `skills/i18n-localization/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                  |
 
 **Description:** Internationalization and localization patterns. Detecting hardcoded strings, managing translations, locale files, RTL support.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/i18n_checker.py` | *[See script for details]* |
+| Script                    | Purpose                    |
+| ------------------------- | -------------------------- |
+| `scripts/i18n_checker.py` | _[See script for details]_ |
 
 ---
 
 ### Intelligent Routing
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `intelligent-routing` |
+| Property     | Value                         |
+| ------------ | ----------------------------- |
+| **Name**     | `intelligent-routing`         |
 | **Location** | `skills/intelligent-routing/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                    |
 
 **Description:** Automatic agent selection, intelligent task routing, and platform-adaptive orchestration. Analyzes user requests and automatically selects the best specialist agent(s). Detects the runtime platform (Claude Code, Gemini, Opencode) and proactively recommends enabling platform-specific features like Agent Teams and Plugins.
 
@@ -499,59 +520,60 @@ skill-name/
 
 ### Jira
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `jira` |
+| Property     | Value          |
+| ------------ | -------------- |
+| **Name**     | `jira`         |
 | **Location** | `skills/jira/` |
-| **Type** | Standalone |
+| **Type**     | Standalone     |
 
 **Description:** "Jira ticket management skill for creating, updating, and managing issues. Use for: (1) Creating new tickets/issues with custom fields, (2) Updating existing tickets (status, assignee, priority, labels), (3) Adding and updating comments, (4) Logging work time and time tracking, (5) Searching issues with JQL, (6) Managing transitions and workflows, (7) Bulk operations on multiple tickets, (8) Sprint and board management. Supports both MCP server integration and direct REST API calls. Requires JIRA_API_TOKEN and JIRA_URL environment variables."
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/add_comment.py` | *[See script for details]* |
-| `scripts/bulk_log_work.py` | *[See script for details]* |
-| `scripts/create_ticket.py` | *[See script for details]* |
-| `scripts/get_ticket.py` | *[See script for details]* |
-| `scripts/jira_client.py` | *[See script for details]* |
-| `scripts/log_work.py` | *[See script for details]* |
-| `scripts/search_tickets.py` | *[See script for details]* |
-| `scripts/update_comment.py` | *[See script for details]* |
-| `scripts/update_ticket.py` | *[See script for details]* |
+| Script                      | Purpose                    |
+| --------------------------- | -------------------------- |
+| `scripts/add_comment.py`    | _[See script for details]_ |
+| `scripts/bulk_log_work.py`  | _[See script for details]_ |
+| `scripts/create_ticket.py`  | _[See script for details]_ |
+| `scripts/get_ticket.py`     | _[See script for details]_ |
+| `scripts/jira_client.py`    | _[See script for details]_ |
+| `scripts/log_work.py`       | _[See script for details]_ |
+| `scripts/search_tickets.py` | _[See script for details]_ |
+| `scripts/update_comment.py` | _[See script for details]_ |
+| `scripts/update_ticket.py`  | _[See script for details]_ |
 
 **References:**
+
 - `references/jql_reference.md`
 
 ---
 
 ### Lint And Validate
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `lint-and-validate` |
+| Property     | Value                       |
+| ------------ | --------------------------- |
+| **Name**     | `lint-and-validate`         |
 | **Location** | `skills/lint-and-validate/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                  |
 
 **Description:** Automatic quality control, linting, and static analysis procedures. Use after every code modification to ensure syntax correctness and project standards. Triggers onKeywords: lint, format, check, validate, types, static analysis.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/lint_runner.py` | *[See script for details]* |
-| `scripts/type_coverage.py` | *[See script for details]* |
+| Script                     | Purpose                    |
+| -------------------------- | -------------------------- |
+| `scripts/lint_runner.py`   | _[See script for details]_ |
+| `scripts/type_coverage.py` | _[See script for details]_ |
 
 ---
 
 ### Mcp Builder
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `mcp-builder` |
+| Property     | Value                 |
+| ------------ | --------------------- |
+| **Name**     | `mcp-builder`         |
 | **Location** | `skills/mcp-builder/` |
-| **Type** | Standalone |
+| **Type**     | Standalone            |
 
 **Description:** MCP (Model Context Protocol) server building principles. Tool design, resource patterns, best practices.
 
@@ -559,29 +581,29 @@ skill-name/
 
 ### Mobile Design
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `mobile-design` |
+| Property     | Value                   |
+| ------------ | ----------------------- |
+| **Name**     | `mobile-design`         |
 | **Location** | `skills/mobile-design/` |
-| **Type** | Standalone |
+| **Type**     | Standalone              |
 
 **Description:** Mobile-first design thinking and decision-making for iOS and Android apps. Touch interaction, performance patterns, platform conventions. Teaches principles, not fixed values. Use when building React Native, Flutter, or native mobile apps.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/mobile_audit.py` | *[See script for details]* |
+| Script                    | Purpose                    |
+| ------------------------- | -------------------------- |
+| `scripts/mobile_audit.py` | _[See script for details]_ |
 
 ---
 
 ### Nextjs Best Practices
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `nextjs-best-practices` |
+| Property     | Value                           |
+| ------------ | ------------------------------- |
+| **Name**     | `nextjs-best-practices`         |
 | **Location** | `skills/nextjs-best-practices/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                      |
 
 **Description:** Next.js App Router principles. Server Components, data fetching, routing patterns.
 
@@ -589,11 +611,11 @@ skill-name/
 
 ### Nodejs Best Practices
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `nodejs-best-practices` |
+| Property     | Value                           |
+| ------------ | ------------------------------- |
+| **Name**     | `nodejs-best-practices`         |
 | **Location** | `skills/nodejs-best-practices/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                      |
 
 **Description:** Node.js development principles and decision-making. Framework selection, async patterns, security, and architecture. Teaches thinking, not copying.
 
@@ -601,66 +623,69 @@ skill-name/
 
 ### Notebooklm Mcp
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `notebooklm-mcp` |
+| Property     | Value                    |
+| ------------ | ------------------------ |
+| **Name**     | `notebooklm-mcp`         |
 | **Location** | `skills/notebooklm-mcp/` |
-| **Type** | Standalone |
+| **Type**     | Standalone               |
 
 **Description:** "Connects to Google NotebookLM via MCP using PleasePrompto/notebooklm-mcp. Browser-automated auth, zero-hallucination research, smart library management. Triggers when user asks to research docs, query NotebookLM, or manage notebook libraries."
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/auth_helper.py` | *[See script for details]* |
-| `scripts/list_notebooks_cli.py` | *[See script for details]* |
+| Script                          | Purpose                    |
+| ------------------------------- | -------------------------- |
+| `scripts/auth_helper.py`        | _[See script for details]_ |
+| `scripts/list_notebooks_cli.py` | _[See script for details]_ |
 
 **References:**
+
 - `references/api_reference.md`
 
 ---
 
 ### Notebooklm Rag
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `notebooklm-rag` |
+| Property     | Value                    |
+| ------------ | ------------------------ |
+| **Name**     | `notebooklm-rag`         |
 | **Location** | `skills/notebooklm-rag/` |
-| **Type** | Standalone |
+| **Type**     | Standalone               |
 
 **Description:** "Deep-search RAG knowledge layer powered by Google NotebookLM + Gemini 2.5. Use when explicitly asked to research, investigate, plan with docs, or query knowledge bases. Complement to qdrant-memory (token saver). Triggers on: '@notebooklm', 'research my docs', 'check my notebooks', 'deep search', 'investigate with docs'."
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/preflight_check.py` | *[See script for details]* |
-| `scripts/research_query.py` | *[See script for details]* |
-| `scripts/research_report.py` | *[See script for details]* |
+| Script                       | Purpose                    |
+| ---------------------------- | -------------------------- |
+| `scripts/preflight_check.py` | _[See script for details]_ |
+| `scripts/research_query.py`  | _[See script for details]_ |
+| `scripts/research_report.py` | _[See script for details]_ |
 
 **References:**
+
 - `references/research_patterns.md`
 
 ---
 
 ### Opensearch
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `opensearch` |
+| Property     | Value                |
+| ------------ | -------------------- |
+| **Name**     | `opensearch`         |
 | **Location** | `skills/opensearch/` |
-| **Type** | Standalone |
+| **Type**     | Standalone           |
 
 **Description:** OpenSearch specialist covering querying (Query DSL, SQL), performance optimization, cluster management, monitoring, OpenSearch Dashboards, ML/AI (neural search, embeddings, ML Commons), data ingestion (Logstash, Fluent Bit, Data Prepper), OpenSearch Operator for Kubernetes, and MCP integration. Use for any task involving: (1) Writing or optimizing OpenSearch queries, (2) Index design and mapping, (3) Cluster health and performance tuning, (4) OpenSearch Dashboards visualization, (5) Neural/semantic search with vectors, (6) Log and data ingestion pipelines, (7) Kubernetes deployments with OpenSearch Operator.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/configure_mcp.py` | *[See script for details]* |
+| Script                     | Purpose                    |
+| -------------------------- | -------------------------- |
+| `scripts/configure_mcp.py` | _[See script for details]_ |
 
 **References:**
+
 - `references/ml_neural_search.md`
 - `references/operator.md`
 - `references/query_dsl.md`
@@ -669,11 +694,11 @@ skill-name/
 
 ### Parallel Agents
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `parallel-agents` |
+| Property     | Value                     |
+| ------------ | ------------------------- |
+| **Name**     | `parallel-agents`         |
 | **Location** | `skills/parallel-agents/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                |
 
 **Description:** Platform-adaptive multi-agent orchestration. Uses Claude Code Agent Teams when available, subagents as fallback, and sequential persona switching on other platforms. Use when multiple independent tasks can run with different domain expertise or when comprehensive analysis requires multiple perspectives.
 
@@ -681,50 +706,51 @@ skill-name/
 
 ### Pdf Reader
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `pdf-reader` |
+| Property     | Value                |
+| ------------ | -------------------- |
+| **Name**     | `pdf-reader`         |
 | **Location** | `skills/pdf-reader/` |
-| **Type** | Standalone |
+| **Type**     | Standalone           |
 
 **Description:** Extract text from PDF files for manipulation, search, and reference. Use when needing to read PDF content, extract text from documents, search within PDFs, or convert PDF to text for further processing. Supports multiple extraction methods (pdfplumber, PyMuPDF, pdfminer) with automatic fallback.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/extract_text.py` | *[See script for details]* |
+| Script                    | Purpose                    |
+| ------------------------- | -------------------------- |
+| `scripts/extract_text.py` | _[See script for details]_ |
 
 **References:**
+
 - `references/pdf_libraries.md`
 
 ---
 
 ### Performance Profiling
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `performance-profiling` |
+| Property     | Value                           |
+| ------------ | ------------------------------- |
+| **Name**     | `performance-profiling`         |
 | **Location** | `skills/performance-profiling/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                      |
 
 **Description:** Performance profiling principles. Measurement, analysis, and optimization techniques.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/lighthouse_audit.py` | *[See script for details]* |
+| Script                        | Purpose                    |
+| ----------------------------- | -------------------------- |
+| `scripts/lighthouse_audit.py` | _[See script for details]_ |
 
 ---
 
 ### Plan Writing
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `plan-writing` |
+| Property     | Value                  |
+| ------------ | ---------------------- |
+| **Name**     | `plan-writing`         |
 | **Location** | `skills/plan-writing/` |
-| **Type** | Standalone |
+| **Type**     | Standalone             |
 
 **Description:** Structured task planning with clear breakdowns, dependencies, and verification criteria. Use when implementing features, refactoring, or any multi-step work.
 
@@ -732,29 +758,29 @@ skill-name/
 
 ### Plugin Discovery
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `plugin-discovery` |
+| Property     | Value                      |
+| ------------ | -------------------------- |
+| **Name**     | `plugin-discovery`         |
 | **Location** | `skills/plugin-discovery/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                 |
 
 **Description:** Platform-adaptive plugin and extension auto-discovery. Detects the runtime environment (Claude Code, Gemini, Opencode, Kiro) and recommends or installs relevant plugins, extensions, MCP servers, and marketplace integrations. Use when setting up a project, onboarding, or when the user asks about available tools/plugins.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/platform_setup.py` | *[See script for details]* |
+| Script                      | Purpose                    |
+| --------------------------- | -------------------------- |
+| `scripts/platform_setup.py` | _[See script for details]_ |
 
 ---
 
 ### Powershell Windows
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `powershell-windows` |
+| Property     | Value                        |
+| ------------ | ---------------------------- |
+| **Name**     | `powershell-windows`         |
 | **Location** | `skills/powershell-windows/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                   |
 
 **Description:** PowerShell Windows patterns. Critical pitfalls, operator syntax, error handling.
 
@@ -762,11 +788,11 @@ skill-name/
 
 ### Python Patterns
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `python-patterns` |
+| Property     | Value                     |
+| ------------ | ------------------------- |
+| **Name**     | `python-patterns`         |
 | **Location** | `skills/python-patterns/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                |
 
 **Description:** Python development principles and decision-making. Framework selection, async patterns, type hints, project structure. Teaches thinking, not copying.
 
@@ -774,27 +800,28 @@ skill-name/
 
 ### Qdrant Memory
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `qdrant-memory` |
+| Property     | Value                   |
+| ------------ | ----------------------- |
+| **Name**     | `qdrant-memory`         |
 | **Location** | `skills/qdrant-memory/` |
-| **Type** | Standalone |
+| **Type**     | Standalone              |
 
 **Description:** "Intelligent token optimization through Qdrant-powered semantic caching and long-term memory. Use for (1) Semantic Cache - avoid LLM calls entirely for semantically similar queries with 100% token savings, (2) Long-Term Memory - retrieve only relevant context chunks instead of full conversation history with 80-95% context reduction, (3) Hybrid Search - combine vector similarity with keyword filtering for technical queries, (4) Memory Management - store and retrieve conversation memories, decisions, and code patterns with metadata filtering. Triggers when needing to cache responses, remember past interactions, optimize context windows, or implement RAG patterns."
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/benchmark_token_savings.py` | *[See script for details]* |
-| `scripts/embedding_utils.py` | *[See script for details]* |
-| `scripts/hybrid_search.py` | *[See script for details]* |
-| `scripts/init_collection.py` | *[See script for details]* |
-| `scripts/memory_retrieval.py` | *[See script for details]* |
-| `scripts/semantic_cache.py` | *[See script for details]* |
-| `scripts/test_skill.py` | *[See script for details]* |
+| Script                               | Purpose                    |
+| ------------------------------------ | -------------------------- |
+| `scripts/benchmark_token_savings.py` | _[See script for details]_ |
+| `scripts/embedding_utils.py`         | _[See script for details]_ |
+| `scripts/hybrid_search.py`           | _[See script for details]_ |
+| `scripts/init_collection.py`         | _[See script for details]_ |
+| `scripts/memory_retrieval.py`        | _[See script for details]_ |
+| `scripts/semantic_cache.py`          | _[See script for details]_ |
+| `scripts/test_skill.py`              | _[See script for details]_ |
 
 **References:**
+
 - `references/advanced_patterns.md`
 - `references/collection_schemas.md`
 - `references/complete_guide.md`
@@ -804,11 +831,11 @@ skill-name/
 
 ### React Patterns
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `react-patterns` |
+| Property     | Value                    |
+| ------------ | ------------------------ |
+| **Name**     | `react-patterns`         |
 | **Location** | `skills/react-patterns/` |
-| **Type** | Standalone |
+| **Type**     | Standalone               |
 
 **Description:** Modern React patterns and principles. Hooks, composition, performance, TypeScript best practices.
 
@@ -816,11 +843,11 @@ skill-name/
 
 ### React:Components
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `react:components` |
+| Property     | Value                      |
+| ------------ | -------------------------- |
+| **Name**     | `react:components`         |
 | **Location** | `skills/react-components/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                 |
 
 **Description:** Converts Stitch designs into modular Vite and React components using system-level networking and AST-based validation.
 
@@ -828,11 +855,11 @@ skill-name/
 
 ### Red Team Tactics
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `red-team-tactics` |
+| Property     | Value                      |
+| ------------ | -------------------------- |
+| **Name**     | `red-team-tactics`         |
 | **Location** | `skills/red-team-tactics/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                 |
 
 **Description:** Red team tactics principles based on MITRE ATT&CK. Attack phases, detection evasion, reporting.
 
@@ -840,47 +867,47 @@ skill-name/
 
 ### Self Update
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `self-update` |
+| Property     | Value                 |
+| ------------ | --------------------- |
+| **Name**     | `self-update`         |
 | **Location** | `skills/self-update/` |
-| **Type** | Standalone |
+| **Type**     | Standalone            |
 
 **Description:** Update the AGI Agent Kit to the latest version from NPM
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/update_kit.py` | *[See script for details]* |
+| Script                  | Purpose                    |
+| ----------------------- | -------------------------- |
+| `scripts/update_kit.py` | _[See script for details]_ |
 
 ---
 
 ### Seo Fundamentals
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `seo-fundamentals` |
+| Property     | Value                      |
+| ------------ | -------------------------- |
+| **Name**     | `seo-fundamentals`         |
 | **Location** | `skills/seo-fundamentals/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                 |
 
 **Description:** SEO fundamentals, E-E-A-T, Core Web Vitals, and Google algorithm principles.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/seo_checker.py` | *[See script for details]* |
+| Script                   | Purpose                    |
+| ------------------------ | -------------------------- |
+| `scripts/seo_checker.py` | _[See script for details]_ |
 
 ---
 
 ### Server Management
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `server-management` |
+| Property     | Value                       |
+| ------------ | --------------------------- |
+| **Name**     | `server-management`         |
 | **Location** | `skills/server-management/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                  |
 
 **Description:** Server management principles and decision-making. Process management, monitoring strategy, and scaling decisions. Teaches thinking, not commands.
 
@@ -888,11 +915,11 @@ skill-name/
 
 ### Stitch Loop
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `stitch-loop` |
+| Property     | Value                 |
+| ------------ | --------------------- |
+| **Name**     | `stitch-loop`         |
 | **Location** | `skills/stitch-loop/` |
-| **Type** | Standalone |
+| **Type**     | Standalone            |
 
 **Description:** Teaches agents to iteratively build websites using Stitch with an autonomous baton-passing loop pattern
 
@@ -900,11 +927,11 @@ skill-name/
 
 ### Systematic Debugging
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `systematic-debugging` |
+| Property     | Value                          |
+| ------------ | ------------------------------ |
+| **Name**     | `systematic-debugging`         |
 | **Location** | `skills/systematic-debugging/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                     |
 
 **Description:** 4-phase systematic debugging methodology with root cause analysis and evidence-based verification. Use when debugging complex issues.
 
@@ -912,11 +939,11 @@ skill-name/
 
 ### Tailwind Patterns
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `tailwind-patterns` |
+| Property     | Value                       |
+| ------------ | --------------------------- |
+| **Name**     | `tailwind-patterns`         |
 | **Location** | `skills/tailwind-patterns/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                  |
 
 **Description:** Tailwind CSS v4 principles. CSS-first configuration, container queries, modern patterns, design token architecture.
 
@@ -924,11 +951,11 @@ skill-name/
 
 ### Tdd Workflow
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `tdd-workflow` |
+| Property     | Value                  |
+| ------------ | ---------------------- |
+| **Name**     | `tdd-workflow`         |
 | **Location** | `skills/tdd-workflow/` |
-| **Type** | Standalone |
+| **Type**     | Standalone             |
 
 **Description:** Test-Driven Development workflow principles. RED-GREEN-REFACTOR cycle.
 
@@ -936,33 +963,34 @@ skill-name/
 
 ### Testing Patterns
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `testing-patterns` |
+| Property     | Value                      |
+| ------------ | -------------------------- |
+| **Name**     | `testing-patterns`         |
 | **Location** | `skills/testing-patterns/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                 |
 
 **Description:** Testing patterns and principles. Unit, integration, mocking strategies.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/test_runner.py` | *[See script for details]* |
+| Script                   | Purpose                    |
+| ------------------------ | -------------------------- |
+| `scripts/test_runner.py` | _[See script for details]_ |
 
 ---
 
 ### Victoriametrics
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `victoriametrics` |
+| Property     | Value                     |
+| ------------ | ------------------------- |
+| **Name**     | `victoriametrics`         |
 | **Location** | `skills/victoriametrics/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                |
 
 **Description:** VictoriaMetrics time-series database specialist covering deployment (bare metal, Docker, EKS/Kubernetes), cluster architecture (vminsert/vmselect/vmstorage), vmagent configuration, performance optimization, capacity planning, troubleshooting, monitoring, and Prometheus migration/compatibility. Use for any task involving: (1) Installing or upgrading VictoriaMetrics (single-node or cluster), (2) vmagent scraping and remote write configuration, (3) Capacity planning and resource optimization, (4) Prometheus to VictoriaMetrics migration with vmctl, (5) High availability and replication setup, (6) Kubernetes/EKS deployments with Helm or Operator, (7) MetricsQL queries and optimization, (8) Troubleshooting performance issues.
 
 **References:**
+
 - `references/kubernetes.md`
 - `references/prometheus_migration.md`
 - `references/troubleshooting.md`
@@ -971,62 +999,64 @@ skill-name/
 
 ### Vulnerability Scanner
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `vulnerability-scanner` |
+| Property     | Value                           |
+| ------------ | ------------------------------- |
+| **Name**     | `vulnerability-scanner`         |
 | **Location** | `skills/vulnerability-scanner/` |
-| **Type** | Standalone |
+| **Type**     | Standalone                      |
 
 **Description:** Advanced vulnerability analysis principles. OWASP 2025, Supply Chain Security, attack surface mapping, risk prioritization.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/security_scan.py` | *[See script for details]* |
+| Script                     | Purpose                    |
+| -------------------------- | -------------------------- |
+| `scripts/security_scan.py` | _[See script for details]_ |
 
 ---
 
 ### Webapp Testing
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `webapp-testing` |
+| Property     | Value                    |
+| ------------ | ------------------------ |
+| **Name**     | `webapp-testing`         |
 | **Location** | `skills/webapp-testing/` |
-| **Type** | Standalone |
+| **Type**     | Standalone               |
 
 **Description:** Web application testing principles. E2E, Playwright, deep audit strategies.
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/playwright_runner.py` | *[See script for details]* |
+| Script                         | Purpose                    |
+| ------------------------------ | -------------------------- |
+| `scripts/playwright_runner.py` | _[See script for details]_ |
 
 ---
 
 ### Webcrawler
 
-| Property | Value |
-| -------- | ----- |
-| **Name** | `webcrawler` |
+| Property     | Value                |
+| ------------ | -------------------- |
+| **Name**     | `webcrawler`         |
 | **Location** | `skills/webcrawler/` |
-| **Type** | Standalone |
+| **Type**     | Standalone           |
 
 **Description:** "Documentation harvesting agent for crawling and extracting content from documentation websites. Use for crawling documentation sites and extracting all pages about a subject, building offline knowledge bases from online docs, harvesting API references, tutorials, or guides from documentation portals, creating structured markdown exports from multi-page documentation, and downloading and organizing technical docs for embedding or RAG pipelines. Supports recursive crawling with depth control, content filtering, and structured output."
 
 **Scripts:**
 
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/crawl_docs.py` | *[See script for details]* |
-| `scripts/extract_page.py` | *[See script for details]* |
-| `scripts/filter_docs.py` | *[See script for details]* |
+| Script                    | Purpose                    |
+| ------------------------- | -------------------------- |
+| `scripts/crawl_docs.py`   | _[See script for details]_ |
+| `scripts/extract_page.py` | _[See script for details]_ |
+| `scripts/filter_docs.py`  | _[See script for details]_ |
 
 **References:**
+
 - `references/advanced_crawling.md`
 
 ---
+
 ## Using Skills
 
 Skills are automatically triggered based on the user's request matching the skill description. You can also explicitly invoke a skill:
@@ -1063,4 +1093,4 @@ python skill-creator/scripts/update_catalog.py --skills-dir skills/
 
 ---
 
-*This catalog is part of the [3-Layer Architecture](../AGENTS.md) for reliable AI agent operations.*
+_This catalog is part of the [3-Layer Architecture](../AGENTS.md) for reliable AI agent operations._
