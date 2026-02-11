@@ -13,7 +13,24 @@ token.json
 __pycache__/
 *.py[cod]
 venv/
-.venv/
+
+# Private / Internal
+.agent/
+.claude/
+.gemini/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+OPENCODE.md
+skills/
+execution/
+directives/
+scripts/
+skill-creator/
+*.skill
+requirements.txt
+verify_public_release.py
+
 
 # IDE/OS
 .idea/
