@@ -1,268 +1,146 @@
 ---
 name: antigravity-designer
-description: "Elite website design specialist powered by NotebookLM Deep RAG. Queries the 'antigravity-designer' notebook for cutting-edge design patterns, UI/UX best practices, and visual excellence strategies. Triggers on: 'design website', 'UI patterns', 'visual design', 'web aesthetics', '@designer'."
+description: "Website design specialist powered by the AntiGravity design system (Jack Roberts). Uses NotebookLM Deep RAG to query curated design patterns: Cloud-to-Local workflow, UI Sniping, automated accessibility/SEO, Firecrawl brand extraction, and GitHub+Vercel CI/CD. Triggers on: 'design website', 'UI patterns', 'visual design', 'web aesthetics', '@designer'."
+skills:
+  - notebooklm-rag
 ---
 
-# Antigravity Designer — Deep RAG Website Design Specialist
+# Antigravity Designer — Website Design Specialist
 
-> **Elite Design Intelligence:** This skill queries a curated NotebookLM notebook (`antigravity-designer`) containing advanced website design patterns, UI/UX psychology, visual systems, and modern web aesthetics.
+> **Deep RAG Skill.** Queries the `antigravity-designer` NotebookLM notebook for design patterns grounded in Jack Roberts' AntiGravity design system.
 
-## Purpose
+## Prerequisites
 
-Transform generic design requests into **premium, production-ready** website designs by leveraging deep knowledge from the `antigravity-designer` notebook.
+> [!IMPORTANT]
+> This skill requires NotebookLM MCP to be configured and authenticated. On first use, the agent will:
+>
+> 1. Check auth via `get_health` — if `authenticated: false`, propose `setup_auth` (opens browser for Google login)
+> 2. Check if `antigravity-designer` notebook is in the library — if missing, register it via `add_notebook`
+> 3. Select the notebook as active via `select_notebook`
 
-## Architecture
+**Notebook URL:** `https://notebooklm.google.com/notebook/9fecdc06-5e9a-4aa5-8a1b-642083aa6300`
 
-```
-User: "Design a landing page for X"
-    ↓
-Agent checks Qdrant → prior design patterns cached?
-    ↓ miss
-Agent queries antigravity-designer notebook:
-  - "What are the latest landing page design patterns for [industry]?"
-  - "What visual hierarchy works best for [goal]?"
-  - "What color psychology applies to [audience]?"
-    ↓
-Agent synthesizes answers → creates design spec
-    ↓
-Agent caches in Qdrant → reuse patterns
-    ↓
-Agent generates implementation (HTML/CSS/JS)
-```
+## Knowledge Base (From Notebook)
 
-## Workflow
+The notebook contains the AntiGravity design system covering **5 levels of automated design**:
 
-### 1. Design Discovery (Automatic)
+### Level 1: Programmatic Image Generation
 
-When user requests a design, the agent **automatically**:
+- **Nano Banana API** (Google interface) for batch image generation
+- Custom HTML interface ("Image Designer Pro") for controlling dimensions, batches, reference images
+- Runs on local host for immediate preview
 
-1. **Check Qdrant cache** for similar design patterns
-2. **Query NotebookLM** with targeted questions:
-   - "What are modern design patterns for [type] websites?"
-   - "What visual hierarchy works for [goal]?"
-   - "What color systems suit [industry/audience]?"
-   - "What typography pairings are trending?"
-   - "What micro-interactions enhance [user action]?"
+### Level 2: Professional Presentations
 
-3. **Follow-up automatically** if answers have gaps:
-   - "What specific spacing/grid system?"
-   - "What animation timing curves?"
-   - "What accessibility considerations?"
+- **Gamma API** integration for automated slide decks
+- Meeting transcript → structured proposal conversion (Fireflies)
+- Brand-consistent formatting
 
-4. **Cache results** in Qdrant for future reuse
+### Level 3: Interactive Websites ⭐ (Primary Focus)
 
-### 2. Design Synthesis
+- **Cloud-to-Local Workflow** (the "80% Rule"):
+  1. Prototype in AI Studio → get "directionally correct" (80%)
+  2. Download to local host (port 3000) for refinement
+  3. Apply UI/UX skills for professional polish
+  4. Deploy via GitHub → Vercel
 
-Agent combines NotebookLM answers into a cohesive design spec:
+- **UI Sniping**: Copy components from 21st.dev / CodePen → integrate while maintaining brand continuity
 
-```markdown
-## Design Specification
+- **Automated Accessibility**: ARIA attributes, visible focus states, keyboard navigation, motion reduction
 
-### Visual System
+- **Automated SEO**: Meta descriptions, image optimization, semantic tags
 
-- Color Palette: [from notebook]
-- Typography: [from notebook]
-- Spacing Scale: [from notebook]
+- **Firecrawl Style Extraction**: Analyze existing sites (e.g., Apple) to extract brand DNA (colors, fonts, spacing)
 
-### Layout Patterns
+- **Reference-Based Design**: Upload HTML/screenshots to guide AI toward a specific visual direction
 
-- Hero Section: [pattern from notebook]
-- Content Grid: [pattern from notebook]
-- Navigation: [pattern from notebook]
+- **Iterative Sparring**: Refine through dialogue ("reduce underwater effect to 5%", "make CTA more prominent")
 
-### Interactions
+### Level 4: Automated Infographics
 
-- Hover States: [from notebook]
-- Scroll Animations: [from notebook]
-- Transitions: [from notebook]
+- Connect to NotebookLM notebooks for research-backed infographics
+- Spin up multiple knowledge bases for different topics
 
-### Accessibility
+### Level 5: Documents & Administration
 
-- Contrast Ratios: [from notebook]
-- Focus States: [from notebook]
-- ARIA Patterns: [from notebook]
-```
+- Programmatic Excel, financial metrics, invoices
+- Brand consistency enforcement (logos, color palettes)
 
-### 3. Implementation
+## Design Patterns
 
-Agent generates production code following the synthesized spec.
+| Pattern                  | Description                                                                 |
+| ------------------------ | --------------------------------------------------------------------------- |
+| **Master Orchestrator**  | User conducts, AI agents execute across multiple APIs simultaneously        |
+| **Cloud-to-Local**       | Start in AI Studio (speed) → refine locally (control) → deploy (CI/CD)      |
+| **UI Sniping**           | Find premium components on 21st.dev/CodePen → integrate into your brand     |
+| **Reference-Based**      | Feed reference HTML/screenshots to guide the AI's visual output             |
+| **Firecrawl Extraction** | Analyze competitor sites to extract brand DNA without copying layouts       |
+| **SOP-Driven**           | Save successful prompts as SOPs for consistent, repeatable output           |
+| **MCP Integration**      | Universal protocol connecting AI to external apps (Fireflies, Notion, etc.) |
 
-## Notebook Setup
+## Autonomous Workflow
 
-### First Time: Add the Notebook
-
-If `antigravity-designer` is not in the library:
+When a design request is detected, the agent **automatically**:
 
 ```
-User: "I have a NotebookLM with design knowledge"
-Agent: "What is the NotebookLM URL?"
-User: [provides URL]
-Agent: [uses ask_question to discover content]
-Agent: [proposes metadata]
-  Name: antigravity-designer
-  Description: Advanced website design patterns and visual systems
-  Topics: [UI/UX, Visual Design, Web Aesthetics, Typography, Color Theory, ...]
-  Use cases: [Website design, Landing pages, Design systems, ...]
-Agent: "Add it to your library?"
-User: "Yes"
-Agent: [calls add_notebook]
+1. Check auth          → get_health → if false → propose setup_auth
+2. Check notebook      → list_notebooks → if missing → add_notebook with URL above
+3. Select notebook     → select_notebook("antigravity-designer")
+4. Check Qdrant cache  → if similar pattern cached → return from cache
+5. Query notebook      → ask_question with targeted design questions
+6. Follow up           → ask additional questions if gaps detected
+7. Cache results       → store in Qdrant for future reuse
+8. Synthesize          → create design spec from all answers
+9. Implement           → generate production code following the spec
 ```
 
-### Ongoing: Auto-Select
+## Query Strategy
 
-The skill automatically selects `antigravity-designer` when design questions are detected.
+When querying the notebook, ask targeted questions based on request type:
 
-## Query Patterns
+### Landing Page
 
-### Landing Page Design
+1. "What Cloud-to-Local workflow applies to landing pages?"
+2. "What UI Sniping components work for [industry] landing pages?"
+3. "What accessibility and SEO automation should be applied?"
 
-```
-User: "Design a SaaS landing page"
-Agent queries:
-  1. "What are effective SaaS landing page patterns?"
-  2. "What visual hierarchy converts for B2B SaaS?"
-  3. "What trust signals work for enterprise buyers?"
-  4. "What CTA placements maximize conversions?"
-```
+### Full Website
 
-### Design System
+1. "What is the complete Cloud-to-Local workflow for building a website?"
+2. "How does reference-based design guide the initial prototype?"
+3. "What Firecrawl extraction patterns help establish brand DNA?"
+4. "What deployment workflow connects GitHub to Vercel?"
 
-```
-User: "Create a design system for a fintech app"
-Agent queries:
-  1. "What are modern fintech design system patterns?"
-  2. "What color palettes convey trust and security?"
-  3. "What typography scales work for financial data?"
-  4. "What component libraries are standard?"
-```
+### Design Refresh
 
-### Visual Refresh
+1. "How does UI Sniping modernize existing components?"
+2. "What automated UI/UX skills elevate from 'junior to interstellar'?"
+3. "What animation refinement technique uses iterative sparring?"
 
-```
-User: "Modernize this outdated website"
-Agent queries:
-  1. "What are current web design trends for [industry]?"
-  2. "What visual updates signal modernity?"
-  3. "What animation patterns feel contemporary?"
-  4. "What layout shifts improve user experience?"
-```
+## Integration
 
-## Integration with Other Skills
-
-### Stitch Loop
-
-After querying `antigravity-designer`, the agent can use `stitch-loop` to:
-
-1. Generate `DESIGN.md` from NotebookLM insights
-2. Implement components following discovered patterns
-3. Iterate based on design principles from the notebook
-
-### Qdrant Memory
-
-- **Pattern Reuse:** Design patterns are cached and reused across projects
-- **Context Building:** Each design builds on prior research
-- **Token Savings:** Avoid re-querying for known patterns
-
-## Autonomous Behavior
-
-The agent **does not ask** for permission to query NotebookLM. It:
-
-1. Detects design intent in user request
-2. Checks Qdrant for cached patterns
-3. Queries `antigravity-designer` automatically
-4. Synthesizes answers into design spec
-5. Generates implementation
-6. Caches for future use
-
-## Example Session
-
-```
-User: "Design a landing page for an AI coding assistant"
-
-Agent (internal):
-  - Checks Qdrant: no cached AI tool landing pages
-  - Queries antigravity-designer:
-    Q1: "What are effective landing page patterns for developer tools?"
-    Q2: "What visual hierarchy works for technical audiences?"
-    Q3: "What code-related visual elements enhance credibility?"
-    Q4: "What color schemes appeal to developers?"
-  - Synthesizes answers
-  - Caches in Qdrant
-
-Agent (to user):
-  "Based on modern developer tool design patterns, here's the spec:
-
-  **Visual System:**
-  - Dark mode primary (90% of devs prefer)
-  - Accent: Electric blue (#0066FF) for CTAs
-  - Typography: JetBrains Mono (code) + Inter (UI)
-  - Grid: 12-column with 24px gutters
-
-  **Hero Section:**
-  - Animated code editor demo (left 60%)
-  - Value prop + CTA (right 40%)
-  - Syntax highlighting with real code examples
-
-  **Trust Signals:**
-  - GitHub stars counter
-  - Live code playground
-  - Developer testimonials with code snippets
-
-  Implementing now..."
-
-  [Generates HTML/CSS/JS following the spec]
-```
+| Skill             | How It Integrates                                                                      |
+| ----------------- | -------------------------------------------------------------------------------------- |
+| `stitch-loop`     | Generate DESIGN.md from notebook insights, then implement via Stitch workflow          |
+| `qdrant-memory`   | Cache design patterns for reuse across projects (100% token savings on repeat queries) |
+| `frontend-design` | Complements with design thinking principles (notebook provides specific patterns)      |
+| `notebooklm-rag`  | Underlying Deep RAG engine — handles auth, querying, caching                           |
 
 ## Triggers
 
-This skill activates when user request contains:
-
 - "design website", "design landing page", "design app"
-- "UI patterns", "UX flow", "visual design"
-- "modern web design", "web aesthetics"
+- "UI patterns", "UX flow", "visual design", "web aesthetics"
+- "UI sniping", "cloud to local", "firecrawl", "reference design"
 - "@designer", "@antigravity-designer"
-- "how should I design...", "what design pattern..."
-
-## MCP Tools Used
-
-- `get_health` — Check auth before querying
-- `list_notebooks` — Verify `antigravity-designer` is registered
-- `select_notebook` — Set as active for queries
-- `ask_question` — Query design knowledge
-- `add_notebook` — Register if not in library (first time)
-
-## Qdrant Integration
-
-### Cache Structure
-
-```python
-{
-  "content": "Q: [design question] A: [notebook answer]",
-  "type": "design_pattern",
-  "project": "antigravity-designer",
-  "tags": ["ui", "landing-page", "saas", "visual-hierarchy"]
-}
-```
-
-### Retrieval
-
-Before querying NotebookLM, check Qdrant:
-
-```bash
-python3 execution/memory_manager.py auto --query "SaaS landing page patterns"
-```
-
-If cache hit, skip browser automation and use cached answer.
 
 ## Limitations
 
-- Requires `antigravity-designer` notebook to be set up in NotebookLM
+- Requires NotebookLM MCP server configured in AI host
 - Subject to NotebookLM rate limits (50/day free, 250/day Pro)
-- Design knowledge is as current as the notebook content
-- Browser overhead: ~3-5 seconds per query
+- Knowledge is based on the Jack Roberts AntiGravity tutorial — add more sources to the notebook for broader coverage
+- Browser overhead: ~5-10 seconds per query
 
 ## Credits
 
+Knowledge source: [Jack Roberts — "The greatest design system I've ever used (AntiGravity)"](https://www.youtube.com/@JackRoberts)
 Built on the `notebooklm-rag` skill foundation.
-Powered by Google NotebookLM + Gemini 2.0.
-Integrated with Qdrant for pattern caching and reuse.
