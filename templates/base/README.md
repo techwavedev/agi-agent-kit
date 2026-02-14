@@ -7,7 +7,7 @@
 
 `@techwavedev/agi-agent-kit` is a modular, deterministic framework designed to bridge the gap between LLM reasoning and reliable production execution. It scaffolds a "3-Layer Architecture" (Intent → Orchestration → Execution) that forces agents to use tested scripts rather than hallucinating code.
 
-**v1.2.3** — Now with platform-adaptive orchestration and integrated semantic memory across Claude Code, Kiro IDE, Gemini, and Opencode.
+**v1.2.8** — Now with structured plan execution, TDD enforcement, verification gates (adapted from [obra/superpowers](https://github.com/obra/superpowers)), plus platform-adaptive orchestration and semantic memory across Claude Code, Kiro IDE, Gemini, and Opencode.
 
 ---
 
@@ -48,12 +48,37 @@ This checks Qdrant, Ollama, embedding models, and collections — auto-fixing an
 | Feature                       | Description                                                                 |
 | ----------------------------- | --------------------------------------------------------------------------- |
 | **Deterministic Execution**   | Separates business logic (Python scripts) from AI reasoning (Directives)    |
-| **Modular Skill System**      | 56 plug-and-play skills that can be added or removed instantly              |
+| **Modular Skill System**      | 45+ plug-and-play skills that can be added or removed instantly             |
+| **Structured Plan Execution** | Batch or subagent-driven execution with two-stage review (spec + quality)   |
+| **TDD Enforcement**           | Iron-law RED-GREEN-REFACTOR cycle — no production code without failing test |
+| **Verification Gates**        | Evidence before claims — no completion without fresh verification output    |
 | **Platform-Adaptive**         | Auto-detects and optimizes for Claude Code, Kiro IDE, Gemini, and Opencode  |
 | **Multi-Agent Orchestration** | Agent Teams, subagents, Powers, or sequential personas — adapts to platform |
 | **Semantic Memory**           | Built-in Qdrant-powered memory with 95% token savings via caching           |
 | **Self-Healing Workflows**    | Agents read error logs, patch scripts, and update directives automatically  |
 | **One-Shot Setup**            | Platform detection + project stack scan + auto-configuration in one command |
+
+---
+
+## 🆚 How This Compares to Superpowers
+
+The agi framework adopts all best patterns from [obra/superpowers](https://github.com/obra/superpowers) and extends them with capabilities superpowers does not have:
+
+| Capability                   | obra/superpowers |         agi Framework          |
+| ---------------------------- | :--------------: | :----------------------------: |
+| TDD Enforcement              |        ✅        |           ✅ Adapted           |
+| Plan Execution + Review      |        ✅        | ✅ Adapted + platform-adaptive |
+| Systematic Debugging         |        ✅        | ✅ Adapted + `debugger` agent  |
+| Verification Gates           |        ✅        | ✅ Adapted + 12 audit scripts  |
+| Two-Stage Code Review        |        ✅        |  ✅ Adapted into orchestrator  |
+| Multi-Platform Orchestration |  ❌ Claude only  |         ✅ 4 platforms         |
+| Semantic Memory (Qdrant)     |        ❌        |    ✅ 90-100% token savings    |
+| 19 Specialist Agents         |        ❌        |      ✅ Domain boundaries      |
+| Agent Boundary Enforcement   |        ❌        |     ✅ File-type ownership     |
+| Dynamic Question Generation  |        ❌        |   ✅ Trade-offs + priorities   |
+| Memory-First Protocol        |        ❌        |       ✅ Auto cache-hit        |
+| Skill Creator + Catalog      |        ❌        |    ✅ 45+ composable skills    |
+| Platform Setup Wizard        |        ❌        |       ✅ One-shot config       |
 
 ---
 
@@ -282,6 +307,10 @@ Use these keywords, commands, and phrases to trigger specific capabilities:
 | **Documentation**  | "update docs", "regenerate catalog", "sync documentation"              | `documentation`                     |
 | **Quality**        | "lint", "format", "check", "validate", "static analysis"               | `lint-and-validate`                 |
 | **Testing**        | "write tests", "run tests", "TDD", "test coverage"                     | `testing-patterns` / `tdd-workflow` |
+| **TDD**            | "test first", "red green refactor", "failing test"                     | `test-driven-development`           |
+| **Plan Execution** | "execute plan", "run the plan", "batch execution"                      | `executing-plans`                   |
+| **Verification**   | "verify", "prove it works", "evidence", "show me the output"           | `verification-before-completion`    |
+| **Debugging**      | "debug", "root cause", "investigate", "why is this failing"            | `systematic-debugging`              |
 | **Architecture**   | "design system", "architecture decision", "ADR", "trade-off"           | `architecture`                      |
 | **Security**       | "security scan", "vulnerability", "audit", "OWASP"                     | `red-team-tactics`                  |
 | **Performance**    | "lighthouse", "bundle size", "core web vitals", "profiling"            | `performance-profiling`             |
