@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.8] - 2026-02-14
+
+### Added
+
+- **Superpowers Adaptation**: Adapted best patterns from [obra/superpowers](https://github.com/obra/superpowers) into the agi framework, extending it with structured execution, TDD enforcement, and verification gates while preserving all existing multi-platform, memory, and agent capabilities.
+
+  **New Skills:**
+  - **`executing-plans`**: Structured plan execution with two modes — Batch (3 tasks + human checkpoint) or Subagent-Driven (fresh agent per task + two-stage review: spec compliance then code quality). Platform-adaptive across Claude Code, Gemini, Kiro, and Opencode.
+  - **`test-driven-development`**: Iron-law TDD enforcement with RED-GREEN-REFACTOR cycle, rationalization prevention table, and verification checklist. "No production code without a failing test first."
+  - **`verification-before-completion`**: Universal evidence gate — no completion claims without fresh verification output. Integrates with agi audit scripts (`checklist.py`, `security_scan.py`, `lint_runner.py`, etc.).
+
+### Changed
+
+- **`systematic-debugging`**: Replaced lightweight 110-line version with comprehensive 4-phase methodology (Root Cause Investigation → Pattern Analysis → Hypothesis Testing → Implementation). Includes iron law, multi-component evidence gathering, rationalization table, and real-world impact stats (95% vs 40% first-time fix rate).
+- **`plan-writing`**: Added TDD step structure template (write test → verify fail → implement → verify pass → commit), bite-sized task granularity (2-5 min per step), and execution handoff to `executing-plans` skill.
+- **`brainstorming`**: Added HARD-GATE (no code before design approval), propose 2-3 approaches step, and design document saving with handoff to `plan-writing`.
+- **`orchestrator`** agent: Added two-stage review protocol (spec compliance then code quality), execution mode selection (batch vs subagent), verification gate, and referenced skills table.
+- **`parallel-agents`**: Added focused agent prompt structure template, explicit "when NOT to use" heuristic, and review-and-integrate protocol with `verification-before-completion` gate.
+- **`debugger`** agent: Added enhanced skills integration table referencing `systematic-debugging`, `test-driven-development`, and `verification-before-completion`.
+- **`SKILLS_CATALOG.md`**: Regenerated with 45 template skills (3 new: `executing-plans`, `test-driven-development`, `verification-before-completion`).
+
+### Why This Is More Complete Than Superpowers
+
+> All superpowers patterns were adopted. The agi framework extends them with capabilities superpowers does not have.
+
+| Capability                    |  obra/superpowers   |                  agi Framework                  |
+| ----------------------------- | :-----------------: | :---------------------------------------------: |
+| TDD Enforcement               |         ✅          |                  ✅ (adapted)                   |
+| Plan Execution with Review    |         ✅          |        ✅ (adapted + platform-adaptive)         |
+| Systematic Debugging          |         ✅          |   ✅ (adapted + `debugger` agent integration)   |
+| Verification Gates            |         ✅          |      ✅ (adapted + agi script integration)      |
+| Two-Stage Code Review         |         ✅          |         ✅ (adapted into orchestrator)          |
+| Git Worktrees                 |         ✅          |           ➖ (standard branches used)           |
+| Multi-Platform Orchestration  | ❌ Claude Code only | ✅ 4 platforms (Claude, Gemini, Kiro, Opencode) |
+| Semantic Memory (Qdrant)      |         ❌          |            ✅ 90-100% token savings             |
+| 19 Specialist Agents          |         ❌          |          ✅ Domain-specific boundaries          |
+| Agent Boundary Enforcement    |         ❌          |         ✅ File-type ownership protocol         |
+| Dynamic Question Generation   |         ❌          |         ✅ Trade-off tables, priorities         |
+| 12 Audit/Verification Scripts |         ❌          |     ✅ Security, lint, UX, SEO, Lighthouse      |
+| Memory-First Protocol         |         ❌          |          ✅ Auto cache-hit before work          |
+| Skill Creator + Catalog       |         ❌          |            ✅ 45+ composable skills             |
+| Platform Setup Wizard         |         ❌          |         ✅ One-shot auto-configuration          |
+
 ## [1.2.7] - 2026-02-11
 
 ### Security & Maintenance
