@@ -445,3 +445,79 @@ After all agents/teammates complete, synthesize:
 5. **Single synthesis** — One unified report, not separate outputs
 6. **Verify changes** — Always include test-engineer for code modifications
 7. **Avoid file conflicts** — Assign non-overlapping file scopes to parallel agents
+
+---
+
+## Focused Agent Prompt Structure
+
+> Adapted from obra/superpowers — applies when dispatching parallel agents for independent problems.
+
+Good agent prompts are:
+
+1. **Focused** — One clear problem domain
+2. **Self-contained** — All context needed to understand the problem
+3. **Specific about output** — What should the agent return?
+
+```markdown
+[Clear problem description with specific scope]
+
+Context:
+
+- [Error messages, test names, or specific symptoms]
+- [Relevant file paths]
+
+Your task:
+
+1. [Specific investigation step]
+2. [Root cause analysis]
+3. [Fix with constraints]
+
+Constraints:
+
+- [What NOT to change]
+- [Scope boundaries]
+
+Return: Summary of what you found and what you fixed.
+```
+
+### Common Mistakes
+
+| ❌ Bad                                      | ✅ Good                                        |
+| ------------------------------------------- | ---------------------------------------------- |
+| "Fix all the tests" (too broad)             | "Fix agent-tool-abort.test.ts" (focused scope) |
+| "Fix the race condition" (no context)       | Paste error messages and test names            |
+| No constraints (agent refactors everything) | "Do NOT change production code"                |
+| "Fix it" (vague output)                     | "Return summary of root cause and changes"     |
+
+---
+
+## When NOT to Use Parallel Agents
+
+| Scenario                  | Why                                         | Do Instead                       |
+| ------------------------- | ------------------------------------------- | -------------------------------- |
+| **Related failures**      | Fixing one might fix others                 | Investigate together first       |
+| **Need full context**     | Understanding requires seeing entire system | Single agent investigates all    |
+| **Exploratory debugging** | You don't know what's broken yet            | Use `systematic-debugging` skill |
+| **Shared state**          | Agents would interfere (editing same files) | Sequential execution             |
+
+---
+
+## Review and Integrate Protocol
+
+After all agents/teammates complete:
+
+1. **Review each summary** — Understand what changed
+2. **Check for conflicts** — Did agents edit overlapping code?
+3. **Run full test suite** — Verify all fixes work together
+4. **Spot check** — Agents can make systematic errors
+5. **Use `verification-before-completion`** — Evidence before claiming success
+
+---
+
+## Integration
+
+| Skill                            | Relationship                            |
+| -------------------------------- | --------------------------------------- |
+| `executing-plans`                | Plan execution with subagent modes      |
+| `systematic-debugging`           | For investigation before parallel fixes |
+| `verification-before-completion` | Gate after integration                  |

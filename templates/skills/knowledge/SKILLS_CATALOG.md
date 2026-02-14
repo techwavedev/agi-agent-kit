@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-02-09 13:07
+> **Auto-generated Documentation** — Last updated: 2026-02-14 20:01
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -18,44 +18,33 @@ This document provides comprehensive documentation on available skills, how to u
   - [Api Patterns](#api-patterns)
   - [App Builder](#app-builder)
   - [Architecture](#architecture)
-  - [AWS (Hub)](#aws-hub)
-  - [Aws Terraform](#aws-terraform)
   - [Bash Linux](#bash-linux)
   - [Behavioral Modes](#behavioral-modes)
   - [Brainstorming](#brainstorming)
   - [Clean Code](#clean-code)
   - [Code Review Checklist](#code-review-checklist)
-  - [Confluent Kafka](#confluent-kafka)
-  - [Consul](#consul)
   - [Database Design](#database-design)
   - [Deployment Procedures](#deployment-procedures)
   - [Design Md](#design-md)
-  - [Documentation](#documentation)
   - [Documentation Templates](#documentation-templates)
+  - [Executing Plans](#executing-plans)
   - [Frontend Design](#frontend-design)
   - [Game Development](#game-development)
   - [Geo Fundamentals](#geo-fundamentals)
-  - [Gitlab](#gitlab)
   - [I18N Localization](#i18n-localization)
   - [Intelligent Routing](#intelligent-routing)
-  - [Jira](#jira)
-  - [Karpenter](#karpenter)
   - [Lint And Validate](#lint-and-validate)
   - [Mcp Builder](#mcp-builder)
   - [Mobile Design](#mobile-design)
   - [Nextjs Best Practices](#nextjs-best-practices)
   - [Nodejs Best Practices](#nodejs-best-practices)
-  - [Notebooklm Mcp](#notebooklm-mcp)
   - [Notebooklm Rag](#notebooklm-rag)
-  - [Opensearch](#opensearch)
   - [Parallel Agents](#parallel-agents)
-  - [Pdf Reader](#pdf-reader)
   - [Performance Profiling](#performance-profiling)
   - [Plan Writing](#plan-writing)
   - [Plugin Discovery](#plugin-discovery)
   - [Powershell Windows](#powershell-windows)
   - [Python Patterns](#python-patterns)
-  - [Qdrant Memory](#qdrant-memory)
   - [React:Components](#react:components)
   - [React Patterns](#react-patterns)
   - [Red Team Tactics](#red-team-tactics)
@@ -66,11 +55,11 @@ This document provides comprehensive documentation on available skills, how to u
   - [Systematic Debugging](#systematic-debugging)
   - [Tailwind Patterns](#tailwind-patterns)
   - [Tdd Workflow](#tdd-workflow)
+  - [Test Driven Development](#test-driven-development)
   - [Testing Patterns](#testing-patterns)
-  - [Victoriametrics](#victoriametrics)
+  - [Verification Before Completion](#verification-before-completion)
   - [Vulnerability Scanner](#vulnerability-scanner)
   - [Webapp Testing](#webapp-testing)
-  - [Webcrawler](#webcrawler)
 - [Using Skills](#using-skills)
 - [Creating New Skills](#creating-new-skills)
 - [Maintenance](#maintenance)
@@ -94,126 +83,6 @@ skill-name/
 ---
 
 ## Available Skills
-
-### AWS (Hub)
-
-| Property | Value |
-| -------- | ----- |
-| **Name** | `aws` |
-| **Location** | `skills/aws/` |
-| **Type** | Router / Hub |
-
-**Description:** Comprehensive AWS MCP skill covering ALL AWS services. Use for any AWS-related task - infrastructure, databases, AI/ML, observability, networking, serverless, and more. This single skill provides access to 60+ AWS MCP servers organized by category.
-
-**References:**
-- `references/common_patterns.md`
-- `references/mcp_servers.md`
-
----
-
-### Confluent Kafka
-
-| Property | Value |
-| -------- | ----- |
-| **Name** | `confluent-kafka` |
-| **Location** | `skills/confluent-kafka/` |
-| **Parent** | [Aws](#aws) |
-
-**Description:** Confluent Kafka specialist for tarball/Ansible custom installations. Expert in updating, maintaining, checking health, troubleshooting, documenting, analyzing metrics, and upgrading Confluent Kafka deployments from 7.x to 8.x versions. Covers KRaft mode (ZooKeeper-less), broker configuration, Schema Registry, Connect, ksqlDB, Control Center, and production-grade operations. Use when working with Confluent Platform installations, migrations to KRaft, performance tuning, health monitoring, and infrastructure-as-code with Ansible.
-
-**Scripts:**
-
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/kafka_health_check.py` | *[See script for details]* |
-| `scripts/upgrade_preflight.py` | *[See script for details]* |
-| `scripts/validate_config.py` | *[See script for details]* |
-
-**References:**
-- `references/ansible_playbooks.md`
-- `references/ec_deployment.md`
-- `references/kraft_migration.md`
-- `references/troubleshooting.md`
-- `references/upgrade_7x_to_8x.md`
-
----
-
-### Consul
-
-| Property | Value |
-| -------- | ----- |
-| **Name** | `consul` |
-| **Location** | `skills/consul/` |
-| **Parent** | [Aws](#aws) |
-
-**Description:** HashiCorp Consul specialist for EKS clusters. Use for Consul service mesh installation, configuration, HA setup, maintenance, updates, upgrades, troubleshooting, and optimization. Covers Consul Connect, intentions, health checks, ACLs, gossip encryption, TLS configuration, federation, and Kubernetes integration via consul-k8s Helm chart. Requires kubectl and helm access to target EKS cluster.
-
-**Scripts:**
-
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/consul_health_report.py` | *[See script for details]* |
-| `scripts/consul_status.py` | *[See script for details]* |
-| `scripts/generate_values.py` | *[See script for details]* |
-
-**References:**
-- `references/acl_setup.md`
-- `references/ha_config.md`
-- `references/troubleshooting.md`
-- `references/upgrades.md`
-
----
-
-### Gitlab
-
-| Property | Value |
-| -------- | ----- |
-| **Name** | `gitlab` |
-| **Location** | `skills/gitlab/` |
-| **Parent** | [Aws](#aws) |
-
-**Description:** GitLab specialist for Kubernetes agent management on EKS clusters. Use for GitLab agent (agentk) installation, configuration, upgrades, GitOps with Flux, CI/CD pipeline integration, project management via API, token management, and troubleshooting connectivity issues. Covers agent registration, Helm deployments, KAS configuration (self-managed on-prem), impersonation, and multi-cluster setups. Requires kubectl/helm access to target EKS cluster and GitLab API token.
-
-**Scripts:**
-
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/generate_agent_values.py` | *[See script for details]* |
-| `scripts/gitlab_agent_status.py` | *[See script for details]* |
-
-**References:**
-- `references/agent_installation.md`
-- `references/api_reference.md`
-- `references/gitops_flux.md`
-- `references/troubleshooting.md`
-
----
-
-### Karpenter
-
-| Property | Value |
-| -------- | ----- |
-| **Name** | `karpenter` |
-| **Location** | `skills/karpenter/` |
-| **Parent** | [Aws](#aws) |
-
-**Description:** Karpenter Kubernetes autoscaler specialist for EKS clusters. Use for troubleshooting, documenting, managing, creating, updating, upgrading Karpenter deployments, and obtaining live cluster information. Covers NodePool/EC2NodeClass configuration, cost optimization, node consolidation, drift detection, Spot interruption handling, and migration from Cluster Autoscaler. Requires kubectl access to target EKS cluster.
-
-**Scripts:**
-
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/generate_ec2nodeclass.py` | *[See script for details]* |
-| `scripts/generate_nodepool.py` | *[See script for details]* |
-| `scripts/karpenter_status.py` | *[See script for details]* |
-
-**References:**
-- `references/ec2nodeclasses.md`
-- `references/migration.md`
-- `references/nodepools.md`
-- `references/troubleshooting.md`
-
----
 
 ### Api Patterns
 
@@ -254,28 +123,6 @@ skill-name/
 | **Type** | Standalone |
 
 **Description:** Architectural decision-making framework. Requirements analysis, trade-off evaluation, ADR documentation. Use when making architecture decisions or analyzing system design.
-
----
-
-### Aws Terraform
-
-| Property | Value |
-| -------- | ----- |
-| **Name** | `aws-terraform` |
-| **Location** | `skills/aws-terraform/` |
-| **Type** | Standalone |
-
-**Description:** AWS infrastructure deployments using Terraform and Terragrunt. Use for any task involving: (1) Writing, validating, or deploying Terraform/HCL code for AWS, (2) Security scanning with Checkov, (3) AWS provider documentation lookup, (4) Terraform Registry module analysis, (5) Terragrunt multi-environment orchestration, (6) Infrastructure as Code best practices for AWS. Parent skill: aws.
-
-**Scripts:**
-
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/configure_mcp.py` | *[See script for details]* |
-
-**References:**
-- `references/best_practices.md`
-- `references/checkov_reference.md`
 
 ---
 
@@ -381,31 +228,6 @@ skill-name/
 
 ---
 
-### Documentation
-
-| Property | Value |
-| -------- | ----- |
-| **Name** | `documentation` |
-| **Location** | `skills/documentation/` |
-| **Type** | Standalone |
-
-**Description:** "Automated documentation maintenance and generation skill. Triggers when: (1) Code is added, changed, updated, or deleted in any skill, (2) New scripts or references are created, (3) SKILL.md files are modified, (4) User requests documentation updates, (5) Skills catalog needs regeneration, (6) README or AGENTS.md need updates reflecting code changes. Use for generating technical documentation, updating docs after code changes, producing changelogs, ensuring documentation stays synchronized with the codebase, and maintaining the skills catalog."
-
-**Scripts:**
-
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/analyze_code.py` | *[See script for details]* |
-| `scripts/detect_changes.py` | *[See script for details]* |
-| `scripts/generate_changelog.py` | *[See script for details]* |
-| `scripts/sync_docs.py` | *[See script for details]* |
-| `scripts/update_skill_docs.py` | *[See script for details]* |
-
-**References:**
-- `references/best_practices.md`
-
----
-
 ### Documentation Templates
 
 | Property | Value |
@@ -415,6 +237,18 @@ skill-name/
 | **Type** | Standalone |
 
 **Description:** Documentation templates and structure guidelines. README, API docs, code comments, and AI-friendly documentation.
+
+---
+
+### Executing Plans
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `executing-plans` |
+| **Location** | `skills/executing-plans/` |
+| **Type** | Standalone |
+
+**Description:** Structured plan execution with batch checkpoints or subagent-per-task with two-stage review. Use when you have a written implementation plan to execute methodically.
 
 ---
 
@@ -497,35 +331,6 @@ skill-name/
 
 ---
 
-### Jira
-
-| Property | Value |
-| -------- | ----- |
-| **Name** | `jira` |
-| **Location** | `skills/jira/` |
-| **Type** | Standalone |
-
-**Description:** "Jira ticket management skill for creating, updating, and managing issues. Use for: (1) Creating new tickets/issues with custom fields, (2) Updating existing tickets (status, assignee, priority, labels), (3) Adding and updating comments, (4) Logging work time and time tracking, (5) Searching issues with JQL, (6) Managing transitions and workflows, (7) Bulk operations on multiple tickets, (8) Sprint and board management. Supports both MCP server integration and direct REST API calls. Requires JIRA_API_TOKEN and JIRA_URL environment variables."
-
-**Scripts:**
-
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/add_comment.py` | *[See script for details]* |
-| `scripts/bulk_log_work.py` | *[See script for details]* |
-| `scripts/create_ticket.py` | *[See script for details]* |
-| `scripts/get_ticket.py` | *[See script for details]* |
-| `scripts/jira_client.py` | *[See script for details]* |
-| `scripts/log_work.py` | *[See script for details]* |
-| `scripts/search_tickets.py` | *[See script for details]* |
-| `scripts/update_comment.py` | *[See script for details]* |
-| `scripts/update_ticket.py` | *[See script for details]* |
-
-**References:**
-- `references/jql_reference.md`
-
----
-
 ### Lint And Validate
 
 | Property | Value |
@@ -599,28 +404,6 @@ skill-name/
 
 ---
 
-### Notebooklm Mcp
-
-| Property | Value |
-| -------- | ----- |
-| **Name** | `notebooklm-mcp` |
-| **Location** | `skills/notebooklm-mcp/` |
-| **Type** | Standalone |
-
-**Description:** "Connects to Google NotebookLM via MCP using PleasePrompto/notebooklm-mcp. Browser-automated auth, zero-hallucination research, smart library management. Triggers when user asks to research docs, query NotebookLM, or manage notebook libraries."
-
-**Scripts:**
-
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/auth_helper.py` | *[See script for details]* |
-| `scripts/list_notebooks_cli.py` | *[See script for details]* |
-
-**References:**
-- `references/api_reference.md`
-
----
-
 ### Notebooklm Rag
 
 | Property | Value |
@@ -629,41 +412,20 @@ skill-name/
 | **Location** | `skills/notebooklm-rag/` |
 | **Type** | Standalone |
 
-**Description:** "Deep-search RAG knowledge layer powered by Google NotebookLM + Gemini 2.5. Use when explicitly asked to research, investigate, plan with docs, or query knowledge bases. Complement to qdrant-memory (token saver). Triggers on: '@notebooklm', 'research my docs', 'check my notebooks', 'deep search', 'investigate with docs'."
+**Description:** "Deep RAG layer powered by Google NotebookLM + Gemini. The agent autonomously manages notebooks via MCP tools — authentication, library management, querying, follow-ups, and caching. Opt-in for users with a Google account. Default RAG is qdrant-memory. Triggers on: '@notebooklm', 'research my docs', 'deep search', 'query my notebook', 'check my notebooks'."
 
 **Scripts:**
 
 | Script | Purpose |
 | ------ | ------- |
-| `scripts/preflight_check.py` | *[See script for details]* |
-| `scripts/research_query.py` | *[See script for details]* |
-| `scripts/research_report.py` | *[See script for details]* |
-
-**References:**
-- `references/research_patterns.md`
-
----
-
-### Opensearch
-
-| Property | Value |
-| -------- | ----- |
-| **Name** | `opensearch` |
-| **Location** | `skills/opensearch/` |
-| **Type** | Standalone |
-
-**Description:** OpenSearch specialist covering querying (Query DSL, SQL), performance optimization, cluster management, monitoring, OpenSearch Dashboards, ML/AI (neural search, embeddings, ML Commons), data ingestion (Logstash, Fluent Bit, Data Prepper), OpenSearch Operator for Kubernetes, and MCP integration. Use for any task involving: (1) Writing or optimizing OpenSearch queries, (2) Index design and mapping, (3) Cluster health and performance tuning, (4) OpenSearch Dashboards visualization, (5) Neural/semantic search with vectors, (6) Log and data ingestion pipelines, (7) Kubernetes deployments with OpenSearch Operator.
-
-**Scripts:**
-
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/configure_mcp.py` | *[See script for details]* |
-
-**References:**
-- `references/ml_neural_search.md`
-- `references/operator.md`
-- `references/query_dsl.md`
+| `scripts/ask_question.py` | *[See script for details]* |
+| `scripts/auth_manager.py` | *[See script for details]* |
+| `scripts/browser_utils.py` | *[See script for details]* |
+| `scripts/cleanup_manager.py` | *[See script for details]* |
+| `scripts/config.py` | *[See script for details]* |
+| `scripts/notebook_manager.py` | *[See script for details]* |
+| `scripts/run.py` | *[See script for details]* |
+| `scripts/setup_environment.py` | *[See script for details]* |
 
 ---
 
@@ -676,27 +438,6 @@ skill-name/
 | **Type** | Standalone |
 
 **Description:** Platform-adaptive multi-agent orchestration. Uses Claude Code Agent Teams when available, subagents as fallback, and sequential persona switching on other platforms. Use when multiple independent tasks can run with different domain expertise or when comprehensive analysis requires multiple perspectives.
-
----
-
-### Pdf Reader
-
-| Property | Value |
-| -------- | ----- |
-| **Name** | `pdf-reader` |
-| **Location** | `skills/pdf-reader/` |
-| **Type** | Standalone |
-
-**Description:** Extract text from PDF files for manipulation, search, and reference. Use when needing to read PDF content, extract text from documents, search within PDFs, or convert PDF to text for further processing. Supports multiple extraction methods (pdfplumber, PyMuPDF, pdfminer) with automatic fallback.
-
-**Scripts:**
-
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/extract_text.py` | *[See script for details]* |
-
-**References:**
-- `references/pdf_libraries.md`
 
 ---
 
@@ -769,36 +510,6 @@ skill-name/
 | **Type** | Standalone |
 
 **Description:** Python development principles and decision-making. Framework selection, async patterns, type hints, project structure. Teaches thinking, not copying.
-
----
-
-### Qdrant Memory
-
-| Property | Value |
-| -------- | ----- |
-| **Name** | `qdrant-memory` |
-| **Location** | `skills/qdrant-memory/` |
-| **Type** | Standalone |
-
-**Description:** "Intelligent token optimization through Qdrant-powered semantic caching and long-term memory. Use for (1) Semantic Cache - avoid LLM calls entirely for semantically similar queries with 100% token savings, (2) Long-Term Memory - retrieve only relevant context chunks instead of full conversation history with 80-95% context reduction, (3) Hybrid Search - combine vector similarity with keyword filtering for technical queries, (4) Memory Management - store and retrieve conversation memories, decisions, and code patterns with metadata filtering. Triggers when needing to cache responses, remember past interactions, optimize context windows, or implement RAG patterns."
-
-**Scripts:**
-
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/benchmark_token_savings.py` | *[See script for details]* |
-| `scripts/embedding_utils.py` | *[See script for details]* |
-| `scripts/hybrid_search.py` | *[See script for details]* |
-| `scripts/init_collection.py` | *[See script for details]* |
-| `scripts/memory_retrieval.py` | *[See script for details]* |
-| `scripts/semantic_cache.py` | *[See script for details]* |
-| `scripts/test_skill.py` | *[See script for details]* |
-
-**References:**
-- `references/advanced_patterns.md`
-- `references/collection_schemas.md`
-- `references/complete_guide.md`
-- `references/embedding_models.md`
 
 ---
 
@@ -906,7 +617,7 @@ skill-name/
 | **Location** | `skills/systematic-debugging/` |
 | **Type** | Standalone |
 
-**Description:** 4-phase systematic debugging methodology with root cause analysis and evidence-based verification. Use when debugging complex issues.
+**Description:** 4-phase root cause debugging process. Use for ANY technical issue — test failures, bugs, unexpected behavior, performance problems. ALWAYS find root cause before attempting fixes.
 
 ---
 
@@ -934,6 +645,18 @@ skill-name/
 
 ---
 
+### Test Driven Development
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `test-driven-development` |
+| **Location** | `skills/test-driven-development/` |
+| **Type** | Standalone |
+
+**Description:** RED-GREEN-REFACTOR enforcement. MANDATORY for new features, bug fixes, and behavior changes. Write the test first, watch it fail, then implement.
+
+---
+
 ### Testing Patterns
 
 | Property | Value |
@@ -952,20 +675,15 @@ skill-name/
 
 ---
 
-### Victoriametrics
+### Verification Before Completion
 
 | Property | Value |
 | -------- | ----- |
-| **Name** | `victoriametrics` |
-| **Location** | `skills/victoriametrics/` |
+| **Name** | `verification-before-completion` |
+| **Location** | `skills/verification-before-completion/` |
 | **Type** | Standalone |
 
-**Description:** VictoriaMetrics time-series database specialist covering deployment (bare metal, Docker, EKS/Kubernetes), cluster architecture (vminsert/vmselect/vmstorage), vmagent configuration, performance optimization, capacity planning, troubleshooting, monitoring, and Prometheus migration/compatibility. Use for any task involving: (1) Installing or upgrading VictoriaMetrics (single-node or cluster), (2) vmagent scraping and remote write configuration, (3) Capacity planning and resource optimization, (4) Prometheus to VictoriaMetrics migration with vmctl, (5) High availability and replication setup, (6) Kubernetes/EKS deployments with Helm or Operator, (7) MetricsQL queries and optimization, (8) Troubleshooting performance issues.
-
-**References:**
-- `references/kubernetes.md`
-- `references/prometheus_migration.md`
-- `references/troubleshooting.md`
+**Description:** Universal verification gate. MANDATORY before any completion claim, success assertion, commit, or PR. Evidence before claims, always.
 
 ---
 
@@ -1002,29 +720,6 @@ skill-name/
 | Script | Purpose |
 | ------ | ------- |
 | `scripts/playwright_runner.py` | *[See script for details]* |
-
----
-
-### Webcrawler
-
-| Property | Value |
-| -------- | ----- |
-| **Name** | `webcrawler` |
-| **Location** | `skills/webcrawler/` |
-| **Type** | Standalone |
-
-**Description:** "Documentation harvesting agent for crawling and extracting content from documentation websites. Use for crawling documentation sites and extracting all pages about a subject, building offline knowledge bases from online docs, harvesting API references, tutorials, or guides from documentation portals, creating structured markdown exports from multi-page documentation, and downloading and organizing technical docs for embedding or RAG pipelines. Supports recursive crawling with depth control, content filtering, and structured output."
-
-**Scripts:**
-
-| Script | Purpose |
-| ------ | ------- |
-| `scripts/crawl_docs.py` | *[See script for details]* |
-| `scripts/extract_page.py` | *[See script for details]* |
-| `scripts/filter_docs.py` | *[See script for details]* |
-
-**References:**
-- `references/advanced_crawling.md`
 
 ---
 ## Using Skills

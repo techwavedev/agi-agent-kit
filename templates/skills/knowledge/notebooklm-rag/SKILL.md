@@ -29,6 +29,49 @@ Agent stores in Qdrant → cache for future use
 Agent responds to user with synthesized answer
 ```
 
+## Quick Start
+
+> [!IMPORTANT]
+> **Step 1: MCP Server Required.** The NotebookLM MCP server must be configured in your AI host. It is bundled with many setups, but verify it's running.
+
+### 1. Check if MCP is configured
+
+The agent should call `get_health`. If the tool exists, the MCP server is active.
+
+- ✅ `status: "ok"` → MCP is running
+- ❌ Tool not found → Add the MCP server to your host config (see [MCP Server Setup](#mcp-server-setup))
+
+### 2. Authenticate (one-time)
+
+```
+Agent calls: get_health
+If authenticated: false →
+  Agent calls: setup_auth (opens a browser window)
+  User logs into Google account
+  Agent calls: get_health to verify → authenticated: true ✅
+```
+
+> [!TIP]
+> Auth is saved to disk. You only need to log in once. If it expires, the agent will detect it and propose `re_auth`.
+
+### 3. Add a Notebook
+
+```
+User: "Here is my NotebookLM: https://notebooklm.google.com/notebook/..."
+Agent calls: ask_question(notebook_url=URL, question="What is the content? What topics?")
+Agent uses answer to fill: name, description, topics
+Agent calls: add_notebook(url, name, description, topics)
+```
+
+### 4. Query
+
+```
+User: "Research [topic] from my notebook"
+Agent calls: ask_question(notebook_id="my-notebook", question="...")
+```
+
+That's it. The agent handles everything else autonomously.
+
 ## MCP Tools Reference
 
 The agent has direct access to these tools. Use them autonomously.
@@ -71,11 +114,24 @@ The agent has direct access to these tools. Use them autonomously.
 
 ## Autonomous Workflow
 
+### Auth Gate (Mandatory First Step)
+
+> [!CAUTION]
+> **ALWAYS check auth before any NotebookLM operation.** If `authenticated: false`, propose `setup_auth` to the user before proceeding. Never silently fail.
+
+```
+get_health → authenticated?
+  → true:  proceed to step 1
+  → false: tell user "NotebookLM needs authentication. A browser will open for Google login."
+            → setup_auth → get_health → verify authenticated: true
+            → if still false: propose cleanup_data(preserve_library=true) + setup_auth
+```
+
 ### On Any Research Request:
 
 1. **Check Qdrant first** — `memory_manager.py auto --query "..."`. If cache hit, return immediately.
 
-2. **Check auth** — `get_health`. If not authenticated, run `setup_auth` and tell user a browser will open.
+2. **Auth gate** — `get_health`. If not authenticated, run `setup_auth` and tell user a browser will open. **Do not proceed without auth.**
 
 3. **Resolve notebook** — `list_notebooks`. If user mentions a topic, `search_notebooks`. If no notebooks exist, ask user for a NotebookLM URL and `add_notebook`.
 
