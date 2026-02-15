@@ -82,6 +82,79 @@ The agi framework adopts all best patterns from [obra/superpowers](https://githu
 
 ---
 
+## 🧪 Real Benchmark: Subagents vs Agent Teams
+
+The framework supports two orchestration modes. Here are **real test results** from `execution/benchmark_modes.py` running on local infrastructure (Qdrant + Ollama `nomic-embed-text`, zero cloud API calls):
+
+```
+MODE A: SUBAGENTS — Independent, fire-and-forget
+  📤 Explore Auth Patterns    → ✅ stored in cache + memory (127ms)
+  📤 Query Performance        → ❌ FAILED (timeout — fault tolerant)
+  📤 Scan CVEs                → ✅ stored in cache + memory (14ms)
+  Summary: 2/3 completed, 1 failed, 0 cross-references
+
+MODE B: AGENT TEAMS — Shared context, coordinated
+  👤 Backend Specialist       → ✅ stored in shared memory (14ms)
+  👤 Database Specialist      → ✅ stored in shared memory (13ms)
+  👤 Frontend Specialist      → 🔗 Read Backend + Database output first
+     ✅ Got context from team-backend: "API contract: POST /api/messages..."
+     ✅ Got context from team-database: "Schema: users(id UUID PK, name..."
+     → ✅ stored in shared memory (14ms)
+  Summary: 3/3 completed, 0 failed, 2 cross-references
+```
+
+**2nd run (cache warm):** All queries hit cache at **score 1.000**, reducing total time from 314ms → 76ms (Subagents) and 292ms → 130ms (Agent Teams).
+
+| Metric               | Subagents                            | Agent Teams                          |
+| -------------------- | ------------------------------------ | ------------------------------------ |
+| Execution model      | Fire-and-forget (isolated)           | Shared context (coordinated)         |
+| Tasks completed      | 2/3 (fault tolerant)                 | 3/3                                  |
+| Cross-references     | 0 (not supported)                    | 2 (peers read each other's work)     |
+| Context sharing      | ❌ Each agent isolated               | ✅ Peer-to-peer via Qdrant           |
+| Two-stage review     | ❌                                   | ✅ Spec + Quality                    |
+| Cache hits (2nd run) | 5/5                                  | 5/5                                  |
+| Embedding provider   | Ollama local (nomic-embed-text 137M) | Ollama local (nomic-embed-text 137M) |
+
+**Try it yourself:**
+
+```bash
+# 1. Start infrastructure
+docker run -d -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant
+ollama serve & ollama pull nomic-embed-text
+
+# 2. Boot memory system
+python3 execution/session_boot.py --auto-fix
+# ✅ Memory system ready — 5 memories, 1 cached responses
+
+# 3. Run the full benchmark (both modes)
+python3 execution/benchmark_modes.py --verbose
+
+# 4. Or test individual operations:
+
+# Store a decision (embedding generated locally via Ollama)
+python3 execution/memory_manager.py store \
+  --content "Chose PostgreSQL for relational data" \
+  --type decision --project myapp
+# → {"status": "stored", "point_id": "...", "token_count": 5}
+
+# Auto-query: checks cache first, then retrieves context
+python3 execution/memory_manager.py auto \
+  --query "what database did we choose?"
+# → {"source": "memory", "cache_hit": false, "context_chunks": [...]}
+
+# Cache an LLM response for future reuse
+python3 execution/memory_manager.py cache-store \
+  --query "how to set up auth?" \
+  --response "Use JWT with 24h expiry, refresh tokens in httpOnly cookies"
+
+# Re-query → instant cache hit (score 1.000, zero re-computation)
+python3 execution/memory_manager.py auto \
+  --query "how to set up auth?"
+# → {"source": "cache", "cache_hit": true, "tokens_saved_estimate": 12}
+```
+
+---
+
 ## 🌐 Platform Support
 
 The framework automatically detects your AI coding environment and activates the best available features:
