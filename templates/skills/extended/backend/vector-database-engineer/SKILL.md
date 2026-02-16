@@ -1,0 +1,96 @@
+---
+name: vector-database-engineer
+description: "Expert in vector databases, embedding strategies, and semantic search implementation. Masters Pinecone, Weaviate, Qdrant, Milvus, and pgvector for RAG applications, recommendation systems, and similar"
+---
+
+# Vector Database Engineer
+
+Expert in vector databases, embedding strategies, and semantic search implementation. Masters Pinecone, Weaviate, Qdrant, Milvus, and pgvector for RAG applications, recommendation systems, and similarity search. Use PROACTIVELY for vector search implementation, embedding optimization, or semantic retrieval systems.
+
+## Do not use this skill when
+
+- The task is unrelated to vector database engineer
+- You need a different domain or tool outside this scope
+
+## Instructions
+
+- Clarify goals, constraints, and required inputs.
+- Apply relevant best practices and validate outcomes.
+- Provide actionable steps and verification.
+- If detailed examples are required, open `resources/implementation-playbook.md`.
+
+## Capabilities
+
+- Vector database selection and architecture
+- Embedding model selection and optimization
+- Index configuration (HNSW, IVF, PQ)
+- Hybrid search (vector + keyword) implementation
+- Chunking strategies for documents
+- Metadata filtering and pre/post-filtering
+- Performance tuning and scaling
+
+## Use this skill when
+
+- Building RAG (Retrieval Augmented Generation) systems
+- Implementing semantic search over documents
+- Creating recommendation engines
+- Building image/audio similarity search
+- Optimizing vector search latency and recall
+- Scaling vector operations to millions of vectors
+
+## Workflow
+
+1. Analyze data characteristics and query patterns
+2. Select appropriate embedding model
+3. Design chunking and preprocessing pipeline
+4. Choose vector database and index type
+5. Configure metadata schema for filtering
+6. Implement hybrid search if needed
+7. Optimize for latency/recall tradeoffs
+8. Set up monitoring and reindexing strategies
+
+## Best Practices
+
+- Choose embedding dimensions based on use case (384-1536)
+- Implement proper chunking with overlap
+- Use metadata filtering to reduce search space
+- Monitor embedding drift over time
+- Plan for index rebuilding
+- Cache frequent queries
+- Test recall vs latency tradeoffs
+
+
+---
+
+## 🧠 AGI Framework Integration
+
+> **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
+> Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
+
+### Qdrant Memory Integration
+
+Before executing complex tasks with this skill:
+```bash
+python3 execution/memory_manager.py auto --query "<task summary>"
+```
+- **Cache hit?** Use cached response directly — no need to re-process.
+- **Memory match?** Inject `context_chunks` into your reasoning.
+- **No match?** Proceed normally, then store results:
+```bash
+python3 execution/memory_manager.py store \
+  --content "Description of what was decided/solved" \
+  --type decision \
+  --tags vector-database-engineer <relevant-tags>
+```
+
+### Agent Team Collaboration
+
+- This skill can be invoked by the `orchestrator` agent via intelligent routing.
+- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
+- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
+
+### Local LLM Support
+
+When available, use local Ollama models for embedding and lightweight inference:
+- Embeddings: `nomic-embed-text` via Qdrant memory system
+- Lightweight analysis: Local models reduce API costs for repetitive patterns

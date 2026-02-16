@@ -1,0 +1,168 @@
+---
+name: azure-storage-blob-rust
+description: |
+  Azure Blob Storage SDK for Rust. Use for uploading, downloading, and managing blobs and containers.
+  Triggers: "blob storage rust", "BlobClient rust", "upload blob rust", "download blob rust", "container rust".
+package: azure_storage_blob
+---
+
+# Azure Blob Storage SDK for Rust
+
+Client library for Azure Blob Storage — Microsoft's object storage solution for the cloud.
+
+## Installation
+
+```sh
+cargo add azure_storage_blob azure_identity
+```
+
+## Environment Variables
+
+```bash
+AZURE_STORAGE_ACCOUNT_NAME=<storage-account-name>
+# Endpoint: https://<account>.blob.core.windows.net/
+```
+
+## Authentication
+
+```rust
+use azure_identity::DeveloperToolsCredential;
+use azure_storage_blob::{BlobClient, BlobClientOptions};
+
+let credential = DeveloperToolsCredential::new(None)?;
+let blob_client = BlobClient::new(
+    "https://<account>.blob.core.windows.net/",
+    "container-name",
+    "blob-name",
+    Some(credential),
+    Some(BlobClientOptions::default()),
+)?;
+```
+
+## Client Types
+
+| Client | Purpose |
+|--------|---------|
+| `BlobServiceClient` | Account-level operations, list containers |
+| `BlobContainerClient` | Container operations, list blobs |
+| `BlobClient` | Individual blob operations |
+
+## Core Operations
+
+### Upload Blob
+
+```rust
+use azure_core::http::RequestContent;
+
+let data = b"hello world";
+blob_client
+    .upload(
+        RequestContent::from(data.to_vec()),
+        false,  // overwrite
+        u64::try_from(data.len())?,
+        None,
+    )
+    .await?;
+```
+
+### Download Blob
+
+```rust
+let response = blob_client.download(None).await?;
+let content = response.into_body().collect_bytes().await?;
+println!("Content: {:?}", content);
+```
+
+### Get Blob Properties
+
+```rust
+let properties = blob_client.get_properties(None).await?;
+println!("Content-Length: {:?}", properties.content_length);
+```
+
+### Delete Blob
+
+```rust
+blob_client.delete(None).await?;
+```
+
+## Container Operations
+
+```rust
+use azure_storage_blob::BlobContainerClient;
+
+let container_client = BlobContainerClient::new(
+    "https://<account>.blob.core.windows.net/",
+    "container-name",
+    Some(credential),
+    None,
+)?;
+
+// Create container
+container_client.create(None).await?;
+
+// List blobs
+let mut pager = container_client.list_blobs(None)?;
+while let Some(blob) = pager.try_next().await? {
+    println!("Blob: {}", blob.name);
+}
+```
+
+## Best Practices
+
+1. **Use Entra ID auth** — `DeveloperToolsCredential` for dev, `ManagedIdentityCredential` for production
+2. **Specify content length** — required for uploads
+3. **Use `RequestContent::from()`** — to wrap upload data
+4. **Handle async operations** — use `tokio` runtime
+5. **Check RBAC permissions** — ensure "Storage Blob Data Contributor" role
+
+## RBAC Permissions
+
+For Entra ID auth, assign one of these roles:
+- `Storage Blob Data Reader` — read-only
+- `Storage Blob Data Contributor` — read/write
+- `Storage Blob Data Owner` — full access including RBAC
+
+## Reference Links
+
+| Resource | Link |
+|----------|------|
+| API Reference | https://docs.rs/azure_storage_blob |
+| Source Code | https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob |
+| crates.io | https://crates.io/crates/azure_storage_blob |
+
+
+---
+
+## 🧠 AGI Framework Integration
+
+> **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
+> Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
+
+### Qdrant Memory Integration
+
+Before executing complex tasks with this skill:
+```bash
+python3 execution/memory_manager.py auto --query "<task summary>"
+```
+- **Cache hit?** Use cached response directly — no need to re-process.
+- **Memory match?** Inject `context_chunks` into your reasoning.
+- **No match?** Proceed normally, then store results:
+```bash
+python3 execution/memory_manager.py store \
+  --content "Description of what was decided/solved" \
+  --type decision \
+  --tags azure-storage-blob-rust <relevant-tags>
+```
+
+### Agent Team Collaboration
+
+- This skill can be invoked by the `orchestrator` agent via intelligent routing.
+- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
+- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
+
+### Local LLM Support
+
+When available, use local Ollama models for embedding and lightweight inference:
+- Embeddings: `nomic-embed-text` via Qdrant memory system
+- Lightweight analysis: Local models reduce API costs for repetitive patterns

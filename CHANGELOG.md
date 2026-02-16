@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-02-16
+
+### Added
+
+- **Extended Skills Tier: 862 Total Skills** — Integrated 782 community skills from [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills) (v5.4.0) by [@sickn33](https://github.com/sickn33). Restructured skill tiers:
+  - **Core** (4 skills): webcrawler, pdf-reader, qdrant-memory, documentation
+  - **Medium** (75 skills): Core + knowledge-tier specialized skills across 16 categories
+  - **Full** (861 skills): Medium + 782 community skills, all adapted for AGI framework
+  - CLI installer renamed: `knowledge` → `medium`, added `full` tier
+
+- **Categorized Skill Organization** — All skills (knowledge + extended) physically organized into 16 domain categories:
+  - `frontend/`, `backend/`, `ai-agents/`, `devops/`, `testing/`, `security/`, `architecture/`, `mobile/`, `debugging/`, `documentation/`, `workflow/`, `content/`, `data/`, `gaming/`, `blockchain/`, `other/`
+  - Core tier stays flat (4 skills). Knowledge: 75 skills in 16 categories. Extended: 782 skills in 16 categories.
+  - `category_map.json` — Persistent mapping for upstream sync; new skills default to `other/` for later reclassification.
+  - Installer (`init.js`) auto-detects categories vs skills via `SKILL.md` presence; installs flat at user destination.
+  - `SKILLS_CATALOG.md` — Browsable catalog with tier badges (🟢 Core, 🔵 Medium, 🟡 Full) and quick-reference table.
+
+- **8-Platform Support** — Expanded from 2 to 8 platform symlinks:
+  - Instruction files: `GEMINI.md`, `CLAUDE.md`, `OPENCODE.md`, `COPILOT.md` (→ `AGENTS.md`)
+  - Skill directories: `.claude/skills/`, `.gemini/skills/`, `.codex/skills/`, `.cursor/skills/`, `.adal/skills/` (→ `skills/`)
+  - Compatible with: Claude Code, Gemini CLI, Codex CLI, Antigravity IDE, Cursor, GitHub Copilot, OpenCode, AdaL CLI
+
+- **AGI Framework Adaptation** — All 782 community skills automatically adapted with:
+  - Qdrant Memory Integration (semantic caching)
+  - Agent Team Collaboration (orchestrator-driven invocation)
+  - Local LLM Support (Ollama embeddings)
+  - Source attribution linking back to original repo
+
+- **Attribution & Licensing** — Proper open-source compliance:
+  - `THIRD-PARTY-LICENSES.md` — Full MIT license text + upstream attribution chain
+  - `templates/skills/extended/ATTRIBUTION.md` — Credits with support links
+  - `templates/skills/extended/LICENSE-MIT` — Original upstream license file
+
+- **Automated Adaptation Pipeline** — CI/CD for upstream sync:
+  - `scripts/adapt_extended_skills.py` — Diff detection, section-marker preservation, categorized placement, dry-run mode
+  - `.github/workflows/adapt-skills.yml` — Auto-creates PR on upstream changes
+
+### Changed
+
+- **6 Enriched Skills** — Merged richer external versions into knowledge tier:
+  - `code-review-checklist` (+9KB), `mcp-builder` (+5.7KB), `seo-fundamentals` (+3KB)
+  - `systematic-debugging` (+2.8KB), `test-driven-development` (+2.7KB), `testing-patterns` (+2.3KB)
+- **Installer** (`bin/init.js`) — Updated `copySkills()` to walk category subdirectories; detects skill vs category by `SKILL.md` presence; installs all skills flat at destination.
+- **Adaptation Script** (`scripts/adapt_extended_skills.py`) — Now places skills into correct category subdirectories using `category_map.json`; `find_skill_path()` walks nested dirs; auto-updates map with new upstream skills.
+- `README.md` — Updated for v1.3.0: new tier descriptions, 8-platform table, categorized structure, community credits section
+- `package.json` — Version bump to 1.3.0, added `THIRD-PARTY-LICENSES.md` to published files
+
+### Credits
+
+This release would not be possible without the [Antigravity Awesome Skills](https://github.com/sickn33/antigravity-awesome-skills) community. Skills aggregated from 50+ contributors including Anthropic, Microsoft, Vercel Labs, Supabase, Trail of Bits, Expo, Sentry, and many more. See [SOURCES.md](https://github.com/sickn33/antigravity-awesome-skills/blob/main/docs/SOURCES.md) for the full attribution ledger.
+
 ## [1.2.8] - 2026-02-14
 
 ### Added

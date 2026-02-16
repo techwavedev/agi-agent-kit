@@ -7,7 +7,7 @@
 
 `@techwavedev/agi-agent-kit` is a modular, deterministic framework designed to bridge the gap between LLM reasoning and reliable production execution. It scaffolds a "3-Layer Architecture" (Intent → Orchestration → Execution) that forces agents to use tested scripts rather than hallucinating code.
 
-**v1.2.8** — Now with structured plan execution, TDD enforcement, verification gates (adapted from [obra/superpowers](https://github.com/obra/superpowers)), plus platform-adaptive orchestration and semantic memory across Claude Code, Kiro IDE, Gemini, and Opencode.
+**v1.3.0** — Now with **862 curated skills** (including 782 community skills from [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)), **8-platform support** (Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE), structured plan execution, TDD enforcement, verification gates (adapted from [obra/superpowers](https://github.com/obra/superpowers)), and semantic memory.
 
 ---
 
@@ -21,9 +21,9 @@ npx @techwavedev/agi-agent-kit init
 
 You'll be prompted to choose a pack:
 
-- **core** - Essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)
-- **knowledge** - Core + 36 specialized skills (API, Security, Design, Architecture)
-- **full** - Complete suite with `.agent/` structure (agents, workflows, rules)
+- **core** — 4 essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)
+- **medium** — Core + 75 specialized skills in 16 categories + `.agent/` structure (API, Security, Design, Architecture)
+- **full** — Complete suite: Medium + 782 community skills from [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills) (861 total)
 
 After installation, run the **one-shot setup wizard** to auto-configure your environment:
 
@@ -45,18 +45,18 @@ This checks Qdrant, Ollama, embedding models, and collections — auto-fixing an
 
 ## ✨ Key Features
 
-| Feature                       | Description                                                                 |
-| ----------------------------- | --------------------------------------------------------------------------- |
-| **Deterministic Execution**   | Separates business logic (Python scripts) from AI reasoning (Directives)    |
-| **Modular Skill System**      | 45+ plug-and-play skills that can be added or removed instantly             |
-| **Structured Plan Execution** | Batch or subagent-driven execution with two-stage review (spec + quality)   |
-| **TDD Enforcement**           | Iron-law RED-GREEN-REFACTOR cycle — no production code without failing test |
-| **Verification Gates**        | Evidence before claims — no completion without fresh verification output    |
-| **Platform-Adaptive**         | Auto-detects and optimizes for Claude Code, Kiro IDE, Gemini, and Opencode  |
-| **Multi-Agent Orchestration** | Agent Teams, subagents, Powers, or sequential personas — adapts to platform |
-| **Semantic Memory**           | Built-in Qdrant-powered memory with 95% token savings via caching           |
-| **Self-Healing Workflows**    | Agents read error logs, patch scripts, and update directives automatically  |
-| **One-Shot Setup**            | Platform detection + project stack scan + auto-configuration in one command |
+| Feature                       | Description                                                                                   |
+| ----------------------------- | --------------------------------------------------------------------------------------------- |
+| **Deterministic Execution**   | Separates business logic (Python scripts) from AI reasoning (Directives)                      |
+| **Modular Skill System**      | 861 plug-and-play skills across 3 tiers, organized in 16 domain categories                    |
+| **Structured Plan Execution** | Batch or subagent-driven execution with two-stage review (spec + quality)                     |
+| **TDD Enforcement**           | Iron-law RED-GREEN-REFACTOR cycle — no production code without failing test                   |
+| **Verification Gates**        | Evidence before claims — no completion without fresh verification output                      |
+| **Platform-Adaptive**         | Auto-detects Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL, Antigravity |
+| **Multi-Agent Orchestration** | Agent Teams, subagents, Powers, or sequential personas — adapts to platform                   |
+| **Semantic Memory**           | Built-in Qdrant-powered memory with 95% token savings via caching                             |
+| **Self-Healing Workflows**    | Agents read error logs, patch scripts, and update directives automatically                    |
+| **One-Shot Setup**            | Platform detection + project stack scan + auto-configuration in one command                   |
 
 ---
 
@@ -77,8 +77,9 @@ The agi framework adopts all best patterns from [obra/superpowers](https://githu
 | Agent Boundary Enforcement   |        ❌        |     ✅ File-type ownership     |
 | Dynamic Question Generation  |        ❌        |   ✅ Trade-offs + priorities   |
 | Memory-First Protocol        |        ❌        |       ✅ Auto cache-hit        |
-| Skill Creator + Catalog      |        ❌        |    ✅ 45+ composable skills    |
+| Skill Creator + Catalog      |        ❌        |    ✅ 862 composable skills    |
 | Platform Setup Wizard        |        ❌        |       ✅ One-shot config       |
+| Multi-Platform Symlinks      |  ❌ Claude only  |         ✅ 8 platforms         |
 
 ---
 
@@ -157,14 +158,20 @@ python3 execution/memory_manager.py auto \
 
 ## 🌐 Platform Support
 
-The framework automatically detects your AI coding environment and activates the best available features:
+The framework automatically detects your AI coding environment and activates the best available features.
 
-| Platform        | Orchestration Strategy              | Key Features                                 |
-| --------------- | ----------------------------------- | -------------------------------------------- |
-| **Claude Code** | Agent Teams (parallel) or Subagents | Plugins, marketplace, LSP, hooks             |
-| **Kiro IDE**    | Powers + Autonomous Agent (async)   | Dynamic MCP loading, hooks, cross-repo tasks |
-| **Gemini**      | Sequential personas via `@agent`    | Skills, MCP servers, execution scripts       |
-| **Opencode**    | Sequential personas via `@agent`    | Skills, MCP servers, providers               |
+Skills are installed to the canonical `skills/` directory and symlinked to each platform's expected path:
+
+| Platform            | Skills Path       | Instruction File | Orchestration Strategy              |
+| ------------------- | ----------------- | ---------------- | ----------------------------------- |
+| **Claude Code**     | `.claude/skills/` | `CLAUDE.md`      | Agent Teams (parallel) or Subagents |
+| **Gemini CLI**      | `.gemini/skills/` | `GEMINI.md`      | Sequential personas via `@agent`    |
+| **Codex CLI**       | `.codex/skills/`  | `AGENTS.md`      | Sequential via prompts              |
+| **Antigravity IDE** | `.agent/skills/`  | `AGENTS.md`      | Full agentic orchestration          |
+| **Cursor**          | `.cursor/skills/` | `AGENTS.md`      | Chat-based via `@skill`             |
+| **GitHub Copilot**  | N/A (paste)       | `COPILOT.md`     | Manual paste into context           |
+| **OpenCode**        | `.agent/skills/`  | `OPENCODE.md`    | Sequential personas via `@agent`    |
+| **AdaL CLI**        | `.adal/skills/`   | `AGENTS.md`      | Auto-load on demand                 |
 
 Run `/setup` to auto-detect and configure your platform, or use the setup script directly:
 
@@ -185,25 +192,26 @@ python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir . --dry-
 
 ```
 your-project/
-├── AGENTS.md              # Master instruction file (symlinked to GEMINI.md, CLAUDE.md)
-├── skills/                # 56 pre-built tools
+├── AGENTS.md              # Master instruction file
+├── GEMINI.md → AGENTS.md  # Platform symlinks
+├── CLAUDE.md → AGENTS.md
+├── OPENCODE.md → AGENTS.md
+├── COPILOT.md → AGENTS.md
+├── skills/                # Up to 862 skills (depends on pack)
 │   ├── webcrawler/        # Documentation harvesting
-│   ├── pdf-reader/        # PDF text extraction
 │   ├── qdrant-memory/     # Semantic caching & memory
-│   ├── documentation/     # Auto-documentation maintenance
-│   ├── plugin-discovery/  # Platform detection & setup wizard
-│   ├── parallel-agents/   # Multi-agent orchestration
-│   ├── intelligent-routing/ # Smart agent selection & routing
-│   ├── self-update/       # Framework self-update capability
-│   └── ...                # 48 more specialized skills
+│   └── ...                # 860 more skills in full pack
+├── .claude/skills → skills/   # Platform-specific symlinks
+├── .gemini/skills → skills/
+├── .codex/skills → skills/
+├── .cursor/skills → skills/
+├── .adal/skills → skills/
 ├── directives/            # SOPs in Markdown
-│   └── memory_integration.md  # Memory protocol reference
 ├── execution/             # Deterministic Python scripts
 │   ├── session_boot.py    # Session startup (Qdrant + Ollama check)
-│   ├── session_init.py    # Collection initializer
 │   └── memory_manager.py  # Store/retrieve/cache operations
 ├── skill-creator/         # Tools to create new skills
-└── .agent/                # (full pack) Agents, workflows, rules
+└── .agent/                # (medium/full) Agents, workflows, rules
     └── workflows/         # /setup, /deploy, /test, /debug, etc.
 ```
 
@@ -413,9 +421,26 @@ Use these keywords, commands, and phrases to trigger specific capabilities:
 
 ## 📚 Documentation
 
-- **[AGENTS.md](./AGENTS.md)** - Complete architecture and operating principles
-- **[skills/SKILLS_CATALOG.md](./skills/SKILLS_CATALOG.md)** - All 56 available skills
-- **[CHANGELOG.md](./CHANGELOG.md)** - Version history
+- **[AGENTS.md](./AGENTS.md)** — Complete architecture and operating principles
+- **[skills/SKILLS_CATALOG.md](./skills/SKILLS_CATALOG.md)** — Skill catalog
+- **[CHANGELOG.md](./CHANGELOG.md)** — Version history
+- **[THIRD-PARTY-LICENSES.md](./THIRD-PARTY-LICENSES.md)** — Third-party attributions
+
+---
+
+## 🤝 Community Skills & Credits
+
+The **Full** tier includes 782 community skills adapted from the [Antigravity Awesome Skills](https://github.com/sickn33/antigravity-awesome-skills) project (v5.4.0) by [@sickn33](https://github.com/sickn33), distributed under the MIT License.
+
+This collection aggregates skills from 50+ open-source contributors and organizations including Anthropic, Microsoft, Vercel Labs, Supabase, Trail of Bits, Expo, Sentry, Neon, fal.ai, and many more. For the complete attribution ledger, see [SOURCES.md](https://github.com/sickn33/antigravity-awesome-skills/blob/main/docs/SOURCES.md).
+
+Each community skill has been adapted for the AGI framework with:
+
+- **Qdrant Memory Integration** — Semantic caching and context retrieval
+- **Agent Team Collaboration** — Orchestrator-driven invocation and shared memory
+- **Local LLM Support** — Ollama-based embeddings for local-first operation
+
+If these skills help you, consider [starring the original repo](https://github.com/sickn33/antigravity-awesome-skills) or [supporting the author](https://buymeacoffee.com/sickn33).
 
 ---
 
@@ -428,3 +453,5 @@ This package includes a pre-flight security scanner that checks for private term
 ## 📄 License
 
 Apache-2.0 © [Elton Machado@TechWaveDev](https://github.com/techwavedev)
+
+Community skills in the Full tier are licensed under the MIT License. See [THIRD-PARTY-LICENSES.md](./THIRD-PARTY-LICENSES.md) for details.

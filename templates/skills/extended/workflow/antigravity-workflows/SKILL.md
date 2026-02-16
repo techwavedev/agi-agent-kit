@@ -1,0 +1,116 @@
+---
+name: antigravity-workflows
+description: "Orchestrate multiple Antigravity skills through guided workflows for SaaS MVP delivery, security audits, AI agent builds, and browser QA."
+source: self
+risk: none
+---
+
+# Antigravity Workflows
+
+Use this skill to turn a complex objective into a guided sequence of skill invocations.
+
+## When to Use This Skill
+
+Use this skill when:
+- The user wants to combine several skills without manually selecting each one.
+- The goal is multi-phase (for example: plan, build, test, ship).
+- The user asks for best-practice execution for common scenarios like:
+  - Shipping a SaaS MVP
+  - Running a web security audit
+  - Building an AI agent system
+  - Implementing browser automation and E2E QA
+
+## Workflow Source of Truth
+
+Read workflows in this order:
+1. `docs/WORKFLOWS.md` for human-readable playbooks.
+2. `data/workflows.json` for machine-readable workflow metadata.
+
+## How to Run This Skill
+
+1. Identify the user's concrete outcome.
+2. Propose the 1-2 best matching workflows.
+3. Ask the user to choose one.
+4. Execute step-by-step:
+   - Announce current step and expected artifact.
+   - Invoke recommended skills for that step.
+   - Verify completion criteria before moving to next step.
+5. At the end, provide:
+   - Completed artifacts
+   - Validation evidence
+   - Remaining risks and next actions
+
+## Default Workflow Routing
+
+- Product delivery request -> `ship-saas-mvp`
+- Security review request -> `security-audit-web-app`
+- Agent/LLM product request -> `build-ai-agent-system`
+- E2E/browser testing request -> `qa-browser-automation`
+
+## Copy-Paste Prompts
+
+```text
+Use @antigravity-workflows to run the "Ship a SaaS MVP" workflow for my project idea.
+```
+
+```text
+Use @antigravity-workflows and execute a full "Security Audit for a Web App" workflow.
+```
+
+```text
+Use @antigravity-workflows to guide me through "Build an AI Agent System" with checkpoints.
+```
+
+```text
+Use @antigravity-workflows to execute the "QA and Browser Automation" workflow and stabilize flaky tests.
+```
+
+## Limitations
+
+- This skill orchestrates; it does not replace specialized skills.
+- It depends on the local availability of referenced skills.
+- It does not guarantee success without environment access, credentials, or required infrastructure.
+- For stack-specific browser automation in Go, `go-playwright` may require the corresponding skill to be present in your local skills repository.
+
+## Related Skills
+
+- `concise-planning`
+- `brainstorming`
+- `workflow-automation`
+- `verification-before-completion`
+
+
+---
+
+## 🧠 AGI Framework Integration
+
+> **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
+> Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
+
+### Qdrant Memory Integration
+
+Before executing complex tasks with this skill:
+```bash
+python3 execution/memory_manager.py auto --query "<task summary>"
+```
+- **Cache hit?** Use cached response directly — no need to re-process.
+- **Memory match?** Inject `context_chunks` into your reasoning.
+- **No match?** Proceed normally, then store results:
+```bash
+python3 execution/memory_manager.py store \
+  --content "Description of what was decided/solved" \
+  --type decision \
+  --tags antigravity-workflows <relevant-tags>
+```
+
+### Agent Team Collaboration
+
+- This skill can be invoked by the `orchestrator` agent via intelligent routing.
+- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
+- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
+
+### Local LLM Support
+
+When available, use local Ollama models for embedding and lightweight inference:
+- Embeddings: `nomic-embed-text` via Qdrant memory system
+- Lightweight analysis: Local models reduce API costs for repetitive patterns
