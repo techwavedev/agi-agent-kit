@@ -2,7 +2,12 @@
 
 ## Goal
 
-Ensure all AI agents use the Qdrant-powered memory system by default to save tokens and preserve context across sessions. Embedding is handled locally via Ollama (`nomic-embed-text`, 768 dimensions) at zero cost.
+Ensure all AI agents use the **Hybrid Memory System (Qdrant + BM25)** by default to save tokens, preserve context, and avoid redundant work.
+
+- **Semantic Memory (Qdrant)**: Concept matching (e.g., "how do I fix econnrefused")
+- **Keyword Memory (BM25)**: Exact matching (e.g., "error 503", "sg-018f20ea", "API_KEY")
+
+Using memory provides **90-100% token savings** on repeated tasks.
 
 ## Inputs
 
@@ -10,24 +15,15 @@ Ensure all AI agents use the Qdrant-powered memory system by default to save tok
 - Project name (optional, for scoped retrieval)
 - Memory type classification (auto-detected or explicit)
 
-## Prerequisites
-
-| Component          | Required | Check Command                                       |
-| ------------------ | -------- | --------------------------------------------------- |
-| Qdrant (Docker)    | Yes      | `curl http://localhost:6333/collections`             |
-| Ollama             | Yes      | `curl http://localhost:11434/api/tags`               |
-| nomic-embed-text   | Yes      | `ollama pull nomic-embed-text`                       |
-| Collections setup  | Yes      | `python3 execution/session_init.py`                  |
-
 ## Execution Protocol
 
 ### 1. Session Start (Run Once)
 
 ```bash
-python3 execution/session_init.py
+python3 execution/session_boot.py --auto-fix
 ```
 
-This verifies Qdrant, Ollama, and creates `agent_memory` (768d) and `semantic_cache` (768d) collections if they don't exist.
+Checks Qdrant, Ollama, collections, and BM25 index. Auto-heals if broken.
 
 ### 2. Before Every Complex Task
 
@@ -37,13 +33,15 @@ python3 execution/memory_manager.py auto --query "<user request summary>"
 
 **Decision tree based on result:**
 
-| Result             | Action                                                   |
-| ------------------ | -------------------------------------------------------- |
-| `cache_hit: true`  | Use cached response directly. Inform user of cache hit.  |
-| `source: memory`   | Inject retrieved context chunks into your reasoning.     |
-| `source: none`     | Proceed normally. Store the result when done.            |
+| Result            | Action                                                  |
+| ----------------- | ------------------------------------------------------- |
+| `cache_hit: true` | Use cached response directly. Inform user of cache hit. |
+| `source: memory`  | Inject retrieved context chunks into your reasoning.    |
+| `source: none`    | Proceed normally. Store the result when done.           |
 
-### 3. After Key Decisions or Solutions
+### 3. Storing Knowledge (Auto-Indexed)
+
+Whenever you solve a problem or make a decision:
 
 ```bash
 python3 execution/memory_manager.py store \
@@ -53,7 +51,11 @@ python3 execution/memory_manager.py store \
   --tags relevant-tag1 relevant-tag2
 ```
 
-### 4. After Completing a Complex Task (Cache the Response)
+> **Note:** This automatically updates both Qdrant (vectors) and BM25 (keywords).
+
+### 4. Cache the Response
+
+After completing a complex task:
 
 ```bash
 python3 execution/memory_manager.py cache-store \
@@ -61,35 +63,34 @@ python3 execution/memory_manager.py cache-store \
   --response "The complete response that was generated"
 ```
 
+## Hybrid Search Modes
+
+If you need specific lookup behavior, use `hybrid_search.py` directly:
+
+```bash
+# True Hybrid (Default) - Best for general refactoring
+python3 scripts/hybrid_search.py --query "fix auth error" --mode hybrid
+
+# Vector Only - Best for conceptual research
+python3 scripts/hybrid_search.py --query "authentication patterns" --mode vector
+
+# Keyword Only - Best for error codes/IDs
+python3 scripts/hybrid_search.py --query "sg-018f20ea63e82eeb5" --mode keyword
+```
+
 ## Memory Type Guide
 
-| Type           | When to Store                                    | Retention |
-| -------------- | ------------------------------------------------ | --------- |
-| `decision`     | Architecture choice, tech selection, trade-off   | Permanent |
-| `code`         | Reusable pattern, snippet, config                | Permanent |
-| `error`        | Bug fix with root cause and solution             | 90 days   |
-| `technical`    | API docs, library quirks, config patterns        | Permanent |
-| `conversation` | User preference, constraint, project context     | 30 days   |
-
-## Token Savings Reference
-
-| Scenario              | Without Memory | With Memory | Savings |
-| --------------------- | -------------- | ----------- | ------- |
-| Repeated question     | ~2000 tokens   | 0 tokens    | 100%    |
-| Similar architecture  | ~5000 tokens   | ~500 tokens | 90%     |
-| Past error resolution | ~3000 tokens   | ~300 tokens | 90%     |
-| Context from history  | ~10000 tokens  | ~1000 tokens| 90%     |
+| Type           | When to Store                                  | Retention |
+| -------------- | ---------------------------------------------- | --------- |
+| `decision`     | Architecture choice, tech selection, trade-off | Permanent |
+| `code`         | Reusable pattern, snippet, config              | Permanent |
+| `error`        | Bug fix with root cause and solution           | 90 days   |
+| `technical`    | API docs, library quirks, config patterns      | Permanent |
+| `conversation` | User preference, constraint, project context   | 30 days   |
 
 ## Edge Cases
 
 - **Qdrant not running:** Log warning, proceed without memory. Never block user workflow.
-- **Ollama not running:** Same as above. Memory is optional, never mandatory for task completion.
-- **Stale cache:** Cache entries older than 7 days are auto-cleared. Run `python3 execution/memory_manager.py cache-clear --older-than 7` manually if needed.
-- **Dimension mismatch:** If switching providers (e.g., OpenAI→Ollama), run `python3 execution/session_init.py --force` to recreate collections with correct dimensions.
+- **BM25 missing:** Run `python3 execution/memory_manager.py bm25-sync` to rebuild.
+- **Stale cache:** Cache entries older than 7 days are auto-cleared. Run `python3 execution/memory_manager.py cache-clear --older-than 7`.
 - **User opt-out:** Respect "no cache", "fresh", "skip memory" keywords.
-
-## Outputs
-
-- Cached responses (in Qdrant `semantic_cache` collection)
-- Stored memories (in Qdrant `agent_memory` collection)
-- Session health report (JSON from `session_init.py`)
