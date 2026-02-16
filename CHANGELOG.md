@@ -11,14 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Backend Template Hardening** — Resolved 5 high-severity vulnerabilities in `loki-mode` backend example by overriding `node-tar` to safe version `7.5.9`.
 
-### Governance
-
-- **Release Gate Protocol** — Implemented mandatory `prepublishOnly` hook (`release_gate.py`) enforcing:
-  - Documentation integrity
-  - Secret scanning
-  - Python syntax validation
-  - Version consistency
-
 ## [1.3.7] - 2026-02-16
 
 ### Added
