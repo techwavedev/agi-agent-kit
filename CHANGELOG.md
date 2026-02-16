@@ -5,14 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.1] - Unreleased
-
-### Fixed
-
-- **Attribution**: Added AGI framework author's Buy Me a Coffee link (`eltonmachado`); separated from upstream skills author support section.
-- **README**: Added dedicated ☕ Support section with correct project links.
-
-## [1.3.0] - 2026-02-16
+## [1.3.2] - 2026-02-16
 
 ### Added
 
@@ -56,8 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `systematic-debugging` (+2.8KB), `test-driven-development` (+2.7KB), `testing-patterns` (+2.3KB)
 - **Installer** (`bin/init.js`) — Updated `copySkills()` to walk category subdirectories; detects skill vs category by `SKILL.md` presence; installs all skills flat at destination.
 - **Adaptation Script** (`scripts/adapt_extended_skills.py`) — Now places skills into correct category subdirectories using `category_map.json`; `find_skill_path()` walks nested dirs; auto-updates map with new upstream skills.
-- `README.md` — Updated for v1.3.0: new tier descriptions, 8-platform table, categorized structure, community credits section
-- `package.json` — Version bump to 1.3.0, added `THIRD-PARTY-LICENSES.md` to published files
+- `README.md` — Updated for v1.3.2: new tier descriptions, 8-platform table, categorized structure, community credits section
+- `package.json` — Version bump to 1.3.2, added `THIRD-PARTY-LICENSES.md` to published files
 
 ### Credits
 

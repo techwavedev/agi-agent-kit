@@ -7,7 +7,7 @@
 
 `@techwavedev/agi-agent-kit` is a modular, deterministic framework designed to bridge the gap between LLM reasoning and reliable production execution. It scaffolds a "3-Layer Architecture" (Intent → Orchestration → Execution) that forces agents to use tested scripts rather than hallucinating code.
 
-**v1.3.0** — Now with **862 curated skills** (including 782 community skills from [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)), **8-platform support** (Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE), structured plan execution, TDD enforcement, verification gates (adapted from [obra/superpowers](https://github.com/obra/superpowers)), and semantic memory.
+**v1.3.2** — Now with **861 curated skills** (including 782 community skills from [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)), **8-platform support** (Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE), structured plan execution, TDD enforcement, verification gates (adapted from [obra/superpowers](https://github.com/obra/superpowers)), and semantic memory.
 
 ---
 
