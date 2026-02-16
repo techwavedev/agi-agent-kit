@@ -45,3 +45,4 @@ techwavedev-agi-agent-kit-*.tgz*.code-workspace
 directives
 update_skills_memory.py
 test_output/
+__pycache__/
