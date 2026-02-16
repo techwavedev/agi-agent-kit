@@ -43,8 +43,9 @@ from urllib.error import URLError
 
 # Resolve path to qdrant-memory scripts
 SKILL_SCRIPTS_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     "skills",
+    "core",
     "qdrant-memory",
     "scripts",
 )
@@ -118,7 +119,13 @@ def health_check() -> dict:
     return result
 
 
-def auto_query(query: str, project: str = None, threshold: float = 0.92) -> dict:
+def auto_query(
+    query: str, 
+    project: str = None, 
+    threshold: float = 0.92,
+    vector_weight: float = None,
+    text_weight: float = None
+) -> dict:
     """
     Smart query: check cache first, then retrieve context.
     This is the primary entry point for agents.
@@ -154,12 +161,20 @@ def auto_query(query: str, project: str = None, threshold: float = 0.92) -> dict
         if project:
             filters = {"must": [{"key": "project", "match": {"value": project}}]}
 
-        context = retrieve_context(query, filters=filters, top_k=5, score_threshold=0.7)
+        context = retrieve_context(
+            query, 
+            filters=filters, 
+            top_k=5, 
+            score_threshold=0.7,
+            vector_weight=vector_weight,
+            text_weight=text_weight
+        )
         if context.get("total_chunks", 0) > 0:
             result["source"] = "memory"
             result["context_chunks"] = context.get("chunks", [])
             result["total_chunks"] = context.get("total_chunks", 0)
             result["tokens_saved_estimate"] = context.get("total_tokens_estimate", 0)
+            result["search_type"] = context.get("search_type", "unknown")
     except Exception:
         pass  # No context available
 
@@ -193,6 +208,8 @@ Examples:
     auto_parser.add_argument(
         "--threshold", type=float, default=0.92, help="Cache similarity threshold"
     )
+    auto_parser.add_argument("--vector-weight", type=float, help="Hybrid search vector weight")
+    auto_parser.add_argument("--text-weight", type=float, help="Hybrid search text weight")
 
     # Store command
     store_parser = subparsers.add_parser(
@@ -221,6 +238,8 @@ Examples:
     retrieve_parser.add_argument(
         "--threshold", type=float, default=0.7, help="Score threshold"
     )
+    retrieve_parser.add_argument("--vector-weight", type=float, help="Hybrid search vector weight")
+    retrieve_parser.add_argument("--text-weight", type=float, help="Hybrid search text weight")
 
     # Cache store command
     cache_parser = subparsers.add_parser(
@@ -255,7 +274,13 @@ Examples:
 
     try:
         if args.command == "auto":
-            result = auto_query(args.query, args.project, args.threshold)
+            result = auto_query(
+                args.query, 
+                args.project, 
+                args.threshold,
+                vector_weight=args.vector_weight,
+                text_weight=args.text_weight
+            )
             print(json.dumps(result, indent=2))
             sys.exit(0 if result["source"] != "none" else 1)
 
@@ -278,6 +303,8 @@ Examples:
                 filters={"must": filters["must"]} if filters else None,
                 top_k=args.top_k,
                 score_threshold=args.threshold,
+                vector_weight=args.vector_weight,
+                text_weight=args.text_weight
             )
             print(json.dumps(result, indent=2))
             sys.exit(0 if result.get("total_chunks", 0) > 0 else 1)
