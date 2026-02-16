@@ -54,6 +54,13 @@ from embedding_utils import check_embedding_service, get_embedding_dimension
 from semantic_cache import check_cache, store_response, clear_cache
 from memory_retrieval import retrieve_context, store_memory, list_memories, build_filter
 
+# Import BM25 index (optional — graceful if unavailable)
+try:
+    from bm25_index import BM25Index
+    _BM25_AVAILABLE = True
+except ImportError:
+    _BM25_AVAILABLE = False
+
 # Configuration
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 
@@ -84,6 +91,22 @@ def health_check() -> dict:
     result["missing_collections"] = [
         c for c in expected if c not in result.get("collections", [])
     ]
+
+    # Check BM25 index
+    if _BM25_AVAILABLE:
+        try:
+            with BM25Index() as bm25:
+                bm25_stats = bm25.get_stats()
+                result["bm25"] = {
+                    "status": "ok",
+                    "documents": bm25_stats["documents"],
+                    "last_sync": bm25_stats["last_sync"],
+                    "db_size": bm25_stats["db_size_human"]
+                }
+        except Exception as e:
+            result["bm25"] = {"status": f"error: {e}"}
+    else:
+        result["bm25"] = {"status": "not_installed"}
 
     # Overall status
     result["ready"] = (
@@ -223,6 +246,11 @@ Examples:
         "--older-than", type=int, default=7, help="Delete entries older than N days"
     )
 
+    # BM25 sync command
+    subparsers.add_parser(
+        "bm25-sync", help="Rebuild BM25 keyword index from Qdrant (for hybrid search)"
+    )
+
     args = parser.parse_args()
 
     try:
@@ -281,6 +309,18 @@ Examples:
             result = clear_cache(args.older_than)
             print(json.dumps(result, indent=2))
             sys.exit(0)
+
+        elif args.command == "bm25-sync":
+            if not _BM25_AVAILABLE:
+                print(json.dumps({
+                    "status": "error",
+                    "message": "BM25 index module not found. Check bm25_index.py exists in qdrant-memory/scripts/"
+                }), file=sys.stderr)
+                sys.exit(3)
+            with BM25Index() as bm25:
+                result = bm25.sync_from_qdrant()
+            print(json.dumps(result, indent=2))
+            sys.exit(0 if result["status"] == "synced" else 2)
 
     except URLError as e:
         print(

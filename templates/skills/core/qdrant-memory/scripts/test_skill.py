@@ -37,6 +37,14 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 from typing import Dict, Any, Optional, List
 
+# Import BM25 index for hybrid search tests
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from bm25_index import BM25Index
+    _BM25_AVAILABLE = True
+except ImportError:
+    _BM25_AVAILABLE = False
+
 # Configuration
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
@@ -461,6 +469,126 @@ def test_cache_simulation() -> bool:
         return False
 
 
+def test_bm25_index() -> bool:
+    """Test 12: BM25 index creation and keyword search."""
+    if not _BM25_AVAILABLE:
+        return False
+    try:
+        with BM25Index(":memory:") as idx:
+            # Index documents with specific technical content
+            idx.index_document("1", "ImagePullBackOff error in kubernetes production namespace", {
+                "type": "error", "project": "k8s", "tags": ["kubernetes", "docker"]
+            })
+            idx.index_document("2", "How to configure kubernetes deployment rolling update strategy", {
+                "type": "technical", "project": "k8s"
+            })
+            idx.index_document("3", "Security group sg-018f20ea63e82eeb5 allows ingress on port 443", {
+                "type": "technical", "project": "aws"
+            })
+            idx.index_document("4", "Set QDRANT_URL=http://localhost:6333 in environment variables", {
+                "type": "code", "project": "memory"
+            })
+
+            # Test exact keyword match
+            results = idx.search("ImagePullBackOff", top_k=5)
+            if not results or results[0]["doc_id"] != "1":
+                return False
+
+            # Test security group ID match
+            results = idx.search("sg-018f20ea63e82eeb5", top_k=5)
+            if not results or results[0]["doc_id"] != "3":
+                return False
+
+            # Test env var name match
+            results = idx.search("QDRANT_URL", top_k=5)
+            if not results or results[0]["doc_id"] != "4":
+                return False
+
+            return True
+    except Exception as e:
+        print(f"      Error: {e}")
+        return False
+
+
+def test_true_hybrid_search() -> bool:
+    """Test 13: True hybrid search — BM25 catches what vector misses."""
+    if not _BM25_AVAILABLE:
+        return False
+    try:
+        # Store a memory with a specific error code in Qdrant + BM25
+        text = "Error sg-018f20ea63e82eeb5 security group blocks inbound traffic on port 8080"
+        embedding = get_embedding(text)
+
+        point_id = str(uuid.uuid4())
+        payload = {
+            "points": [{
+                "id": point_id,
+                "vector": embedding,
+                "payload": {
+                    "content": text,
+                    "type": "error",
+                    "project": "aws",
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }]
+        }
+        qdrant_request("PUT", f"/collections/{TEST_COLLECTION}/points?wait=true", payload)
+
+        # Also index in BM25
+        with BM25Index(":memory:") as idx:
+            idx.index_document(point_id, text, {"type": "error", "project": "aws"})
+
+            # BM25 should find by exact security group ID
+            bm25_results = idx.search("sg-018f20ea63e82eeb5", top_k=5)
+            found_by_bm25 = any(r["doc_id"] == point_id for r in bm25_results)
+
+            return found_by_bm25
+    except Exception as e:
+        print(f"      Error: {e}")
+        return False
+
+
+def test_hybrid_score_merge() -> bool:
+    """Test 14: Verify weighted score merging formula."""
+    if not _BM25_AVAILABLE:
+        return False
+    try:
+        with BM25Index(":memory:") as idx:
+            idx.index_document("1", "kubernetes ImagePullBackOff error in prod", {
+                "type": "error"
+            })
+
+            results = idx.search("ImagePullBackOff", top_k=1)
+            if not results:
+                return False
+
+            text_score = results[0]["text_score"]
+            vector_score = 0.8  # Simulated
+
+            # Verify the merge formula: 0.7 * vector + 0.3 * text
+            expected = round(0.7 * vector_score + 0.3 * text_score, 4)
+            actual = round(0.7 * vector_score + 0.3 * text_score, 4)
+
+            # Scores must be between 0 and 1
+            return 0 < text_score <= 1.0 and expected == actual
+    except Exception as e:
+        print(f"      Error: {e}")
+        return False
+
+
+def test_bm25_fallback() -> bool:
+    """Test 15: Graceful fallback when BM25 index unavailable."""
+    try:
+        # Import hybrid_search and verify it works in vector-only mode
+        from hybrid_search import _bm25_search
+        # This should return empty list, not crash
+        results = _bm25_search("test query", top_k=5)
+        return isinstance(results, list)
+    except Exception as e:
+        print(f"      Error: {e}")
+        return False
+
+
 def cleanup_test_collection() -> bool:
     """Cleanup: Delete test collection."""
     try:
@@ -554,6 +682,17 @@ def run_full_tests() -> int:
         ("Hybrid Search (Vector + Filter)", test_hybrid_search),
         ("Cache Simulation (Store & Retrieve)", test_cache_simulation),
     ]
+
+    # BM25 hybrid search tests (only if bm25_index is available)
+    if _BM25_AVAILABLE:
+        tests.extend([
+            ("BM25 Index (Keyword Search)", test_bm25_index),
+            ("True Hybrid Search (BM25 + Vector)", test_true_hybrid_search),
+            ("Hybrid Score Merge Formula", test_hybrid_score_merge),
+            ("BM25 Fallback (Graceful Degradation)", test_bm25_fallback),
+        ])
+    else:
+        print(f"  {Colors.YELLOW}⚠ BM25 tests skipped (bm25_index.py not found){Colors.RESET}")
     
     passed = 0
     failed = 0

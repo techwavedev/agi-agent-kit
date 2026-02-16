@@ -53,6 +53,16 @@ except ImportError:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from embedding_utils import get_embedding
 
+# Import BM25 index for hybrid search (optional — graceful if unavailable)
+try:
+    from bm25_index import BM25Index
+    _BM25_AVAILABLE = True
+except ImportError:
+    _BM25_AVAILABLE = False
+
+# Hybrid search toggle
+HYBRID_SEARCH = os.environ.get("HYBRID_SEARCH", "true").lower() in ("true", "1", "yes")
+
 # Configuration
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 COLLECTION = os.environ.get("MEMORY_COLLECTION", "agent_memory")
@@ -181,12 +191,31 @@ def store_memory(
     
     with urlopen(req, timeout=30) as response:
         result = json.loads(response.read().decode())
-        
+
+    # Auto-index into BM25 for hybrid search
+    bm25_status = "skipped"
+    if _BM25_AVAILABLE and HYBRID_SEARCH:
+        try:
+            with BM25Index() as bm25:
+                bm25_result = bm25.index_document(
+                    doc_id=point_id,
+                    content=content,
+                    metadata={
+                        "type": memory_type,
+                        "project": (metadata or {}).get("project", ""),
+                        "tags": (metadata or {}).get("tags", [])
+                    }
+                )
+                bm25_status = bm25_result.get("status", "error")
+        except Exception:
+            bm25_status = "error"
+
     return {
         "status": "stored",
         "point_id": point_id,
         "type": memory_type,
         "token_count": payload["token_count"],
+        "bm25_indexed": bm25_status,
         "result": result
     }
 
