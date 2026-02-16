@@ -513,13 +513,22 @@ Each community skill has been adapted for the AGI framework with:
 - **Agent Team Collaboration** — Orchestrator-driven invocation and shared memory
 - **Local LLM Support** — Ollama-based embeddings for local-first operation
 
-If these skills help you, consider [starring the original repo](https://github.com/sickn33/antigravity-awesome-skills) or [supporting the author](https://buymeacoffee.com/sickn33).
+If these community skills help you, consider [starring the original repo](https://github.com/sickn33/antigravity-awesome-skills) or [supporting the author](https://buymeacoffee.com/sickn33).
 
 ---
 
 ## 🛡️ Security
 
 This package includes a pre-flight security scanner that checks for private terms before publishing. All templates are sanitized for public use.
+
+---
+
+## ☕ Support
+
+If the AGI Agent Kit helps you build better AI-powered workflows, consider supporting the project:
+
+- ⭐ [Star on GitHub](https://github.com/techwavedev/agi-agent-kit)
+- ☕ [Buy me a coffee](https://www.buymeacoffee.com/eltonmachado)
 
 ---
 
