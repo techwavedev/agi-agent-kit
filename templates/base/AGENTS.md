@@ -1,6 +1,6 @@
 # Agent Instructions
 
-> `CLAUDE.md`, `GEMINI.md`, and `OPENCODE.md` are symlinks to this file, so the same instructions load in any AI environment.
+> `CLAUDE.md`, `GEMINI.md`, `OPENCODE.md`, `COPILOT.md`, and `OPENCLAW.md` are symlinks to this file, so the same instructions load in any AI environment.
 
 ---
 

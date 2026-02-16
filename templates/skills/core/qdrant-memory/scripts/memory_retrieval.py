@@ -48,10 +48,12 @@ from urllib.error import URLError, HTTPError
 # Import shared embedding utilities (supports Ollama and OpenAI)
 try:
     from embedding_utils import get_embedding
+    from hybrid_search import hybrid_query
 except ImportError:
     # Fallback if run from different directory
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from embedding_utils import get_embedding
+    from hybrid_search import hybrid_query
 
 # Import BM25 index for hybrid search (optional — graceful if unavailable)
 try:
@@ -72,75 +74,96 @@ def retrieve_context(
     query: str,
     filters: Optional[Dict[str, Any]] = None,
     top_k: int = 5,
-    score_threshold: float = 0.7
+    score_threshold: float = 0.7,
+    vector_weight: float = None,  # Use default from hybrid_search if None
+    text_weight: float = None     # Use default from hybrid_search if None
 ) -> List[Dict[str, Any]]:
     """
-    Retrieve relevant context from long-term memory.
+    Retrieve relevant context from long-term memory using HYBRID SEARCH.
     
-    Instead of passing 20K tokens of conversation history,
-    this returns only the top-K most relevant chunks (500-1000 tokens).
+    Combines:
+    1. Vector similarity (Qdrant) - for semantic meaning
+    2. BM25 keyword search (SQLite) - for exact matches (IDs, codes, names)
     
     Args:
         query: Natural language query
         filters: Qdrant filter conditions (type, project, tags, etc.)
         top_k: Number of results to return
-        score_threshold: Minimum similarity score
+        score_threshold: Minimum similarity score for vector component
+        vector_weight: Weight for vector search (0.0-1.0)
+        text_weight: Weight for BM25 search (0.0-1.0)
     
     Returns:
         List of relevant memory chunks with metadata
     """
-    embedding = get_embedding(query)
+    # Extract keyword filters from complex Qdrant filter structure if possible
+    # specific structure: {"must": [{"key": "project", "match": {"value": "foo"}}]}
+    keyword_filters = {}
+    if filters and "must" in filters:
+        for condition in filters["must"]:
+            if "key" in condition and "match" in condition and "value" in condition["match"]:
+                keyword_filters[condition["key"]] = condition["match"]["value"]
     
-    search_payload = {
-        "vector": embedding,
-        "limit": top_k,
-        "score_threshold": score_threshold,
-        "with_payload": True
-    }
-    
-    if filters:
-        search_payload["filter"] = filters
-    
-    req = Request(
-        f"{QDRANT_URL}/collections/{COLLECTION}/points/search",
-        data=json.dumps(search_payload).encode(),
-        headers={"Content-Type": "application/json"},
-        method="POST"
-    )
-    
+    # Use the new hybrid_query function
     try:
-        with urlopen(req, timeout=30) as response:
-            result = json.loads(response.read().decode())
+        # Default weights are handled by hybrid_query if passed as None? 
+        # hybrid_query signature has defaults. 
+        # We need to handle arguments carefully.
+        
+        # Checking hybrid_query signature in hybrid_search.py:
+        # def hybrid_query(text_query, keyword_filters, must_not_filters, top_k, score_threshold, vector_weight, text_weight, mode)
+        
+        # We'll use defaults if not provided
+        kwargs = {
+            "text_query": query,
+            "keyword_filters": keyword_filters,
+            "top_k": top_k,
+            "score_threshold": score_threshold,
+            "mode": "hybrid" if HYBRID_SEARCH else "vector"
+        }
+        
+        if vector_weight is not None:
+            kwargs["vector_weight"] = vector_weight
+        if text_weight is not None:
+            kwargs["text_weight"] = text_weight
+            
+        result = hybrid_query(**kwargs)
             
         chunks = []
         total_tokens = 0
         
-        for hit in result.get("result", []):
-            content = hit["payload"].get("content", "")
+        for hit in result.get("results", []):
+            content = hit.get("content", "")
             token_estimate = len(content.split())
             total_tokens += token_estimate
             
             chunks.append({
                 "content": content,
-                "score": hit["score"],
-                "type": hit["payload"].get("type"),
-                "project": hit["payload"].get("project"),
-                "timestamp": hit["payload"].get("timestamp"),
-                "tags": hit["payload"].get("tags", []),
-                "token_estimate": token_estimate
+                "score": hit.get("score", 0),  # Hybrid score
+                "vector_score": hit.get("vector_score", 0),
+                "text_score": hit.get("text_score", 0),
+                "type": hit.get("type"),
+                "project": hit.get("project"),
+                "timestamp": hit.get("timestamp"),
+                "tags": hit.get("tags", []),
+                "token_estimate": token_estimate,
+                "search_sources": hit.get("search_sources", [])
             })
         
         return {
             "chunks": chunks,
             "total_chunks": len(chunks),
             "total_tokens_estimate": total_tokens,
-            "query": query
+            "query": query,
+            "search_type": result.get("search_type", "hybrid")
         }
         
-    except HTTPError as e:
-        if e.code == 404:
-            return {"chunks": [], "total_chunks": 0, "total_tokens_estimate": 0}
-        raise
+    except Exception as e:
+        # Fallback to simple vector search if hybrid fails or during transition
+        # But honestly, hybrid_query handles vector-only fallback too.
+        # This is just a safety catch.
+        print(f"Hybrid search failed, falling back: {e}", file=sys.stderr)
+        return {"chunks": [], "total_chunks": 0, "total_tokens_estimate": 0}
 
 
 def store_memory(

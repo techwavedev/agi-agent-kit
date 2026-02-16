@@ -13,6 +13,7 @@
 [![OpenCode](https://img.shields.io/badge/OpenCode-CLI-gray)](https://github.com/opencode-ai/opencode)
 [![Antigravity IDE](https://img.shields.io/badge/Antigravity-DeepMind-red)](https://github.com/techwavedev/agi-agent-kit)
 [![AdaL CLI](https://img.shields.io/badge/AdaL%20CLI-SylphAI-pink)](https://sylph.ai/)
+[![OpenClaw](https://img.shields.io/badge/OpenClaw-CLI-teal)](https://github.com/openclaw/openclaw)
 [![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a-coffee-d13610?logo=buymeacoffee&logoColor=white)](https://www.buymeacoffee.com/eltonmachado)
 
 **AGI Agent Kit** is the enterprise-grade scaffolding that turns any AI coding assistant into a **deterministic production machine**. While LLMs are probabilistic (90% accuracy per step = 59% over 5 steps), this framework forces them through a **3-Layer Architecture** — Intent → Orchestration → Execution — where business logic lives in tested scripts, not hallucinated code.
@@ -25,7 +26,7 @@ Most AI coding setups give you a prompt and hope for the best. AGI Agent Kit giv
 - 🎯 **19 Specialist Agents** — Domain-bounded experts (Frontend, Backend, Security, Mobile, Game Dev...) with enforced file ownership
 - ⚡ **861 Curated Skills** — 4 core + 75 professional + 782 community skills across 16 domain categories
 - 🔒 **Verification Gates** — No task completes without evidence. TDD enforcement. Two-stage code review.
-- 🌐 **8 Platforms, One Config** — Write once, run on Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE
+- 🌐 **9 Platforms, One Config** — Write once, run on Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE, OpenClaw
 
 ```bash
 npx @techwavedev/agi-agent-kit init

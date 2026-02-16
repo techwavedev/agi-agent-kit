@@ -336,6 +336,7 @@ function createSymlinks(targetPath) {
     { name: "CLAUDE.md", target: "AGENTS.md" },
     { name: "OPENCODE.md", target: "AGENTS.md" },
     { name: "COPILOT.md", target: "AGENTS.md" },
+    { name: "OPENCLAW.md", target: "AGENTS.md" },
   ];
 
   for (const link of instructionSymlinks) {
@@ -365,6 +366,7 @@ function createSymlinks(targetPath) {
     { platform: ".codex/skills", platformName: "Codex CLI" },
     { platform: ".cursor/skills", platformName: "Cursor" },
     { platform: ".adal/skills", platformName: "AdaL CLI" },
+    { platform: ".openclaw/skills", platformName: "OpenClaw" },
   ];
 
   for (const { platform, platformName } of platformDirs) {
