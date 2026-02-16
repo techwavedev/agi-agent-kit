@@ -24,16 +24,15 @@ Safely release a new version of the Agi Agent Kit to NPM and the public reposito
    - Add new version header to `CHANGELOG.md`.
    - List all features, fixes, and breaking changes.
 
-4. **Git Commit**:
-   - Commit changes: `git commit -m "chore(release): vX.Y.Z"`
-   - Tag version: `git tag vX.Y.Z`
+4. **Trigger Release**:
+   - Push changes: `git push origin main`
+   - Create a Release on GitHub matching `package.json` version (e.g., `v1.3.8`).
+   - This triggers the `.github/workflows/publish.yml` action.
+   - The action will run `release_gate.py` and publish to NPM automatically.
 
-5. **Publish**:
-   - Run `npm publish --access public`
-   - (The `prepublishOnly` hook will run `release_gate.py` again automatically).
-
-6. **Push**:
-   - `git push origin main --tags`
+5. **Verify**:
+   - Check Actions tab for success.
+   - Check NPM for new version.
 
 ## Edge Cases
 
