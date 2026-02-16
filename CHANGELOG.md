@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.6] - 2026-02-16
+
+### Added
+
+- **Hybrid BM25+Vector Memory Search** — True hybrid retrieval combining Qdrant vector similarity with SQLite FTS5 keyword search:
+  - **BM25 Index** (`bm25_index.py`): SQLite FTS5 sidecar for exact keyword matching (error codes, IDs, env vars)
+  - **Weighted Score Merge**: `finalScore = 0.7 × vectorScore + 0.3 × textScore` (configurable)
+  - **3 Search Modes**: `hybrid` (default), `vector`, `keyword`
+  - **Auto-indexing**: Every `store_memory()` call automatically indexes into BM25
+  - **`bm25-sync` command**: Rebuild keyword index from existing Qdrant collection
+  - **Graceful fallback**: Falls back to vector-only if BM25 unavailable
+  - **FTS5 query sanitization**: Handles special characters (hyphens, dots) in search terms
+  - **16/16 tests passing**: 4 new BM25 tests (index, hybrid, score merge, fallback)
+
 ## [1.3.5] - 2026-02-16
 
 ### Added

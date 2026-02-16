@@ -21,7 +21,7 @@
 
 Most AI coding setups give you a prompt and hope for the best. AGI Agent Kit gives you:
 
-- 🧠 **Semantic Memory** — Qdrant-powered caching that eliminates redundant LLM calls (90-100% token savings)
+- 🧠 **Hybrid Memory** — Qdrant vectors + BM25 keywords: semantic similarity for concepts, exact matching for error codes and IDs (90-100% token savings)
 - 🎯 **19 Specialist Agents** — Domain-bounded experts (Frontend, Backend, Security, Mobile, Game Dev...) with enforced file ownership
 - ⚡ **861 Curated Skills** — 4 core + 75 professional + 782 community skills across 16 domain categories
 - 🔒 **Verification Gates** — No task completes without evidence. TDD enforcement. Two-stage code review.
@@ -78,7 +78,7 @@ This checks Qdrant, Ollama, embedding models, and collections — auto-fixing an
 | **Verification Gates**        | Evidence before claims — no completion without fresh verification output                      |
 | **Platform-Adaptive**         | Auto-detects Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL, Antigravity |
 | **Multi-Agent Orchestration** | Agent Teams, subagents, Powers, or sequential personas — adapts to platform                   |
-| **Semantic Memory**           | Built-in Qdrant-powered memory with 95% token savings via caching                             |
+| **Hybrid Memory**             | Qdrant vectors + BM25 keywords with weighted score merge (95% token savings)                  |
 | **Self-Healing Workflows**    | Agents read error logs, patch scripts, and update directives automatically                    |
 | **One-Shot Setup**            | Platform detection + project stack scan + auto-configuration in one command                   |
 
@@ -261,15 +261,16 @@ The system operates on three layers:
 
 ---
 
-## 🧠 Semantic Memory
+## 🧠 Hybrid Memory (BM25 + Vector)
 
-Built-in Qdrant-powered memory with automatic token savings:
+Dual-engine retrieval: Qdrant vector similarity for semantic concepts + SQLite FTS5 BM25 for exact keyword matching. Automatically merges results with configurable weights.
 
 | Scenario              | Without Memory | With Memory | Savings  |
 | --------------------- | -------------- | ----------- | -------- |
 | Repeated question     | ~2000 tokens   | 0 tokens    | **100%** |
 | Similar architecture  | ~5000 tokens   | ~500 tokens | **90%**  |
 | Past error resolution | ~3000 tokens   | ~300 tokens | **90%**  |
+| Exact ID/code lookup  | ~3000 tokens   | ~200 tokens | **93%**  |
 
 **Setup** (requires [Qdrant](https://qdrant.tech/) + [Ollama](https://ollama.com/)):
 
@@ -291,11 +292,27 @@ Agents automatically run `session_boot.py` at session start (first instruction i
 # Auto-query (check cache + retrieve context)
 python3 execution/memory_manager.py auto --query "your task summary"
 
-# Store a decision
+# Store a decision (auto-indexes into BM25)
 python3 execution/memory_manager.py store --content "what was decided" --type decision
 
-# Health check
+# Health check (includes BM25 index status)
 python3 execution/memory_manager.py health
+
+# Rebuild BM25 index from existing Qdrant data
+python3 execution/memory_manager.py bm25-sync
+```
+
+**Hybrid search modes** (via `hybrid_search.py`):
+
+```bash
+# True hybrid (default): vector + BM25 merged
+python3 scripts/hybrid_search.py --query "ImagePullBackOff error" --mode hybrid
+
+# Vector only (pure semantic)
+python3 scripts/hybrid_search.py --query "database architecture" --mode vector
+
+# Keyword only (exact BM25 match)
+python3 scripts/hybrid_search.py --query "sg-018f20ea63e82eeb5" --mode keyword
 ```
 
 ---
