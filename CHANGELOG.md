@@ -5,17 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.9] - 2026-02-16
-
-### CI/CD
-
-- **Publish Workflow Fix** — Removed environment restriction from GitHub Action to fix secret access during `npm publish`.
-
-## [1.3.8] - 2026-02-16
+## [1.3.10] - 2026-02-16
 
 ### Security
 
-- **Backend Template Hardening** — Resolved 5 high-severity vulnerabilities in `loki-mode` backend example by overriding `node-tar` to safe version `7.5.9`.
+- **Backend Template Hardening** — Resolved 5 high-severity vulnerabilities in `loki-mode` backend example by upgrading dependencies.
 
 ## [1.3.7] - 2026-02-16
 
