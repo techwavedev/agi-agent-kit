@@ -77,7 +77,7 @@ The agi framework adopts all best patterns from [obra/superpowers](https://githu
 | Agent Boundary Enforcement   |        ❌        |     ✅ File-type ownership     |
 | Dynamic Question Generation  |        ❌        |   ✅ Trade-offs + priorities   |
 | Memory-First Protocol        |        ❌        |       ✅ Auto cache-hit        |
-| Skill Creator + Catalog      |        ❌        |    ✅ 862 composable skills    |
+| Skill Creator + Catalog      |        ❌        |    ✅ 861 composable skills    |
 | Platform Setup Wizard        |        ❌        |       ✅ One-shot config       |
 | Multi-Platform Symlinks      |  ❌ Claude only  |         ✅ 8 platforms         |
 
@@ -270,7 +270,7 @@ your-project/
 ├── CLAUDE.md → AGENTS.md
 ├── OPENCODE.md → AGENTS.md
 ├── COPILOT.md → AGENTS.md
-├── skills/                # Up to 862 skills (depends on pack)
+├── skills/                # Up to 861 skills (depends on pack)
 │   ├── webcrawler/        # Documentation harvesting
 │   ├── qdrant-memory/     # Semantic caching & memory
 │   └── ...                # 860 more skills in full pack
