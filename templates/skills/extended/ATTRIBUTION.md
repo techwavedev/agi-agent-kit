@@ -24,9 +24,16 @@ The antigravity-awesome-skills repository aggregates skills from many authors an
 
 👉 **[Full Attribution Ledger (SOURCES.md)](https://github.com/sickn33/antigravity-awesome-skills/blob/main/docs/SOURCES.md)**
 
-## Support the Original Project
+## Support This Project
 
-If these skills help you, consider supporting the original project:
+If the AGI Agent Kit helps you, consider supporting the framework:
+
+- ⭐ [Star the repo](https://github.com/techwavedev/agi-agent-kit)
+- ☕ [Buy the author a coffee](https://www.buymeacoffee.com/eltonmachado)
+
+## Support the Original Skills Project
+
+If these community skills help you, consider supporting the upstream project:
 
 - ⭐ [Star the repo](https://github.com/sickn33/antigravity-awesome-skills)
 - ☕ [Buy the author a book](https://buymeacoffee.com/sickn33)
