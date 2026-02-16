@@ -52,15 +52,18 @@ Read individual rule files for detailed explanations and code examples:
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Qdrant Memory Integration
+### Hybrid Memory Integration (Qdrant + BM25)
 
 Before executing complex tasks with this skill:
 ```bash
 python3 execution/memory_manager.py auto --query "<task summary>"
 ```
+
+**Decision Tree:**
 - **Cache hit?** Use cached response directly — no need to re-process.
 - **Memory match?** Inject `context_chunks` into your reasoning.
 - **No match?** Proceed normally, then store results:
+
 ```bash
 python3 execution/memory_manager.py store \
   --content "Description of what was decided/solved" \
@@ -68,11 +71,13 @@ python3 execution/memory_manager.py store \
   --tags remotion-best-practices <relevant-tags>
 ```
 
+> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+
 ### Agent Team Collaboration
 
-- This skill can be invoked by the `orchestrator` agent via intelligent routing.
-- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
-- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
+- **Strategy**: This skill communicates via the shared memory system.
+- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
+- **Context Sharing**: Always read previous agent outputs from memory before starting.
 
 ### Local LLM Support
 
