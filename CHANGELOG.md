@@ -5,25 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.10] - 2026-02-16
+## [1.3.6] - 2026-02-16
 
 ### Security
 
 - **Backend Template Hardening** — Resolved 5 high-severity vulnerabilities in `loki-mode` backend example by upgrading dependencies.
 
-## [1.3.7] - 2026-02-16
-
 ### Added
 
-- **OpenClaw Platform Support** — Complete integration for OpenClaw environment:
-  - **Auto-detection**: `init.js` now scaffolding creates `.openclaw/skills` symlinks
-  - **Instruction Symlink**: `OPENCLAW.md` -> `AGENTS.md` automatically created
+- **OpenClaw Platform Support** — Complete integration with auto-detection and instruction symlinks.
   - **Badge**: Added OpenClaw badge to README
   - **Ecosystem**: Now supporting 9 major AI coding platforms
-
-## [1.3.6] - 2026-02-16
-
-### Added
 
 - **Hybrid BM25+Vector Memory Search** — True hybrid retrieval combining Qdrant vector similarity with SQLite FTS5 keyword search:
   - **BM25 Index** (`bm25_index.py`): SQLite FTS5 sidecar for exact keyword matching (error codes, IDs, env vars)
