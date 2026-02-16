@@ -1,13 +1,37 @@
-# AGI Agent Kit
+# 🚀 AGI Agent Kit
 
-**Enterprise-Grade Agentic Framework & Scaffolding Tool**
+> **Stop hallucinating. Start executing.**
 
 [![npm version](https://img.shields.io/npm/v/@techwavedev/agi-agent-kit.svg)](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)
+[![npm downloads](https://img.shields.io/npm/dw/@techwavedev/agi-agent-kit.svg)](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-Anthropic-purple)](https://claude.ai)
+[![Gemini CLI](https://img.shields.io/badge/Gemini%20CLI-Google-blue)](https://github.com/google-gemini/gemini-cli)
+[![Codex CLI](https://img.shields.io/badge/Codex%20CLI-OpenAI-green)](https://github.com/openai/codex)
+[![Cursor](https://img.shields.io/badge/Cursor-AI%20IDE-orange)](https://cursor.sh)
+[![GitHub Copilot](https://img.shields.io/badge/GitHub%20Copilot-VSCode-lightblue)](https://github.com/features/copilot)
+[![OpenCode](https://img.shields.io/badge/OpenCode-CLI-gray)](https://github.com/opencode-ai/opencode)
+[![Antigravity IDE](https://img.shields.io/badge/Antigravity-DeepMind-red)](https://github.com/techwavedev/agi-agent-kit)
+[![AdaL CLI](https://img.shields.io/badge/AdaL%20CLI-SylphAI-pink)](https://sylph.ai/)
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a-coffee-d13610?logo=buymeacoffee&logoColor=white)](https://www.buymeacoffee.com/eltonmachado)
 
-`@techwavedev/agi-agent-kit` is a modular, deterministic framework designed to bridge the gap between LLM reasoning and reliable production execution. It scaffolds a "3-Layer Architecture" (Intent → Orchestration → Execution) that forces agents to use tested scripts rather than hallucinating code.
+**AGI Agent Kit** is the enterprise-grade scaffolding that turns any AI coding assistant into a **deterministic production machine**. While LLMs are probabilistic (90% accuracy per step = 59% over 5 steps), this framework forces them through a **3-Layer Architecture** — Intent → Orchestration → Execution — where business logic lives in tested scripts, not hallucinated code.
 
-**v1.3.4** — Now with **861 curated skills** (including 782 community skills from [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)), **8-platform support** (Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE), structured plan execution, TDD enforcement, verification gates (adapted from [obra/superpowers](https://github.com/obra/superpowers)), and semantic memory.
+### Why this exists
+
+Most AI coding setups give you a prompt and hope for the best. AGI Agent Kit gives you:
+
+- 🧠 **Semantic Memory** — Qdrant-powered caching that eliminates redundant LLM calls (90-100% token savings)
+- 🎯 **19 Specialist Agents** — Domain-bounded experts (Frontend, Backend, Security, Mobile, Game Dev...) with enforced file ownership
+- ⚡ **861 Curated Skills** — 4 core + 75 professional + 782 community skills across 16 domain categories
+- 🔒 **Verification Gates** — No task completes without evidence. TDD enforcement. Two-stage code review.
+- 🌐 **8 Platforms, One Config** — Write once, run on Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE
+
+```bash
+npx @techwavedev/agi-agent-kit init
+```
+
+If this project helps you, consider [supporting it here](https://www.buymeacoffee.com/eltonmachado) or simply ⭐ the repo.
 
 ---
 
@@ -153,81 +177,6 @@ python3 execution/memory_manager.py auto \
   --query "how to set up auth?"
 # → {"source": "cache", "cache_hit": true, "tokens_saved_estimate": 12}
 ```
-
----
-
-## 🧪 Real Benchmark: Subagents vs Agent Teams
-
-The framework supports two orchestration modes. Here are **real test results** from `execution/benchmark_modes.py` running on local infrastructure (Qdrant + Ollama `nomic-embed-text`, zero cloud API calls):
-
-```
-MODE A: SUBAGENTS — Independent, fire-and-forget
-  📤 Explore Auth Patterns    → ✅ stored in cache + memory (127ms)
-  📤 Query Performance        → ❌ FAILED (timeout — fault tolerant)
-  📤 Scan CVEs                → ✅ stored in cache + memory (14ms)
-  Summary: 2/3 completed, 1 failed, 0 cross-references
-
-MODE B: AGENT TEAMS — Shared context, coordinated
-  👤 Backend Specialist       → ✅ stored in shared memory (14ms)
-  👤 Database Specialist      → ✅ stored in shared memory (13ms)
-  👤 Frontend Specialist      → 🔗 Read Backend + Database output first
-     ✅ Got context from team-backend: "API contract: POST /api/messages..."
-     ✅ Got context from team-database: "Schema: users(id UUID PK, name..."
-     → ✅ stored in shared memory (14ms)
-  Summary: 3/3 completed, 0 failed, 2 cross-references
-```
-
-**2nd run (cache warm):** All queries hit cache at **score 1.000**, reducing total time from 314ms → 76ms (Subagents) and 292ms → 130ms (Agent Teams).
-
-| Metric               | Subagents                            | Agent Teams                          |
-| -------------------- | ------------------------------------ | ------------------------------------ |
-| Execution model      | Fire-and-forget (isolated)           | Shared context (coordinated)         |
-| Tasks completed      | 2/3 (fault tolerant)                 | 3/3                                  |
-| Cross-references     | 0 (not supported)                    | 2 (peers read each other's work)     |
-| Context sharing      | ❌ Each agent isolated               | ✅ Peer-to-peer via Qdrant           |
-| Two-stage review     | ❌                                   | ✅ Spec + Quality                    |
-| Cache hits (2nd run) | 5/5                                  | 5/5                                  |
-| Embedding provider   | Ollama local (nomic-embed-text 137M) | Ollama local (nomic-embed-text 137M) |
-
-**Try it yourself:**
-
-```bash
-# 1. Start infrastructure
-docker run -d -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant
-ollama serve & ollama pull nomic-embed-text
-
-# 2. Boot memory system
-python3 execution/session_boot.py --auto-fix
-# ✅ Memory system ready — 5 memories, 1 cached responses
-
-# 3. Run the full benchmark (both modes)
-python3 execution/benchmark_modes.py --verbose
-
-# 4. Or test individual operations:
-
-# Store a decision (embedding generated locally via Ollama)
-python3 execution/memory_manager.py store \
-  --content "Chose PostgreSQL for relational data" \
-  --type decision --project myapp
-# → {"status": "stored", "point_id": "...", "token_count": 5}
-
-# Auto-query: checks cache first, then retrieves context
-python3 execution/memory_manager.py auto \
-  --query "what database did we choose?"
-# → {"source": "memory", "cache_hit": false, "context_chunks": [...]}
-
-# Cache an LLM response for future reuse
-python3 execution/memory_manager.py cache-store \
-  --query "how to set up auth?" \
-  --response "Use JWT with 24h expiry, refresh tokens in httpOnly cookies"
-
-# Re-query → instant cache hit (score 1.000, zero re-computation)
-python3 execution/memory_manager.py auto \
-  --query "how to set up auth?"
-# → {"source": "cache", "cache_hit": true, "tokens_saved_estimate": 12}
-```
-
----
 
 ## 🌐 Platform Support
 
