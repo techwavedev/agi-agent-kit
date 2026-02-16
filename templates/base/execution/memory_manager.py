@@ -42,13 +42,19 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError
 
 # Resolve path to qdrant-memory scripts
-SKILL_SCRIPTS_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "skills",
-    "core",
-    "qdrant-memory",
-    "scripts",
-)
+# Resolve path to qdrant-memory scripts
+# Adaptive path: try project root first (2 levels up), then repo template structure (3 levels up)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+skills_path_project = os.path.join(project_root, "skills", "core", "qdrant-memory", "scripts")
+
+if os.path.exists(skills_path_project):
+    SKILL_SCRIPTS_DIR = skills_path_project
+else:
+    # Fallback to repo template structure (templates/base/execution -> templates/skills)
+    repo_root = os.path.dirname(project_root)
+    SKILL_SCRIPTS_DIR = os.path.join(repo_root, "skills", "core", "qdrant-memory", "scripts")
+
 sys.path.insert(0, SKILL_SCRIPTS_DIR)
 
 from embedding_utils import check_embedding_service, get_embedding_dimension
@@ -127,12 +133,12 @@ def auto_query(
     text_weight: float = None
 ) -> dict:
     """
-    Smart query: check cache first, then retrieve context.
+    Smart query: check cache first, then retrieve context using Hybrid Search.
     This is the primary entry point for agents.
 
     Flow:
     1. Check semantic cache (exact match saves 100% tokens)
-    2. If miss, retrieve relevant memories (saves 80-95% tokens)
+    2. If miss, retrieve context via Vector + BM25 Hybrid Search (saves 80-95% tokens)
     3. Return combined result with token savings estimate
     """
     result = {
@@ -140,6 +146,7 @@ def auto_query(
         "cache_hit": False,
         "context_chunks": [],
         "tokens_saved_estimate": 0,
+        "search_type": "hybrid"
     }
 
     # Step 1: Semantic cache check
@@ -165,7 +172,7 @@ def auto_query(
             query, 
             filters=filters, 
             top_k=5, 
-            score_threshold=0.7,
+            score_threshold=0.45,
             vector_weight=vector_weight,
             text_weight=text_weight
         )
@@ -201,7 +208,7 @@ Examples:
 
     # Auto command (primary entry point)
     auto_parser = subparsers.add_parser(
-        "auto", help="Smart query: cache check + context retrieval"
+        "auto", help="Smart query: cache check + Hybrid Memory retrieval"
     )
     auto_parser.add_argument("--query", required=True, help="Natural language query")
     auto_parser.add_argument("--project", help="Filter by project name")

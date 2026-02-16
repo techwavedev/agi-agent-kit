@@ -163,7 +163,7 @@ python execution/scrape_single_site.py \
 
 ### 1. Memory-First (Automatic)
 
-**All operations use the Qdrant-powered memory system by default.**
+**All operations use the Hybrid Memory System (Qdrant + BM25) by default.**
 
 #### Session Start (MANDATORY — run once per session)
 
