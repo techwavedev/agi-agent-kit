@@ -74,6 +74,23 @@ Skills live in `templates/base/skills/`. To add a skill:
 - **Changelog:** Update `CHANGELOG.md` with your changes.
 - **Catalog:** Update `skills/SKILLS_CATALOG.md` if you added/modified a skill.
 
+## 🛡️ Release Governance Protocol (MANDATORY)
+
+Before submitting any Pull Request or preparing a release, you MUST run the Release Gate:
+
+```bash
+python3 .agent/scripts/release_gate.py
+```
+
+This automated gate validates:
+
+1. Documentation updates (README/CHANGELOG)
+2. Security checks (No leaked secrets)
+3. Code Syntax (Python/JS integrity)
+4. Version Consistency (package.json matches CHANGELOG)
+
+**PRs failing these checks will be automatically rejected.**
+
 ## What Will Get Your PR Rejected
 
 - PRs without a linked issue or prior discussion (for significant changes)
