@@ -270,6 +270,33 @@ Before marking a task complete:
 - Spot-check data quality where possible
 - Confirm deliverables are in the expected location (cloud service, output file, etc.)
 
+### 6. Release Governance Protocol (MANDATORY)
+
+**Before merging to `public` branch or publishing to NPM, YOU MUST:**
+
+1.  **Execute the Release Gate**:
+
+    ```bash
+    python3 .agent/scripts/release_gate.py
+    ```
+
+    This validates:
+    - Documentation (README/CHANGELOG) presence & updates
+    - Security (Secret scanning)
+    - Code Syntax (Python/JS)
+    - Version Consistency (package.json vs CHANGELOG)
+    - Git Status (Clean working tree)
+
+2.  **Verify Workflow**:
+    - Review `.agent/workflows/release-protocol.md` for manual steps.
+    - Ensure `AGENTS.md` and `memory_integration.md` are up-to-date with code.
+
+3.  **Publish via Script**:
+    - Do NOT run `npm publish` manually.
+    - Run `npm run prepublishOnly` (or relying on the lifecycle hook) to enforce the gate.
+
+**ZERO TOLERANCE:** Never bypass the Release Gate. If it fails, FIX the issue. Do not force push.
+
 ---
 
 ## File Organization

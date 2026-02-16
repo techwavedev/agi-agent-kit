@@ -5,6 +5,9 @@
   "bin": {
     "agi-agent-kit": "./bin/init.js"
   },
+  "scripts": {
+    "prepublishOnly": "python3 .agent/scripts/release_gate.py"
+  },
   "files": [
     "bin/",
     "templates/",
