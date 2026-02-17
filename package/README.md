@@ -7,7 +7,7 @@
 
 `@techwavedev/agi-agent-kit` is a modular, deterministic framework designed to bridge the gap between LLM reasoning and reliable production execution. It scaffolds a "3-Layer Architecture" (Intent → Orchestration → Execution) that forces agents to use tested scripts rather than hallucinating code.
 
-**v1.3.3** — Now with **861 curated skills** (including 782 community skills from [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)), **8-platform support** (Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE), structured plan execution, TDD enforcement, verification gates (adapted from [obra/superpowers](https://github.com/obra/superpowers)), and semantic memory.
+**v1.3.7** — Now with **853 curated skills** (including 774 community skills from [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)), **8-platform support** (Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE), structured plan execution, TDD enforcement, verification gates (adapted from [obra/superpowers](https://github.com/obra/superpowers)), and semantic memory.
 
 ---
 
@@ -23,7 +23,7 @@ You'll be prompted to choose a pack:
 
 - **core** — 4 essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)
 - **medium** — Core + 75 specialized skills in 16 categories + `.agent/` structure (API, Security, Design, Architecture)
-- **full** — Complete suite: Medium + 782 community skills from [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills) (861 total)
+- **full** — Complete suite: Medium + 774 community skills from [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills) (853 total)
 
 After installation, run the **one-shot setup wizard** to auto-configure your environment:
 
@@ -48,7 +48,7 @@ This checks Qdrant, Ollama, embedding models, and collections — auto-fixing an
 | Feature                       | Description                                                                                   |
 | ----------------------------- | --------------------------------------------------------------------------------------------- |
 | **Deterministic Execution**   | Separates business logic (Python scripts) from AI reasoning (Directives)                      |
-| **Modular Skill System**      | 861 plug-and-play skills across 3 tiers, organized in 16 domain categories                    |
+| **Modular Skill System**      | 853 plug-and-play skills across 3 tiers, organized in 16 domain categories                    |
 | **Structured Plan Execution** | Batch or subagent-driven execution with two-stage review (spec + quality)                     |
 | **TDD Enforcement**           | Iron-law RED-GREEN-REFACTOR cycle — no production code without failing test                   |
 | **Verification Gates**        | Evidence before claims — no completion without fresh verification output                      |
@@ -77,7 +77,7 @@ The agi framework adopts all best patterns from [obra/superpowers](https://githu
 | Agent Boundary Enforcement   |        ❌        |     ✅ File-type ownership     |
 | Dynamic Question Generation  |        ❌        |   ✅ Trade-offs + priorities   |
 | Memory-First Protocol        |        ❌        |       ✅ Auto cache-hit        |
-| Skill Creator + Catalog      |        ❌        |    ✅ 861 composable skills    |
+| Skill Creator + Catalog      |        ❌        |    ✅ 853 composable skills    |
 | Platform Setup Wizard        |        ❌        |       ✅ One-shot config       |
 | Multi-Platform Symlinks      |  ❌ Claude only  |         ✅ 8 platforms         |
 
@@ -270,10 +270,10 @@ your-project/
 ├── CLAUDE.md → AGENTS.md
 ├── OPENCODE.md → AGENTS.md
 ├── COPILOT.md → AGENTS.md
-├── skills/                # Up to 861 skills (depends on pack)
+├── skills/                # Up to 853 skills (depends on pack)
 │   ├── webcrawler/        # Documentation harvesting
 │   ├── qdrant-memory/     # Semantic caching & memory
-│   └── ...                # 860 more skills in full pack
+│   └── ...                # 852 more skills in full pack
 ├── .claude/skills → skills/   # Platform-specific symlinks
 ├── .gemini/skills → skills/
 ├── .codex/skills → skills/
@@ -503,7 +503,7 @@ Use these keywords, commands, and phrases to trigger specific capabilities:
 
 ## 🤝 Community Skills & Credits
 
-The **Full** tier includes 782 community skills adapted from the [Antigravity Awesome Skills](https://github.com/sickn33/antigravity-awesome-skills) project (v5.4.0) by [@sickn33](https://github.com/sickn33), distributed under the MIT License.
+The **Full** tier includes 774 community skills adapted from the [Antigravity Awesome Skills](https://github.com/sickn33/antigravity-awesome-skills) project (v5.4.0) by [@sickn33](https://github.com/sickn33), distributed under the MIT License.
 
 This collection aggregates skills from 50+ open-source contributors and organizations including Anthropic, Microsoft, Vercel Labs, Supabase, Trail of Bits, Expo, Sentry, Neon, fal.ai, and many more. For the complete attribution ledger, see [SOURCES.md](https://github.com/sickn33/antigravity-awesome-skills/blob/main/docs/SOURCES.md).
 
