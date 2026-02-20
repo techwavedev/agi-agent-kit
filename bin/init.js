@@ -179,6 +179,179 @@ async function promptPackSelection() {
   });
 }
 
+// Prompt user for install scope: project-local vs global
+async function promptInstallScope(options) {
+  // Skip prompt if the user already passed --global or an explicit --path
+  if (options.global || options._pathExplicit) {
+    return;
+  }
+
+  // Platform compatibility reference
+  const PLATFORM_COMPAT = [
+    { name: "Gemini CLI",   globalDir: "~/.gemini/skills",   globalOk: true,  note: "" },
+    { name: "Claude Code",  globalDir: "~/.claude/skills",   globalOk: true,  note: "" },
+    { name: "Cursor",       globalDir: "~/.cursor/skills",   globalOk: false, note: "reads skills from project dir only" },
+    { name: "Codex CLI",    globalDir: "~/.codex/skills",    globalOk: true,  note: "requires CODEX_HOME env var if non-default" },
+    { name: "OpenCode",     globalDir: "(project dir only)", globalOk: false, note: "global skill dirs not yet supported" },
+    { name: "OpenClaw",     globalDir: "~/.openclaw/skills", globalOk: true,  note: "" },
+    { name: "AdaL CLI",     globalDir: "~/.adal/skills",     globalOk: true,  note: "" },
+    { name: "Copilot/VS",   globalDir: "(project dir only)", globalOk: false, note: "skills loaded per-workspace only" },
+  ];
+
+  console.log(`\n${colors.bright}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}`);
+  console.log(`${colors.bright}  INSTALL SCOPE${colors.reset}`);
+  console.log(`${colors.bright}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}\n`);
+
+  console.log(`  ${colors.bright}Option 1 — Project install (default, safest)${colors.reset}`);
+  console.log(`  ─────────────────────────────────────────────`);
+  console.log(`  Skills and agents are installed inside the ${colors.cyan}current directory${colors.reset}.`);
+  console.log(`  Only this project can use them.\n`);
+  console.log(`  ${colors.green}✔ Pitfalls to be aware of:${colors.reset}`);
+  console.log(`    • You must run init again for every new project`);
+  console.log(`    • Skills are NOT shared across projects`);
+  console.log(`    • Existing files in this directory ${colors.yellow}may be overwritten${colors.reset} (e.g. AGENTS.md)\n`);
+
+  console.log(`  ${colors.bright}Option 2 — Global install${colors.reset}`);
+  console.log(`  ─────────────────────────────────────────────`);
+  console.log(`  Skills installed once in ${colors.cyan}~/.agent${colors.reset} and symlinked into`);
+  console.log(`  each supported AI platform's global skills directory.\n`);
+  console.log(`  ${colors.yellow}⚠ Pitfalls to be aware of:${colors.reset}`);
+  console.log(`    • Existing files in platform dirs ${colors.red}may be overwritten${colors.reset}`);
+  console.log(`    • Not all platforms support global skill dirs (see table below)`);
+  console.log(`    • Symlinks may conflict if you later do a project install`);
+  console.log(`    • Removing skills requires manual cleanup of ~/.agent and symlinks\n`);
+
+  console.log(`  ${colors.bright}Platform Global Install Compatibility:${colors.reset}`);
+  console.log(`  ${"Platform".padEnd(14)} ${"Global Dir".padEnd(26)} ${"Supported?".padEnd(12)} Notes`);
+  console.log(`  ${"─".repeat(72)}`);
+  for (const p of PLATFORM_COMPAT) {
+    const supported = p.globalOk
+      ? `${colors.green}✔ Yes${colors.reset}      `
+      : `${colors.red}✖ No${colors.reset}       `;
+    const note = p.note ? `${colors.yellow}⚠ ${p.note}${colors.reset}` : "";
+    console.log(`  ${p.name.padEnd(14)} ${p.globalDir.padEnd(26)} ${supported} ${note}`);
+  }
+
+  console.log(`\n  ${colors.bright}${colors.red}⚠  DISCLAIMER${colors.reset}`);
+  console.log(`  ${"─".repeat(60)}`);
+  console.log(`  By proceeding you acknowledge that:`);
+  console.log(`  • This installer may ${colors.yellow}create, overwrite, or symlink files${colors.reset}`);
+  console.log(`    in your project directory or home directory (~/.agent,`);
+  console.log(`    ~/.gemini, ~/.claude, ~/.cursor, etc.)`);
+  console.log(`  • ${colors.red}Existing AGENTS.md, GEMINI.md, CLAUDE.md${colors.reset} and platform`);
+  console.log(`    skill dirs may be replaced.`);
+  console.log(`  • The authors of agi-agent-kit ${colors.bright}assume no responsibility${colors.reset}`);
+  console.log(`    for data loss, configuration conflicts, or any damages`);
+  console.log(`    resulting from using this installer.`);
+  console.log(`  • ${colors.cyan}Always back up important files before proceeding.${colors.reset}`);
+  console.log(``);
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    rl.question(
+      `  Choose install scope (1=Project / 2=Global, default: 1): `,
+      (answer) => {
+        rl.close();
+        const choice = answer.trim();
+
+        if (choice === "2" || choice.toLowerCase() === "global" || choice.toLowerCase() === "g") {
+          const os = require("os");
+          options.global = true;
+          options.path = path.join(os.homedir(), ".agent");
+          console.log(``);
+          log.warn(`Global install selected. Symlinks will be created in ~/.gemini/skills, ~/.claude/skills, etc.`);
+          log.warn(`Platforms marked ✖ above will NOT pick up global skills automatically.`);
+          log.success(`Target directory: ${colors.cyan}${options.path}${colors.reset}`);
+        } else {
+          log.success(`Project install — target: ${colors.cyan}${options.path}${colors.reset}`);
+        }
+        resolve();
+      },
+    );
+  });
+}
+
+// Detect existing files that will be overwritten and offer to back them up
+async function backupExistingFiles(targetPath) {
+  // Files and dirs the installer will create/overwrite
+  const WATCHED = [
+    "AGENTS.md", "GEMINI.md", "CLAUDE.md", "OPENCODE.md",
+    "COPILOT.md", "OPENCLAW.md", ".env", "directives",
+    "execution", "skills", "skill-creator", ".agent",
+  ];
+
+  const existing = WATCHED.filter((f) =>
+    fs.existsSync(path.join(targetPath, f)),
+  );
+
+  if (existing.length === 0) {
+    // Nothing to back up — clean directory
+    return;
+  }
+
+  console.log(`\n${colors.bright}━━━ Backup Existing Files ━━━${colors.reset}\n`);
+  console.log(`  The following items already exist in ${colors.cyan}${targetPath}${colors.reset}`);
+  console.log(`  and ${colors.yellow}may be overwritten${colors.reset} by this installer:\n`);
+  for (const f of existing) {
+    const full = path.join(targetPath, f);
+    const isDir = fs.statSync(full).isDirectory();
+    console.log(`    ${colors.yellow}${isDir ? "📁" : "📄"} ${f}${colors.reset}`);
+  }
+
+  console.log(`
+  ${colors.bright}We strongly recommend backing these up before continuing.${colors.reset}`);
+  console.log(`  A backup will be saved to: ${colors.cyan}${targetPath}/.agi-backup-<timestamp>/${colors.reset}\n`);
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    rl.question(
+      `  Create backup now? (Y/n, default: Y): `,
+      (answer) => {
+        rl.close();
+        const choice = answer.trim().toLowerCase();
+
+        if (choice === "n" || choice === "no") {
+          log.warn("Backup skipped. Proceeding without backup — existing files may be overwritten.");
+          resolve();
+          return;
+        }
+
+        // Create timestamped backup dir
+        const ts = new Date()
+          .toISOString()
+          .replace(/[:.]/g, "-")
+          .replace("T", "_")
+          .slice(0, 19);
+        const backupDir = path.join(targetPath, `.agi-backup-${ts}`);
+        fs.mkdirSync(backupDir, { recursive: true });
+
+        let backed = 0;
+        for (const f of existing) {
+          const src = path.join(targetPath, f);
+          const dest = path.join(backupDir, f);
+          try {
+            copyDirSync(src, dest) || fs.copyFileSync(src, dest);
+            backed++;
+          } catch (e) {
+            log.warn(`Could not back up ${f}: ${e.message}`);
+          }
+        }
+
+        log.success(`Backup created: ${colors.cyan}${backupDir}${colors.reset} (${backed} items)`);
+        resolve();
+      },
+    );
+  });
+}
+
 // Prompt user for local Qdrant + Ollama usage
 async function promptLocalInfrastructure() {
   const rl = readline.createInterface({
@@ -676,9 +849,73 @@ function runPlatformSetup(targetPath) {
   }
 }
 
+// Verify memory system (Qdrant + Ollama) after .env is written
+function verifyMemorySetup(targetPath) {
+  log.header("Verifying memory system (Qdrant + Ollama)...");
+
+  const bootScript = path.join(targetPath, "execution", "session_boot.py");
+
+  if (!fs.existsSync(bootScript)) {
+    log.warn("session_boot.py not found — skipping memory verification.");
+    console.log(
+      `  You can verify later: ${colors.yellow}python3 execution/session_boot.py --auto-fix${colors.reset}`,
+    );
+    return;
+  }
+
+  const isWindows = process.platform === "win32";
+  const venvPython = isWindows
+    ? path.join(targetPath, ".venv", "Scripts", "python")
+    : path.join(targetPath, ".venv", "bin", "python3");
+  const pythonCmd = fs.existsSync(venvPython) ? `"${venvPython}"` : "python3";
+
+  try {
+    const output = execSync(
+      `${pythonCmd} "${bootScript}" --auto-fix`,
+      { stdio: "pipe", timeout: 60000, cwd: targetPath },
+    ).toString().trim();
+    console.log(`  ${output}`);
+  } catch (e) {
+    // session_boot exits non-zero when services aren't running — show its output
+    const output = (e.stdout || e.stderr || "").toString().trim();
+    if (output) {
+      console.log(`\n${output}\n`);
+    }
+    console.log(`  ${colors.yellow}⚠  Memory services not detected yet.${colors.reset}`);
+    console.log(`
+  ${colors.bright}Follow these steps to get Qdrant + Ollama running:${colors.reset}
+
+  ${colors.bright}Step 1 — Install Ollama (if not already installed)${colors.reset}
+    ${colors.cyan}https://ollama.com/download${colors.reset}
+    Download and install for your OS, then come back here.
+
+  ${colors.bright}Step 2 — Start Ollama in a NEW terminal tab/window${colors.reset}
+    ${colors.yellow}ollama serve${colors.reset}
+    ${colors.red}⚠ IMPORTANT:${colors.reset} This command runs in the foreground and must stay open.
+    Open a new terminal tab (Cmd+T on Mac) and leave this running there.
+    You will see logs like "Listening on 127.0.0.1:11434" — that means it's ready.
+
+  ${colors.bright}Step 3 — Start Qdrant via Docker (in your original terminal)${colors.reset}
+    ${colors.yellow}docker run -d -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant${colors.reset}
+    The ${colors.cyan}-d${colors.reset} flag runs it in the background. Docker Desktop must be running first.
+    Verify it's up: ${colors.yellow}curl http://localhost:6333/healthz${colors.reset}  → should return ${colors.green}{"title":"qdrant"}${colors.reset}
+
+  ${colors.bright}Step 4 — Re-run the memory verification${colors.reset}
+    ${colors.yellow}python3 execution/session_boot.py --auto-fix${colors.reset}
+    This will pull the embedding model and create the memory collections automatically.
+`);
+  }
+}
+
 // Main init function
 async function init(options) {
   log.header("🚀 AGI Agent Kit Initializer");
+
+  // Ask install scope (project vs global) — skip if already set via CLI flag
+  await promptInstallScope(options);
+
+  // Offer to back up any existing files before overwriting
+  await backupExistingFiles(options.path);
 
   // Determine pack
   let pack = options.pack;
@@ -726,6 +963,11 @@ async function init(options) {
   // Ask user about local Qdrant + Ollama and write .env
   const infraChoice = await promptLocalInfrastructure();
   writeEnvFile(options.path, infraChoice);
+
+  // If memory enabled, verify Qdrant + Ollama are up and configured
+  if (infraChoice.useLocal) {
+    verifyMemorySetup(options.path);
+  }
 
   // Auto-run platform setup wizard
   runPlatformSetup(options.path);
