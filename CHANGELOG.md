@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.8] - 2026-02-20
+
+### Fixed
+
+- **Memory System Path Resolution** — Fixed `ModuleNotFoundError` for `embedding_utils` in `memory_manager.py` and `session_init.py` by implementing an adaptive multi-candidate path approach. This ensures correct script initialization inside natively customized workspaces and `npx`-bootstrapped agent projects.
+
 ## [1.3.7] - 2026-02-17
 
 ### Fixed
