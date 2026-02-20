@@ -173,6 +173,113 @@ async function promptPackSelection() {
   });
 }
 
+// Prompt user for local Qdrant + Ollama usage
+async function promptLocalInfrastructure() {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    console.log(
+      `\n${colors.bright}━━━ Local Memory Infrastructure (Qdrant + Ollama) ━━━${colors.reset}\n`,
+    );
+    console.log(
+      `  This toolkit supports a ${colors.cyan}local vector memory system${colors.reset} powered by:`,
+    );
+    console.log(
+      `    • ${colors.green}Qdrant${colors.reset}  — local vector database for semantic agent memory`,
+    );
+    console.log(
+      `    • ${colors.green}Ollama${colors.reset}  — local LLM runtime for private embeddings (nomic-embed-text)\n`,
+    );
+    console.log(`  ${colors.yellow}Requirements:${colors.reset} both services must be installed & running locally.`);
+    console.log(
+      `  If you skip this now, you can enable it later by editing ${colors.cyan}.env${colors.reset}.\n`,
+    );
+    console.log(`  ${colors.bright}Options:${colors.reset}`);
+    console.log(
+      `    ${colors.green}1. Yes${colors.reset}   — configure local Qdrant + Ollama (recommended for offline/private use)`,
+    );
+    console.log(
+      `    ${colors.yellow}2. Skip${colors.reset} — disable local memory now (use cloud/API providers only)\n`,
+    );
+
+    rl.question(`  Your choice (1/2, default: 1): `, (answer) => {
+      rl.close();
+      const choice = answer.trim();
+
+      if (choice === "2" || choice.toLowerCase() === "skip" || choice.toLowerCase() === "no" || choice.toLowerCase() === "n") {
+        log.info("Local memory infrastructure skipped.");
+        resolve({ useLocal: false });
+      } else {
+        // Default to yes
+        log.success("Local Qdrant + Ollama will be configured.");
+        resolve({ useLocal: true });
+      }
+    });
+  });
+}
+
+// Write (or merge) a .env file with memory configuration
+function writeEnvFile(targetPath, infraChoice) {
+  const envPath = path.join(targetPath, ".env");
+  const envExamplePath = path.join(
+    __dirname,
+    "..",
+    "templates",
+    "base",
+    ".env.example",
+  );
+
+  // Build the memory block
+  const memoryEnabled = infraChoice.useLocal ? "true" : "false";
+  const memoryBlock = [
+    "",
+    "# ============================================================",
+    "# Agent Memory Configuration (Qdrant & Local LLM)",
+    "# ============================================================",
+    `MEMORY_ENABLED=${memoryEnabled}`,
+    "QDRANT_URL=http://localhost:6333",
+    "QDRANT_API_KEY=",
+    "QDRANT_COLLECTION=agent_memory",
+    "EMBEDDING_PROVIDER=ollama",
+    "OLLAMA_URL=http://localhost:11434",
+    "EMBEDDING_MODEL=nomic-embed-text",
+    "CACHE_THRESHOLD=0.92",
+    "CACHE_TTL_DAYS=7",
+    "",
+  ].join("\n");
+
+  if (fs.existsSync(envPath)) {
+    // .env already exists — append the memory block only if not already present
+    const existing = fs.readFileSync(envPath, "utf8");
+    if (existing.includes("MEMORY_ENABLED")) {
+      // Already configured — patch just the MEMORY_ENABLED line
+      const patched = existing.replace(
+        /^MEMORY_ENABLED=.*/m,
+        `MEMORY_ENABLED=${memoryEnabled}`,
+      );
+      fs.writeFileSync(envPath, patched, "utf8");
+      log.success(`.env updated: MEMORY_ENABLED=${memoryEnabled}`);
+    } else {
+      // Append the new block
+      fs.appendFileSync(envPath, memoryBlock, "utf8");
+      log.success(`.env: memory configuration appended (MEMORY_ENABLED=${memoryEnabled})`);
+    }
+  } else {
+    // Create a fresh .env from the example template, then append memory block
+    let base = "";
+    if (fs.existsSync(envExamplePath)) {
+      base = fs.readFileSync(envExamplePath, "utf8");
+    } else {
+      base = "# AGI Agent Kit — Environment Configuration\n# Fill in your API keys below\n";
+    }
+    fs.writeFileSync(envPath, base + memoryBlock, "utf8");
+    log.success(`.env created (MEMORY_ENABLED=${memoryEnabled})`);
+  }
+}
+
 // Prompt for update components
 async function promptUpdateSelection() {
   return new Promise((resolve) => {
@@ -608,20 +715,28 @@ async function init(options) {
   // Setup Python environment
   setupPythonEnv(options.path);
 
+  // Ask user about local Qdrant + Ollama and write .env
+  const infraChoice = await promptLocalInfrastructure();
+  writeEnvFile(options.path, infraChoice);
+
   // Auto-run platform setup wizard
   runPlatformSetup(options.path);
 
   // Final message
   log.header("✨ Installation complete!");
+
+  const memoryHint = infraChoice.useLocal
+    ? `  3. ${colors.green}Memory is ENABLED${colors.reset}. Start local services then boot memory system:\n     ${colors.yellow}docker run -p 6333:6333 qdrant/qdrant${colors.reset}  (Qdrant)\n     ${colors.yellow}ollama serve${colors.reset}  (Ollama)\n     ${colors.yellow}python3 execution/session_boot.py --auto-fix${colors.reset}`
+    : `  3. ${colors.yellow}Memory is DISABLED${colors.reset}. To enable later, set ${colors.cyan}MEMORY_ENABLED=true${colors.reset} in ${colors.cyan}.env${colors.reset}.`;
+
   console.log(`
 Next steps:
   1. Activate the Python environment:
      ${colors.yellow}source .venv/bin/activate${colors.reset}
   2. Review ${colors.cyan}AGENTS.md${colors.reset} for architecture overview
-  3. Boot the memory system (optional, requires Qdrant + Ollama):
-     ${colors.yellow}python3 execution/session_boot.py --auto-fix${colors.reset}
+${memoryHint}
   4. Check ${colors.cyan}skills/${colors.reset} for available capabilities
-  5. Create ${colors.cyan}.env${colors.reset} with your API keys
+  5. Extend ${colors.cyan}.env${colors.reset} with any additional API keys
   
 Happy coding! 🎉
 `);
