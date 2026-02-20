@@ -473,7 +473,7 @@ Use these keywords, commands, and phrases to trigger specific capabilities:
 ## 📚 Documentation
 
 - **[AGENTS.md](./AGENTS.md)** — Complete architecture and operating principles
-- **[skills/SKILLS_CATALOG.md](./skills/SKILLS_CATALOG.md)** — Skill catalog
+- **[skills/SKILLS_CATALOG.md](./templates/skills/SKILLS_CATALOG.md)** — Skill catalog
 - **[CHANGELOG.md](./CHANGELOG.md)** — Version history
 - **[THIRD-PARTY-LICENSES.md](./THIRD-PARTY-LICENSES.md)** — Third-party attributions
 
