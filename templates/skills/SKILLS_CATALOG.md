@@ -57,8 +57,6 @@
 | `avalonia-viewmodels-zafiro`                     | 🟡 Full   | Optimal ViewModel and Wizard creation patterns for Avalonia using Zafiro and Rea |
 | `avalonia-zafiro-development`                    | 🟡 Full   | Mandatory skills, conventions, and behavioral rules for Avalonia UI development  |
 | `beautiful-prose`                                | 🟡 Full   | Hard-edged writing style contract for timeless, forceful English prose without A |
-| `brand-guidelines-anthropic`                     | 🟡 Full   | Applies Anthropic's official brand colors and typography to any sort of artifact |
-| `brand-guidelines-community`                     | 🟡 Full   | Applies Anthropic's official brand colors and typography to any sort of artifact |
 | `browser-extension-builder`                      | 🟡 Full   | Expert in building browser extensions that solve real problems - Chrome, Firefox |
 | `burp-suite-testing`                             | 🟡 Full   | This skill should be used when the user asks to "intercept HTTP traffic", "modif |
 | `c4-component`                                   | 🟡 Full   | Expert C4 Component-level documentation specialist. Synthesizes C4               |
@@ -88,7 +86,6 @@
 | `kpi-dashboard-design`                           | 🟡 Full   | Design effective KPI dashboards with metrics selection, visualization best pract |
 | `linux-privilege-escalation`                     | 🟡 Full   | This skill should be used when the user asks to "escalate privileges on Linux",  |
 | `makepad-skills`                                 | 🟡 Full   | Makepad UI development skills for Rust apps: setup, patterns, shaders, packaging |
-| `mcp-builder-ms`                                 | 🟡 Full   | Guide for creating high-quality MCP (Model Context Protocol) servers that enable |
 | `memory-forensics`                               | 🟡 Full   | Master memory forensics techniques including memory acquisition, process analysi |
 | `metasploit-framework`                           | 🟡 Full   | This skill should be used when the user asks to "use Metasploit for penetration  |
 | `micro-saas-launcher`                            | 🟡 Full   | Expert in launching small, focused SaaS products fast - the indie hacker approac |
@@ -99,7 +96,6 @@
 | `nextjs-app-router-patterns`                     | 🟡 Full   | Master Next.js 14+ App Router with Server Components, streaming, parallel routes |
 | `personal-tool-builder`                          | 🟡 Full   | Expert in building custom tools that solve your own problems first. The best pro |
 | `pptx`                                           | 🟡 Full   | Presentation creation, editing, and analysis. When Claude needs to work with pre |
-| `pptx-official`                                  | 🟡 Full   | Presentation creation, editing, and analysis. When Claude needs to work with pre |
 | `quant-analyst`                                  | 🟡 Full   | Build financial models, backtest trading strategies, and analyze                 |
 | `radix-ui-design-system`                         | 🟡 Full   | Build accessible design systems with Radix UI primitives. Headless component cus |
 | `react-best-practices`                           | 🟡 Full   | React and Next.js performance optimization guidelines from Vercel Engineering. T |
@@ -310,7 +306,6 @@
 | `hosted-agents-v2-py`                  | 🟡 Full   |                                                                                  |     |
 | `imagen`                               | 🟡 Full   |                                                                                  |     |
 | `incident-response-smart-fix`          | 🟡 Full   | [Extended thinking: This workflow implements a sophisticated debugging and resol |
-| `internal-comms-anthropic`             | 🟡 Full   | A set of resources to help me write all kinds of internal communications, using  |
 | `javascript-mastery`                   | 🟡 Full   | Comprehensive JavaScript reference covering 33+ essential concepts every develop |
 | `kaizen`                               | 🟡 Full   | Guide for continuous improvement, error proofing, and standardization. Use this  |
 | `langchain-architecture`               | 🟡 Full   | Design LLM applications using the LangChain framework with agents, memory, and t |
@@ -343,7 +338,6 @@
 | `rag-implementation`                   | 🟡 Full   | Build Retrieval-Augmented Generation (RAG) systems for LLM applications with vec |
 | `sales-automator`                      | 🟡 Full   | Draft cold emails, follow-ups, and proposal templates. Creates                   |
 | `shodan-reconnaissance`                | 🟡 Full   | This skill should be used when the user asks to "search for exposed devices on t |
-| `skill-creator-ms`                     | 🟡 Full   | Guide for creating effective skills for AI coding agents working with Azure SDKs |
 | `skill-developer`                      | 🟡 Full   | Create and manage Claude Code skills following Anthropic best practices. Use whe |
 | `skill-rails-upgrade`                  | 🟡 Full   | Analyze Rails apps and provide upgrade assessments                               |
 | `subagent-driven-development`          | 🟡 Full   | Use when executing implementation plans with independent tasks in the current se |
@@ -726,7 +720,6 @@
 | `documentation-generation-doc-generate`  | 🟡 Full   | You are a documentation expert specializing in creating comprehensive, maintaina |
 | `docusign-automation`                    | 🟡 Full   | Automate DocuSign tasks via Rube MCP (Composio): templates, envelopes, signature |
 | `docx`                                   | 🟡 Full   | Comprehensive document creation, editing, and analysis with support for tracked  |
-| `docx-official`                          | 🟡 Full   | Comprehensive document creation, editing, and analysis with support for tracked  |
 | `employment-contract-templates`          | 🟡 Full   | Create employment contracts, offer letters, and HR policy documents following le |
 | `incident-runbook-templates`             | 🟡 Full   | Create structured incident response runbooks with step-by-step procedures, escal |
 | `malware-analyst`                        | 🟡 Full   | Expert malware analyst specializing in defensive malware research,               |
@@ -983,7 +976,6 @@
 | `game-development`                            | 🔵 Medium | Game development orchestrator. Routes to platform-specific skills based on proje |
 | `audio-transcriber`                           | 🟡 Full   | Transform audio recordings into professional Markdown documentation with intelli |
 | `godot-gdscript-patterns`                     | 🟡 Full   | Master Godot 4 GDScript patterns including signals, scenes, state machines, and  |
-| `internal-comms-community`                    | 🟡 Full   | A set of resources to help me write all kinds of internal communications, using  |
 | `startup-business-analyst-market-opportunity` | 🟡 Full   | Generate comprehensive market opportunity analysis with TAM/SAM/SOM              |
 | `threejs-skills`                              | 🟡 Full   | Create 3D scenes, interactive experiences, and visual effects using Three.js. Us |
 | `unity-developer`                             | 🟡 Full   | Build Unity games with optimized C# scripts, efficient rendering,                |
