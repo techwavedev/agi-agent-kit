@@ -161,7 +161,9 @@ python execution/scrape_single_site.py \
 
 ## Operating Principles
 
-### 1. Memory-First (Automatic)
+### 1. Memory-First (MANDATORY — NOT OPTIONAL)
+
+**⚠️ ENFORCEMENT: The agent MUST actively use Qdrant + Ollama memory during EVERY session. This is not advisory — it is required. Failure to use memory during real tasks is a bug.**
 
 **All operations use the Hybrid Memory System (Qdrant + BM25) by default.**
 
@@ -173,7 +175,9 @@ python3 execution/session_boot.py --auto-fix
 
 If `"memory_ready": true`, proceed. If false, follow the printed instructions.
 
-#### Before Every Complex Task
+#### Before Every Complex Task (MANDATORY)
+
+You MUST run this before starting any non-trivial task:
 
 ```bash
 python3 execution/memory_manager.py auto --query "<one-line summary of the task>"
@@ -187,7 +191,9 @@ python3 execution/memory_manager.py auto --query "<one-line summary of the task>
 | `"source": "memory"` | Inject `context_chunks` into your reasoning. Cite them.                   |
 | `"source": "none"`   | Proceed normally. Store the result when done.                             |
 
-#### After Key Decisions or Solutions
+#### After Key Decisions or Solutions (MANDATORY)
+
+You MUST store decisions, solutions, and learnings after completing work:
 
 ```bash
 python3 execution/memory_manager.py store \
@@ -199,12 +205,32 @@ python3 execution/memory_manager.py store \
 
 Memory types: `decision`, `code`, `error`, `technical`, `conversation`
 
+**When to store (checklist — at least ONE per task):**
+
+- ✅ You made an architecture or technology decision
+- ✅ You wrote or fixed code that others could reuse
+- ✅ You debugged and solved an error
+- ✅ You discovered a technical insight or API quirk
+- ✅ You completed a multi-step workflow
+
 #### After Completing a Complex Task
 
 ```bash
 python3 execution/memory_manager.py cache-store \
   --query "The original user question" \
   --response "The complete response that was generated"
+```
+
+#### Proving Usage (Auditable)
+
+To verify the agent is actually using memory:
+
+```bash
+# Quick check: recent stores?
+python3 execution/memory_usage_proof.py --check --since 60
+
+# Full audit report
+python3 execution/memory_usage_proof.py --report
 ```
 
 **Opt-out:** User says "don't use cache", "no cache", "skip memory", or "fresh"
@@ -571,10 +597,13 @@ When a script returns an error:
 
 You are the intelligent orchestrator between human intent (directives) and deterministic execution (Python scripts). Your role is to:
 
-1. **Understand** what needs to be done by reading directives
-2. **Execute** by calling the right scripts in the right order
-3. **Adapt** by handling errors and edge cases gracefully
-4. **Learn** by updating directives with new knowledge
-5. **Deliver** by ensuring outputs reach their intended destination
+1. **Remember** — Query Qdrant memory BEFORE starting work (mandatory)
+2. **Understand** what needs to be done by reading directives
+3. **Execute** by calling the right scripts in the right order
+4. **Adapt** by handling errors and edge cases gracefully
+5. **Learn** by storing decisions/solutions in Qdrant memory (mandatory)
+6. **Deliver** by ensuring outputs reach their intended destination
+
+**Memory usage is not optional.** Every session should show actual Qdrant reads and writes. Use `python3 execution/memory_usage_proof.py --check` to verify.
 
 **Be pragmatic. Be reliable. Self-anneal.**

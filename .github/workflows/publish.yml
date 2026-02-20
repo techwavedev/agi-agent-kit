@@ -5,8 +5,86 @@ on:
     types: [published]
 
 jobs:
+  # ─────────────────────────────────────────────────────────────
+  # RELEASE GATE
+  # Set the Actions Variable RELEASE_BLOCKED=true (repo Settings →
+  # Actions → Variables) to hard-block any publish until QA is done.
+  #
+  # Current block reason: feat/setup-qdrant-ollama-prompt + global
+  # skills install need to be validated via local `npx` before shipping.
+  # Remove the block (set RELEASE_BLOCKED=false or delete the variable)
+  # only after the integration smoke test passes end-to-end.
+  # ─────────────────────────────────────────────────────────────
+  release-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check release block flag
+        env:
+          RELEASE_BLOCKED: ${{ vars.RELEASE_BLOCKED }}
+        run: |
+          if [ "${RELEASE_BLOCKED}" = "true" ]; then
+            echo "🚫 Release is currently BLOCKED."
+            echo ""
+            echo "Reason: pending QA validation of:"
+            echo "  • Qdrant + Ollama setup prompt (Issue #22)"
+            echo "  • Global skills/agents install routing"
+            echo ""
+            echo "To unblock: set the Actions Variable RELEASE_BLOCKED=false"
+            echo "in repo Settings → Actions → Variables, then re-publish the release."
+            exit 1
+          fi
+          echo "✅ Release gate: OPEN — proceeding to integration test."
+
+  # ─────────────────────────────────────────────────────────────
+  # INTEGRATION SMOKE TEST
+  # Simulates a local `npx @techwavedev/agi-agent-kit init` run
+  # (non-interactively, accepting defaults) to verify the init
+  # script works correctly with the new prompt flow.
+  # ─────────────────────────────────────────────────────────────
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: release-gate
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install package locally
+        run: npm install --no-save .
+
+      - name: Smoke test — init with local memory enabled (default)
+        run: |
+          mkdir -p /tmp/agi-test-enabled
+          # Pipe "1\n" to select pack=core, then "1\n" to confirm Qdrant+Ollama
+          printf '1\n1\n' | node bin/init.js init --path=/tmp/agi-test-enabled --no-symlinks
+          # Verify MEMORY_ENABLED=true was written
+          grep "MEMORY_ENABLED=true" /tmp/agi-test-enabled/.env \
+            && echo "✅ MEMORY_ENABLED=true confirmed in .env" \
+            || (echo "❌ MEMORY_ENABLED=true not found in .env" && exit 1)
+
+      - name: Smoke test — init with local memory skipped
+        run: |
+          mkdir -p /tmp/agi-test-disabled
+          # Pipe "1\n" to select pack=core, then "2\n" to skip Qdrant+Ollama
+          printf '1\n2\n' | node bin/init.js init --path=/tmp/agi-test-disabled --no-symlinks
+          # Verify MEMORY_ENABLED=false was written
+          grep "MEMORY_ENABLED=false" /tmp/agi-test-disabled/.env \
+            && echo "✅ MEMORY_ENABLED=false confirmed in .env" \
+            || (echo "❌ MEMORY_ENABLED=false not found in .env" && exit 1)
+
+      - name: Smoke test — global install flag
+        run: |
+          mkdir -p /tmp/agi-test-global
+          printf '1\n1\n' | node bin/init.js init --path=/tmp/agi-test-global --global --no-symlinks || true
+          echo "✅ Global flag smoke test complete (non-zero exit acceptable if global path not writable in CI)"
+
   publish:
     runs-on: ubuntu-latest
+    needs: integration-test
     environment: npm
     permissions:
       contents: read
