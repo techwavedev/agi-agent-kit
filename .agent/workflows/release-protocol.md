@@ -4,6 +4,15 @@ description: Comprehensive Release Protocol for Agi Agent Kit. Enforces document
 
 ## Release Governance Protocol (MANDATORY)
 
+> **⚠️ REPOSITORY MAP — Read before every release:**
+>
+> | Repo                        | Remote        | Purpose             | NPM Publish? |
+> | --------------------------- | ------------- | ------------------- | ------------ |
+> | `techwavedev/agi`           | `origin`      | Private development | ❌ NEVER     |
+> | `techwavedev/agi-agent-kit` | `public-repo` | Public distribution | ✅ YES       |
+>
+> **Flow:** `main` → `public` branch → push to `public-repo` → create release on `public-repo` → NPM auto-publishes
+
 Before merging to `public` branch or publishing the Github Actions release, execute this protocol.
 
 ### 1. Preparation

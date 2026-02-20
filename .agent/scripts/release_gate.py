@@ -69,6 +69,7 @@ def scan_secrets():
     """Scan for hardcoded secrets."""
     print("🔍 Scanning for secrets...")
     issues = []
+    scanned = 0
     # Scan python, js, md files
     for ext in ["py", "js", "md", "json"]:
         for path in ROOT_DIR.rglob(f"*.{ext}"):
@@ -82,13 +83,16 @@ def scan_secrets():
                         issues.append(f"{path}: Potential secret found via regex")
             except Exception:
                 pass
+            scanned += 1
+            if scanned % 100 == 0:
+                print(f"   ...scanned {scanned} files", flush=True)
 
     if issues:
-        print("❌ Security issues found:")
+        print(f"❌ Security issues found ({scanned} files scanned):")
         for issue in issues:
             print(f"   - {issue}")
         sys.exit(1)
-    print("✅ No hardcoded secrets found.")
+    print(f"✅ No hardcoded secrets found ({scanned} files scanned).")
 
 def check_versions():
     """Check package.json version matches changelog."""
@@ -113,22 +117,27 @@ def check_versions():
 
 def syntax_check():
     """Run basic syntax check."""
-    print("🔍 verifying Python syntax...")
+    print("🔍 Verifying Python syntax...")
     # Find all python files
-    py_files = list(ROOT_DIR.rglob("*.py"))
+    py_files = [py for py in ROOT_DIR.rglob("*.py")
+                if "node_modules" not in str(py) and ".venv" not in str(py)]
+    total = len(py_files)
+    print(f"   Checking {total} Python files...", flush=True)
     failed = False
+    checked = 0
     for py in py_files:
-        if "node_modules" in str(py) or ".venv" in str(py):
-            continue
         try:
             subprocess.run(["python3", "-m", "py_compile", str(py)], check=True, capture_output=True)
         except subprocess.CalledProcessError:
             print(f"❌ Syntax error in {py}")
             failed = True
+        checked += 1
+        if checked % 50 == 0:
+            print(f"   ...checked {checked}/{total}", flush=True)
     
     if failed:
         sys.exit(1)
-    print("✅ Python syntax valid.")
+    print(f"✅ Python syntax valid ({total} files checked).")
 
 def main():
     print("🚀 Starting Release Gate Protocol...")

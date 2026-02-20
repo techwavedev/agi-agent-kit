@@ -1,7 +1,7 @@
 # AGI Agent Kit — Skills Catalog
 
-> **875 skills** across 16 categories | Generated 2026-02-20
-> Tiers: 🟢 Core (4) | 🔵 Medium (89) | 🟡 Full (+782 community)
+> **886 skills** across 16 categories | Generated 2026-02-20
+> Tiers: 🟢 Core (4) | 🔵 Medium (89) | 🟡 Full (+793 community)
 
 ## Quick Reference
 
