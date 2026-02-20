@@ -484,7 +484,18 @@ If these community skills help you, consider [starring the original repo](https:
 
 ---
 
-## 🛡️ Security
+## �️ Roadmap
+
+| Feature                             | Status     | Description                                                                                                                                                                                                                                                           |
+| ----------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Federated Agent Memory**          | 🔬 Design  | Cross-agent knowledge sharing via project-scoped Qdrant collections. Agents working on the same project read each other's decisions, errors, and patterns — building collective intelligence across sessions and platforms.                                           |
+| **Blockchain-Authenticated Memory** | 🔬 Design  | Cryptographic trust layer for shared memory using enterprise blockchains (Hyperledger Fabric, MultiChain, or Quorum) — self-hosted, no fees, no cryptocurrency. Agent writes are signed, content hashes are anchored on-chain, and access is token-gated per project. |
+| **Event-Driven Agent Streaming**    | 🔬 Design  | Real-time agent communication via Kafka/Flink. Agents publish decisions and observations to topics, enabling reactive workflows — e.g., a security agent triggers remediation when a vulnerability scan agent publishes findings.                                     |
+| **Workflow Engine**                 | 📋 Planned | Execute `data/workflows.json` playbooks as guided multi-skill sequences with progress tracking and branching logic.                                                                                                                                                   |
+
+---
+
+## �🛡️ Security
 
 This package includes a pre-flight security scanner that checks for private terms before publishing. All templates are sanitized for public use.
 
