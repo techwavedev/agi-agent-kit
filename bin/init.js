@@ -103,6 +103,7 @@ function parseArgs() {
     symlinks: true,
     help: false,
     global: false,
+    ci: false,       // --ci: skip all prompts, use safe defaults
   };
 
   for (const arg of args) {
@@ -117,6 +118,8 @@ function parseArgs() {
       options.path = path.join(os.homedir() || process.env.HOME || process.env.USERPROFILE || "", ".agent");
     } else if (arg === "--no-symlinks") {
       options.symlinks = false;
+    } else if (arg === "--ci") {
+      options.ci = true;
     } else if (arg === "--help" || arg === "-h") {
       options.help = true;
     }
@@ -1337,22 +1340,28 @@ async function detectExistingInstall(targetPath) {
 async function init(options) {
   log.header("🚀 AGI Agent Kit Initializer");
 
+  if (options.ci) {
+    log.info("CI mode: all prompts skipped, using safe defaults (pack=core, memory=disabled, teams=skip).");
+  }
+
   // Detect existing install FIRST — before any scope/pack prompts
-  const existingInstall = await detectExistingInstall(options.path);
+  const existingInstall = options.ci
+    ? { action: "install" }
+    : await detectExistingInstall(options.path);
   const isUpdate = existingInstall.action === "update";
 
   // Ask install scope (project vs global) — skip if already set via CLI flag
-  await promptInstallScope(options);
+  if (!options.ci) await promptInstallScope(options);
 
   // Offer backup only for reinstall (update preserves files, and backup is implied)
-  if (!isUpdate) {
+  if (!isUpdate && !options.ci) {
     await backupExistingFiles(options.path, options);
   }
 
   // Determine pack
   let pack = options.pack;
   if (!pack) {
-    pack = await promptPackSelection();
+    pack = options.ci ? "core" : await promptPackSelection();
   }
 
   if (!PACKS[pack]) {
@@ -1394,10 +1403,14 @@ async function init(options) {
 
   // Ask user about local Qdrant + Ollama and write .env
   // Skip on update (preserve existing .env settings)
-  let infraChoice = { useLocal: false, detected: {} };
-  if (!isUpdate) {
+  let infraChoice = { useLocal: false, detected: {}, ollamaUrl: "http://localhost:11434", qdrantUrl: "http://localhost:6333" };
+  if (!isUpdate && !options.ci) {
     infraChoice = await promptLocalInfrastructure();
     writeEnvFile(options.path, infraChoice);
+  } else if (!isUpdate && options.ci) {
+    // CI: write .env with memory disabled — no Qdrant/Ollama available
+    writeEnvFile(options.path, infraChoice);
+    log.info("CI mode: memory disabled in .env.");
   } else {
     // On update, read existing MEMORY_ENABLED from .env so hints stay accurate
     const envPath = path.join(options.path, ".env");
@@ -1416,7 +1429,9 @@ async function init(options) {
   }
 
   // Ask about platform features (Agent Teams, MCP, etc.) BEFORE running setup wizard
-  const platformFeatures = await promptPlatformFeatures(options.path);
+  const platformFeatures = options.ci
+    ? { agentTeams: false }
+    : await promptPlatformFeatures(options.path);
 
   // Auto-run platform setup wizard
   runPlatformSetup(options.path);

@@ -76,12 +76,8 @@ jobs:
       - name: Smoke test — core install, memory skipped
         run: |
           mkdir -p /tmp/agi-test-core
-          # Wizard prompts (new install — no existing-install prompt):
-          #   1. Install scope  → "" (default: project)
-          #   2. Pack           → "1" (core)
-          #   3. Memory?        → "2" (skip — no Qdrant/Ollama in CI)
-          #   4. Agent Teams?   → "2" (skip — no Claude Code in CI)
-          printf '\n1\n2\n2\n' | node bin/init.js init --path=/tmp/agi-test-core --no-symlinks
+          # --ci skips ALL prompts: pack=core, memory=disabled, teams=skip
+          node bin/init.js init --path=/tmp/agi-test-core --no-symlinks --ci
           grep "MEMORY_ENABLED=false" /tmp/agi-test-core/.env \
             && echo "✅ MEMORY_ENABLED=false confirmed in .env" \
             || (echo "❌ MEMORY_ENABLED=false not found in .env" && exit 1)
@@ -92,11 +88,10 @@ jobs:
             && echo "✅ skills/ directory present" \
             || (echo "❌ skills/ directory missing" && exit 1)
 
-      - name: Smoke test — medium pack, memory skipped
+      - name: Smoke test — medium pack via --pack flag
         run: |
           mkdir -p /tmp/agi-test-medium
-          # Pack "2" = medium, memory skip, teams skip
-          printf '\n2\n2\n2\n' | node bin/init.js init --path=/tmp/agi-test-medium --no-symlinks
+          node bin/init.js init --path=/tmp/agi-test-medium --no-symlinks --ci --pack=medium
           test -f /tmp/agi-test-medium/AGENTS.md \
             && echo "✅ Medium pack installed" \
             || (echo "❌ AGENTS.md missing in medium install" && exit 1)
@@ -104,8 +99,7 @@ jobs:
       - name: Smoke test — global install flag
         run: |
           mkdir -p /tmp/agi-test-global
-          # --global skips scope prompt. Pack=1, memory=skip, teams=skip
-          printf '1\n2\n2\n' | node bin/init.js init --path=/tmp/agi-test-global --global --no-symlinks || true
+          node bin/init.js init --path=/tmp/agi-test-global --global --no-symlinks --ci || true
           echo "✅ Global flag smoke test complete"
 
   # ─────────────────────────────────────────────────────────────
