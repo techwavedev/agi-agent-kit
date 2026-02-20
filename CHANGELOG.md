@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-02-20
+
+### Added
+
+- **Workflows Metadata** — Added `data/workflows.json` with 4 guided multi-skill playbooks:
+  - `ship-saas-mvp` — 5-step SaaS delivery
+  - `security-audit-web-app` — 4-step AppSec review
+  - `build-ai-agent-system` — 4-step AI agent design
+  - `qa-browser-automation` — 3-step E2E testing
+
+### Fixed
+
+- **Skill Count Correction** — Updated SKILLS_CATALOG.md and init.js from stale 862/76 to actual 875/89. Core: 4, Knowledge (Medium): 89, Extended (Full): 782.
+
 ## [1.3.8] - 2026-02-20
 
 ### Fixed

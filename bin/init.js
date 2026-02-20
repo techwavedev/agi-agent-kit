@@ -9,7 +9,7 @@
  *
  * Packs:
  *   core   - Base framework + common skills (webcrawler, pdf-reader, qdrant-memory)
- *   medium - Core + 76 specialized skills + .agent structure
+ *   medium - Core + 89 specialized skills + .agent structure
  *   full   - Medium + 782 community skills (complete suite)
  *
  * Options:
@@ -54,14 +54,14 @@ const PACKS = {
   medium: {
     name: "Medium",
     description:
-      "Core + 76 specialized skills + .agent structure (API, Security, Design, AI, Architecture)",
+      "Core + 89 specialized skills + .agent structure (API, Security, Design, AI, Architecture)",
     skills: ["core", "knowledge"],
     includeAgent: true,
   },
   full: {
     name: "Full Suite",
     description:
-      "Complete suite (Medium + 782 community skills from antigravity-awesome-skills)",
+      "Complete suite (Medium + 782 community skills from antigravity-awesome-skills v5.4.0)",
     skills: ["core", "knowledge", "extended"],
     includeAgent: true,
   },
@@ -113,7 +113,7 @@ ${colors.bright}Packs:${colors.reset}
   ${colors.green}core${colors.reset}      Base framework + common skills
            (webcrawler, pdf-reader, qdrant-memory, documentation)
 
-  ${colors.blue}medium${colors.reset}    Core + 76 specialized skills + .agent/ structure
+  ${colors.blue}medium${colors.reset}    Core + 89 specialized skills + .agent/ structure
            (API, Security, Design, AI, Architecture, Testing...)
   
   ${colors.yellow}full${colors.reset}      Complete suite (Medium + 782 community skills)
@@ -143,10 +143,10 @@ async function promptPackSelection() {
       `  1. ${colors.green}core${colors.reset}      Essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)`,
     );
     console.log(
-      `  2. ${colors.blue}medium${colors.reset}    Core + 76 specialized skills + .agent/ structure`,
+      `  2. ${colors.blue}medium${colors.reset}    Core + 89 specialized skills + .agent/ structure`,
     );
     console.log(
-      `  3. ${colors.yellow}full${colors.reset}      Complete suite (Medium + 782 community skills)\n`,
+      `  3. ${colors.yellow}full${colors.reset}      Complete suite (Medium + 782 community skills from antigravity-awesome-skills)\n`,
     );
 
     rl.question(
@@ -254,7 +254,10 @@ function copySkills(targetPath, pack, templatesPath) {
           // Category directory (e.g., knowledge/frontend/) — recurse one level
           const categorySkills = fs
             .readdirSync(entryPath, { withFileTypes: true })
-            .filter((d) => d.isDirectory() && isSkillDir(path.join(entryPath, d.name)));
+            .filter(
+              (d) =>
+                d.isDirectory() && isSkillDir(path.join(entryPath, d.name)),
+            );
 
           for (const skill of categorySkills) {
             const src = path.join(entryPath, skill.name);
@@ -316,6 +319,15 @@ function copyBaseFiles(targetPath, templatesPath, options) {
   if (fs.existsSync(srcSkillCreator)) {
     copyDirSync(srcSkillCreator, destSkillCreator);
     log.success("Installed skill-creator/");
+  }
+
+  // Copy data (workflows metadata)
+  const srcData = path.join(templatesPath, "base", "data");
+  const destData = path.join(targetPath, "data");
+
+  if (fs.existsSync(srcData)) {
+    copyDirSync(srcData, destData);
+    log.success("Installed data/ (workflows metadata)");
   }
 }
 
@@ -391,9 +403,13 @@ function createSymlinks(targetPath) {
       // Create relative symlink: .claude/skills → ../skills
       const relativeTarget = path.relative(parentDir, skillsDir);
       fs.symlinkSync(relativeTarget, linkPath);
-      log.success(`Created skill symlink: ${platform} → skills/ (${platformName})`);
+      log.success(
+        `Created skill symlink: ${platform} → skills/ (${platformName})`,
+      );
     } catch (err) {
-      log.warn(`Failed to create skill symlink for ${platformName}: ${err.message}`);
+      log.warn(
+        `Failed to create skill symlink for ${platformName}: ${err.message}`,
+      );
     }
   }
 }
