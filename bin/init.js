@@ -66,7 +66,32 @@ const PACKS = {
     skills: ["core", "knowledge", "extended"],
     includeAgent: true,
   },
+  custom: {
+    name: "Custom",
+    description: "Core + selected domains only",
+    skills: ["core"], // domains are resolved at install time via options.domains
+    includeAgent: true,
+  },
 };
+
+// Domain definitions — maps domain name to skill counts per tier
+const DOMAINS = [
+  { id: "ai-agents",      label: "AI Agents & Orchestration", knowledge: 9,   extended: 93  },
+  { id: "architecture",  label: "Architecture & System Design", knowledge: 6,   extended: 32  },
+  { id: "backend",       label: "Backend & APIs",             knowledge: 8,   extended: 100 },
+  { id: "blockchain",    label: "Blockchain & Web3",          knowledge: 1,   extended: 3   },
+  { id: "content",       label: "Content & Copy",            knowledge: 6,   extended: 21  },
+  { id: "debugging",     label: "Debugging & Observability", knowledge: 5,   extended: 36  },
+  { id: "devops",        label: "DevOps & Cloud",            knowledge: 5,   extended: 140 },
+  { id: "documentation",label: "Documentation",             knowledge: 3,   extended: 34  },
+  { id: "frontend",     label: "Frontend & UI/UX",          knowledge: 11,  extended: 61  },
+  { id: "gaming",       label: "Gaming & Creative",         knowledge: 1,   extended: 4   },
+  { id: "mobile",       label: "Mobile (iOS/Android/RN)",   knowledge: 1,   extended: 8   },
+  { id: "security",     label: "Security & Pen Testing",    knowledge: 2,   extended: 38  },
+  { id: "testing",      label: "Testing & QA",             knowledge: 6,   extended: 32  },
+  { id: "workflow",     label: "Workflow & Automation",     knowledge: 10,  extended: 142 },
+  { id: "i18n",         label: "i18n & Localisation",       knowledge: 1,   extended: 0   },
+];
 
 // Parse command line arguments
 function parseArgs() {
@@ -134,48 +159,114 @@ ${colors.bright}Note:${colors.reset} Most scripts require ${colors.cyan}python3$
 `);
 }
 
-// Prompt user for pack selection
+// Prompt user for pack selection (including custom domain picker)
 async function promptPackSelection() {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+  console.log(`\n${colors.bright}Which pack would you like to install?${colors.reset}\n`);
+  console.log(`  ${colors.green}1. core${colors.reset}      — 4 essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)`);
+  console.log(`  ${colors.blue}2. medium${colors.reset}    — Core + 89 domain skills + .agent/ structure`);
+  console.log(`  ${colors.yellow}3. full${colors.reset}      — Everything: Medium + 785 community skills (878 total)`);
+  console.log(`  ${colors.cyan}4. custom${colors.reset}    — Core + you choose specific domains\n`);
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
   return new Promise((resolve) => {
-    console.log(
-      `\n${colors.bright}Which pack would you like to install?${colors.reset}\n`,
-    );
-    console.log(
-      `  1. ${colors.green}core${colors.reset}      Essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)`,
-    );
-    console.log(
-      `  2. ${colors.blue}medium${colors.reset}    Core + 89 specialized skills + .agent/ structure`,
-    );
-    console.log(
-      `  3. ${colors.yellow}full${colors.reset}      Complete suite (Medium + 785 community skills from antigravity-awesome-skills)\n`,
-    );
+    rl.question(`  Enter choice (1-4) or pack name (default: core): `, async (answer) => {
+      rl.close();
+      const choice = answer.trim().toLowerCase();
 
-    rl.question(
-      `Enter choice (1-3) or pack name (default: core): `,
-      (answer) => {
-        rl.close();
-        const choice = answer.trim().toLowerCase();
-
-        if (choice === "1" || choice === "core" || choice === "")
-          resolve("core");
-        else if (
-          choice === "2" ||
-          choice === "medium" ||
-          choice === "knowledge"
-        )
-          resolve("medium");
-        else if (choice === "3" || choice === "full") resolve("full");
-        else {
+      if (choice === "2" || choice === "medium" || choice === "knowledge") {
+        resolve("medium");
+      } else if (choice === "3" || choice === "full") {
+        resolve("full");
+      } else if (choice === "4" || choice === "custom") {
+        const domains = await promptDomainSelection();
+        resolve(domains.length > 0 ? "custom" : "core");
+      } else {
+        if (choice !== "1" && choice !== "core" && choice !== "") {
           log.warn("Invalid choice, defaulting to core");
-          resolve("core");
         }
-      },
-    );
+        resolve("core");
+      }
+    });
+  });
+}
+
+// Multi-select domain picker for custom installs
+async function promptDomainSelection() {
+  const templatesPath = path.join(__dirname, "..", "templates", "skills");
+
+  console.log(`\n${colors.bright}━━━ Custom Domain Selection ━━━${colors.reset}`);
+  console.log(`  ${colors.cyan}Core skills (webcrawler, pdf-reader, qdrant-memory, documentation) are always included.${colors.reset}\n`);
+  console.log(`  The numbers show ${colors.blue}professional skills${colors.reset} (curated, same as medium pack)`);
+  console.log(`  and ${colors.yellow}community skills${colors.reset} (antigravity-awesome-skills, same as full pack).`);
+  console.log(`  You get both tiers for each domain you select.\n`);
+  console.log(`  ${"".padEnd(38)} ${colors.blue}■ professional${colors.reset}   ${colors.yellow}■ community${colors.reset}`);
+  console.log(`  ${"-".repeat(72)}`);
+
+  DOMAINS.forEach((d, i) => {
+    const num = String(i + 1).padStart(2);
+    const knStr = d.knowledge > 0 ? `${d.knowledge} skills` : `—       `;
+    const exStr = d.extended  > 0 ? `${d.extended} skills` : `—`;
+    const knColored = d.knowledge > 0
+      ? `${colors.blue}+${knStr}${colors.reset}`.padEnd(22)
+      : `${colors.dim}${knStr}${colors.reset}`.padEnd(22);
+    const exColored = d.extended > 0
+      ? `${colors.yellow}+${exStr}${colors.reset}`
+      : `${colors.dim}${exStr}${colors.reset}`;
+    console.log(`  ${colors.bright}${num}.${colors.reset} ${d.label.padEnd(36)} ${knColored} ${exColored}`);
+  });
+
+  console.log(`\n  Enter domain numbers separated by commas, or ranges (e.g. 1,3,5-7,9)`);
+  console.log(`  Type ${colors.cyan}all${colors.reset} to select all, or press Enter to skip (core only)\n`);
+
+  const rl2 = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+  return new Promise((resolve) => {
+    rl2.question(`  Your domains: `, (answer) => {
+      rl2.close();
+      const input = answer.trim().toLowerCase();
+
+      if (!input) {
+        log.info("No domains selected — core only.");
+        resolve([]);
+        return;
+      }
+
+      if (input === "all") {
+        log.success(`All ${DOMAINS.length} domains selected.`);
+        // Store selected domain ids on process env for copySkills to read
+        process.env._AGI_CUSTOM_DOMAINS = DOMAINS.map((d) => d.id).join(",");
+        resolve(DOMAINS.map((d) => d.id));
+        return;
+      }
+
+      // Parse numbers and ranges like "1,3,5-7"
+      const selected = [];
+      const parts = input.split(",");
+      for (const part of parts) {
+        const rangeParts = part.trim().split("-").map(Number);
+        if (rangeParts.length === 2) {
+          const [from, to] = rangeParts;
+          for (let n = from; n <= to; n++) {
+            if (n >= 1 && n <= DOMAINS.length) selected.push(DOMAINS[n - 1].id);
+          }
+        } else {
+          const n = parseInt(part.trim(), 10);
+          if (n >= 1 && n <= DOMAINS.length) selected.push(DOMAINS[n - 1].id);
+        }
+      }
+
+      if (selected.length === 0) {
+        log.warn("No valid domains selected — falling back to core.");
+        resolve([]);
+        return;
+      }
+
+      const names = selected.map((id) => DOMAINS.find((d) => d.id === id).label);
+      log.success(`Selected domains: ${colors.cyan}${names.join(", ")}${colors.reset}`);
+      process.env._AGI_CUSTOM_DOMAINS = selected.join(",");
+      resolve(selected);
+    });
   });
 }
 
@@ -276,127 +367,266 @@ async function promptInstallScope(options) {
 }
 
 // Detect existing files that will be overwritten and offer to back them up
-async function backupExistingFiles(targetPath) {
-  // Files and dirs the installer will create/overwrite
+async function backupExistingFiles(targetPath, options = {}) {
+  const os = require("os");
+  const homeDir = os.homedir();
+
+  // Files and dirs the installer will create/overwrite in the target path
   const WATCHED = [
     "AGENTS.md", "GEMINI.md", "CLAUDE.md", "OPENCODE.md",
     "COPILOT.md", "OPENCLAW.md", ".env", "directives",
     "execution", "skills", "skill-creator", ".agent",
   ];
 
+  // For global installs, also check platform dirs that will be symlinked
+  const GLOBAL_PLATFORM_DIRS = options.global ? [
+    path.join(homeDir, ".gemini", "skills"),
+    path.join(homeDir, ".claude", "skills"),
+    path.join(homeDir, ".codex", "skills"),
+    path.join(homeDir, ".cursor", "skills"),
+    path.join(homeDir, ".openclaw", "skills"),
+    path.join(homeDir, ".adal", "skills"),
+  ] : [];
+
   const existing = WATCHED.filter((f) =>
     fs.existsSync(path.join(targetPath, f)),
   );
 
-  if (existing.length === 0) {
-    // Nothing to back up — clean directory
-    return;
+  const existingGlobalDirs = GLOBAL_PLATFORM_DIRS.filter((p) =>
+    fs.existsSync(p) && !fs.lstatSync(p).isSymbolicLink(),
+  );
+
+  if (existing.length === 0 && existingGlobalDirs.length === 0) {
+    return; // Nothing to back up
   }
 
   console.log(`\n${colors.bright}━━━ Backup Existing Files ━━━${colors.reset}\n`);
-  console.log(`  The following items already exist in ${colors.cyan}${targetPath}${colors.reset}`);
-  console.log(`  and ${colors.yellow}may be overwritten${colors.reset} by this installer:\n`);
+  console.log(`  The following items already exist and ${colors.yellow}may be overwritten${colors.reset}:\n`);
+
   for (const f of existing) {
     const full = path.join(targetPath, f);
     const isDir = fs.statSync(full).isDirectory();
-    console.log(`    ${colors.yellow}${isDir ? "📁" : "📄"} ${f}${colors.reset}`);
+    console.log(`    ${colors.yellow}${isDir ? "📁" : "📄"} ${full}${colors.reset}`);
+  }
+  for (const d of existingGlobalDirs) {
+    console.log(`    ${colors.yellow}📁 ${d}${colors.reset} ${colors.red}(real dir — will be replaced by symlink)${colors.reset}`);
   }
 
   console.log(`
   ${colors.bright}We strongly recommend backing these up before continuing.${colors.reset}`);
-  console.log(`  A backup will be saved to: ${colors.cyan}${targetPath}/.agi-backup-<timestamp>/${colors.reset}\n`);
+  const backupBase = options.global
+    ? path.join(homeDir, `.agi-global-backup-<timestamp>`)
+    : path.join(targetPath, `.agi-backup-<timestamp>`);
+  console.log(`  Backup will be saved to: ${colors.cyan}${backupBase}${colors.reset}\n`);
 
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
   return new Promise((resolve) => {
-    rl.question(
-      `  Create backup now? (Y/n, default: Y): `,
-      (answer) => {
-        rl.close();
-        const choice = answer.trim().toLowerCase();
+    rl.question(`  Create backup now? (Y/n, default: Y): `, (answer) => {
+      rl.close();
+      const choice = answer.trim().toLowerCase();
 
-        if (choice === "n" || choice === "no") {
-          log.warn("Backup skipped. Proceeding without backup — existing files may be overwritten.");
-          resolve();
-          return;
-        }
-
-        // Create timestamped backup dir
-        const ts = new Date()
-          .toISOString()
-          .replace(/[:.]/g, "-")
-          .replace("T", "_")
-          .slice(0, 19);
-        const backupDir = path.join(targetPath, `.agi-backup-${ts}`);
-        fs.mkdirSync(backupDir, { recursive: true });
-
-        let backed = 0;
-        for (const f of existing) {
-          const src = path.join(targetPath, f);
-          const dest = path.join(backupDir, f);
-          try {
-            copyDirSync(src, dest) || fs.copyFileSync(src, dest);
-            backed++;
-          } catch (e) {
-            log.warn(`Could not back up ${f}: ${e.message}`);
-          }
-        }
-
-        log.success(`Backup created: ${colors.cyan}${backupDir}${colors.reset} (${backed} items)`);
+      if (choice === "n" || choice === "no") {
+        log.warn("Backup skipped — existing files may be overwritten.");
         resolve();
-      },
-    );
+        return;
+      }
+
+      const ts = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
+      const backupDir = options.global
+        ? path.join(homeDir, `.agi-global-backup-${ts}`)
+        : path.join(targetPath, `.agi-backup-${ts}`);
+      fs.mkdirSync(backupDir, { recursive: true });
+
+      let backed = 0;
+      for (const f of existing) {
+        const src = path.join(targetPath, f);
+        const dest = path.join(backupDir, f);
+        try { copyDirSync(src, dest) || fs.copyFileSync(src, dest); backed++; } catch (e) {
+          log.warn(`Could not back up ${f}: ${e.message}`);
+        }
+      }
+      for (const d of existingGlobalDirs) {
+        const name = d.replace(homeDir, "~").replace(/\//g, "_").replace(/^_/, "");
+        const dest = path.join(backupDir, name);
+        try { copyDirSync(d, dest); backed++; } catch (e) {
+          log.warn(`Could not back up ${d}: ${e.message}`);
+        }
+      }
+
+      log.success(`Backup created: ${colors.cyan}${backupDir}${colors.reset} (${backed} items)`);
+      resolve();
+    });
   });
+}
+
+// Generate an uninstall script for global installs
+function generateUninstallScript(installPath, options) {
+  const os = require("os");
+  const homeDir = os.homedir();
+  const scriptPath = path.join(installPath, "uninstall-agi.sh");
+
+  const platformSymlinks = [
+    path.join(homeDir, ".gemini", "skills"),
+    path.join(homeDir, ".claude", "skills"),
+    path.join(homeDir, ".codex", "skills"),
+    path.join(homeDir, ".cursor", "skills"),
+    path.join(homeDir, ".openclaw", "skills"),
+    path.join(homeDir, ".adal", "skills"),
+  ];
+
+  const instructionLinks = ["GEMINI.md", "CLAUDE.md", "OPENCODE.md", "COPILOT.md", "OPENCLAW.md"]
+    .map((f) => path.join(installPath, f));
+
+  // Build the uninstall script content as a plain string to avoid quote escaping issues
+  let script = "#!/usr/bin/env bash\n";
+  script += "# AGI Agent Kit - Global Uninstaller\n";
+  script += "# Generated: " + new Date().toISOString() + "\n";
+  script += "# Install path: " + installPath + "\n";
+  script += "\n";
+  script += "set -e\n";
+  script += "\n";
+  script += "echo 'AGI Agent Kit - Global Uninstaller'\n";
+  script += "echo 'This will remove:'\n";
+  script += "echo '  - Skill symlinks from platform dirs (~/.gemini/skills, ~/.claude/skills, etc.)'\n";
+  script += "echo '  - Instruction file symlinks (GEMINI.md, CLAUDE.md, etc.)'\n";
+  script += "echo '  - The install directory: " + installPath + "'\n";
+  script += "echo ''\n";
+  script += "read -r -p 'Proceed? (y/N): ' confirm\n";
+  script += "if [ \"$confirm\" != 'y' ] && [ \"$confirm\" != 'Y' ]; then echo 'Aborted.'; exit 0; fi\n";
+  script += "\n";
+  script += "echo 'Removing platform skill symlinks...'\n";
+  for (const p of platformSymlinks) {
+    script += "[ -L '" + p + "' ] && rm '" + p + "' && echo '  Removed: " + p + "' || echo '  Skipped (not a symlink): " + p + "'\n";
+  }
+  script += "\n";
+  script += "echo 'Removing instruction file symlinks...'\n";
+  for (const p of instructionLinks) {
+    script += "[ -L '" + p + "' ] && rm '" + p + "' && echo '  Removed: " + p + "' || echo '  Skipped: " + p + "'\n";
+  }
+  script += "\n";
+  script += "echo 'Removing install directory: " + installPath + "'\n";
+  script += "rm -rf '" + installPath + "'\n";
+  script += "echo 'AGI Agent Kit global install removed successfully.'\n";
+  script += "echo 'Note: your .env and any backups were NOT removed.'\n";
+
+  fs.writeFileSync(scriptPath, script, { mode: 0o755 });
+  log.success("Uninstall script created: " + colors.cyan + scriptPath + colors.reset);
+  console.log("  Run it anytime to cleanly remove this global install:");
+  console.log("    " + colors.yellow + "bash " + scriptPath + colors.reset + "\n");
 }
 
 // Prompt user for local Qdrant + Ollama usage
 async function promptLocalInfrastructure() {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+  // ── Step 1: Detect what's already running ──────────────────────────────────
+  const detected = { ollama: false, docker: false, qdrant: false };
+  let ollamaUrl = "http://localhost:11434";
+  let qdrantUrl = "http://localhost:6333";
 
-  return new Promise((resolve) => {
-    console.log(
-      `\n${colors.bright}━━━ Local Memory Infrastructure (Qdrant + Ollama) ━━━${colors.reset}\n`,
-    );
-    console.log(
-      `  This toolkit supports a ${colors.cyan}local vector memory system${colors.reset} powered by:`,
-    );
-    console.log(
-      `    • ${colors.green}Qdrant${colors.reset}  — local vector database for semantic agent memory`,
-    );
-    console.log(
-      `    • ${colors.green}Ollama${colors.reset}  — local LLM runtime for private embeddings (nomic-embed-text)\n`,
-    );
-    console.log(`  ${colors.yellow}Requirements:${colors.reset} both services must be installed & running locally.`);
-    console.log(
-      `  If you skip this now, you can enable it later by editing ${colors.cyan}.env${colors.reset}.\n`,
-    );
-    console.log(`  ${colors.bright}Options:${colors.reset}`);
-    console.log(
-      `    ${colors.green}1. Yes${colors.reset}   — configure local Qdrant + Ollama (recommended for offline/private use)`,
-    );
-    console.log(
-      `    ${colors.yellow}2. Skip${colors.reset} — disable local memory now (use cloud/API providers only)\n`,
-    );
+  try { execSync("ollama --version", { stdio: "pipe" }); detected.ollama = true; } catch (e) {}
+  try { execSync("docker --version",  { stdio: "pipe" }); detected.docker = true; } catch (e) {}
+  try {
+    execSync(`curl -sf ${qdrantUrl}/healthz`, { stdio: "pipe", timeout: 3000 });
+    detected.qdrant = true;
+  } catch (e) {}
 
-    rl.question(`  Your choice (1/2, default: 1): `, (answer) => {
-      rl.close();
-      const choice = answer.trim();
+  const icon  = (ok) => ok ? `${colors.green}✔ detected${colors.reset}` : `${colors.red}✖ not found${colors.reset}`;
 
-      if (choice === "2" || choice.toLowerCase() === "skip" || choice.toLowerCase() === "no" || choice.toLowerCase() === "n") {
-        log.info("Local memory infrastructure skipped.");
-        resolve({ useLocal: false });
-      } else {
-        // Default to yes
-        log.success("Local Qdrant + Ollama will be configured.");
-        resolve({ useLocal: true });
+  console.log(`\n${colors.bright}━━━ Local Memory Infrastructure (Qdrant + Ollama) ━━━${colors.reset}\n`);
+  console.log(`  This toolkit supports a ${colors.cyan}local vector memory system${colors.reset} powered by:`);
+  console.log(`    • ${colors.green}Qdrant${colors.reset}  — local vector database for semantic agent memory`);
+  console.log(`    • ${colors.green}Ollama${colors.reset}  — local LLM runtime for private embeddings (nomic-embed-text)\n`);
+  console.log(`  ${colors.bright}Current status:${colors.reset}`);
+  console.log(`    Ollama CLI   ${icon(detected.ollama)}`);
+  console.log(`    Docker CLI   ${icon(detected.docker)}`);
+  console.log(`    Qdrant API   ${icon(detected.qdrant)} (${qdrantUrl})\n`);
+
+  // ── Step 2: Ask enable/skip ────────────────────────────────────────────────
+  const allReady = detected.ollama && detected.qdrant;
+  if (allReady) {
+    console.log(`  ${colors.green}✔ Both services detected — enabling memory is recommended.${colors.reset}\n`);
+  }
+
+  console.log(`  ${colors.bright}1. Yes${colors.reset}   — enable memory (Qdrant + Ollama)`);
+  console.log(`  ${colors.bright}2. Skip${colors.reset} — disable for now (can enable later in .env)\n`);
+
+  const answer1 = await _ask(`  Enable memory? (1/2, default: 1): `);
+  const wantsMemory = !(answer1 === "2" || ["skip","no","n"].includes(answer1.toLowerCase()));
+
+  if (!wantsMemory) {
+    log.info("Memory infrastructure skipped.");
+    return { useLocal: false, detected, ollamaUrl, qdrantUrl };
+  }
+
+  // ── Step 3: Per-service resolution when not detected ──────────────────────
+  if (!detected.ollama) {
+    console.log(`\n  ${colors.yellow}⚠  Ollama not detected at localhost.${colors.reset}`);
+    console.log(`  ${colors.bright}What would you like to do?${colors.reset}`);
+    console.log(`    ${colors.bright}1.${colors.reset} I'll install it locally  → ${colors.cyan}https://ollama.com/download${colors.reset}`);
+    console.log(`    ${colors.bright}2.${colors.reset} I have it on a custom URL (remote server / Docker host)\n`);
+    const a = await _ask(`  Choice (1/2, default: 1): `);
+    if (a === "2") {
+      const url = await _ask(`  Enter Ollama URL (e.g. http://192.168.1.10:11434): `);
+      if (url.trim()) {
+        ollamaUrl = url.trim().replace(/\/$/, "");
+        log.success(`Ollama URL set to: ${colors.cyan}${ollamaUrl}${colors.reset}`);
+        // Verify it's reachable
+        try {
+          execSync(`curl -sf ${ollamaUrl}/api/tags`, { stdio: "pipe", timeout: 4000 });
+          log.success(`Ollama reachable at ${ollamaUrl}`);
+          detected.ollama = true;
+        } catch (e) {
+          log.warn(`Could not reach Ollama at ${ollamaUrl} — make sure it's running.`);
+        }
       }
-    });
+    } else {
+      console.log(`  ${colors.cyan}Install Ollama, then run:${colors.reset} ${colors.yellow}ollama pull nomic-embed-text${colors.reset}`);
+      console.log(`  Memory will be written to .env — start Ollama before using the agent.\n`);
+    }
+  }
+
+  if (!detected.qdrant) {
+    console.log(`\n  ${colors.yellow}⚠  Qdrant not detected at ${qdrantUrl}.${colors.reset}`);
+    console.log(`  ${colors.bright}What would you like to do?${colors.reset}`);
+    console.log(`    ${colors.bright}1.${colors.reset} I'll run it locally via Docker`);
+    console.log(`       ${colors.yellow}docker run -d -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant${colors.reset}`);
+    console.log(`    ${colors.bright}2.${colors.reset} I have Qdrant on a custom URL (Qdrant Cloud, remote server, etc.)\n`);
+    const a = await _ask(`  Choice (1/2, default: 1): `);
+    if (a === "2") {
+      const url = await _ask(`  Enter Qdrant URL (e.g. https://xyz.qdrant.tech or http://10.0.0.5:6333): `);
+      if (url.trim()) {
+        qdrantUrl = url.trim().replace(/\/$/, "");
+        const apiKey = await _ask(`  Qdrant API key (leave blank if not required): `);
+        log.success(`Qdrant URL set to: ${colors.cyan}${qdrantUrl}${colors.reset}`);
+        // Verify
+        try {
+          const header = apiKey.trim() ? `-H 'api-key: ${apiKey.trim()}'` : "";
+          execSync(`curl -sf ${header} ${qdrantUrl}/healthz`, { stdio: "pipe", timeout: 4000 });
+          log.success(`Qdrant reachable at ${qdrantUrl}`);
+          detected.qdrant = true;
+        } catch (e) {
+          log.warn(`Could not reach Qdrant at ${qdrantUrl} — check URL and API key.`);
+        }
+        return { useLocal: true, detected, ollamaUrl, qdrantUrl, qdrantApiKey: apiKey.trim() };
+      }
+    } else {
+      if (!detected.docker) {
+        console.log(`\n  ${colors.yellow}⚠  Docker also not found.${colors.reset} Install Docker Desktop first:`);
+        console.log(`     ${colors.cyan}https://www.docker.com/products/docker-desktop${colors.reset}`);
+      }
+      console.log(`  Memory config will be written to .env — start Qdrant before using the agent.\n`);
+    }
+  }
+
+  log.success("Memory infrastructure configured.");
+  return { useLocal: true, detected, ollamaUrl, qdrantUrl };
+}
+
+// Helper: promisified readline question
+function _ask(question) {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    rl.question(question, (answer) => { rl.close(); resolve(answer.trim()); });
   });
 }
 
@@ -413,17 +643,21 @@ function writeEnvFile(targetPath, infraChoice) {
 
   // Build the memory block
   const memoryEnabled = infraChoice.useLocal ? "true" : "false";
+  const qdrantUrl = infraChoice.qdrantUrl || "http://localhost:6333";
+  const qdrantApiKey = infraChoice.qdrantApiKey || "";
+  const ollamaUrl = infraChoice.ollamaUrl || "http://localhost:11434";
+
   const memoryBlock = [
     "",
     "# ============================================================",
     "# Agent Memory Configuration (Qdrant & Local LLM)",
     "# ============================================================",
     `MEMORY_ENABLED=${memoryEnabled}`,
-    "QDRANT_URL=http://localhost:6333",
-    "QDRANT_API_KEY=",
+    `QDRANT_URL=${qdrantUrl}`,
+    `QDRANT_API_KEY=${qdrantApiKey}`,
     "QDRANT_COLLECTION=agent_memory",
     "EMBEDDING_PROVIDER=ollama",
-    "OLLAMA_URL=http://localhost:11434",
+    `OLLAMA_URL=${ollamaUrl}`,
     "EMBEDDING_MODEL=nomic-embed-text",
     "CACHE_THRESHOLD=0.92",
     "CACHE_TTL_DAYS=7",
@@ -514,48 +748,108 @@ function isSkillDir(dirPath) {
 // Supports both flat (core/) and categorized (knowledge/frontend/react-patterns/) layouts.
 // Skills are always installed flat at the destination: skills/<skill-name>/
 function copySkills(targetPath, pack, templatesPath) {
-  log.header(`Installing ${PACKS[pack].name} skills...`);
+  const destSkillsPath = path.join(targetPath, "skills");
 
-  const skillGroups = PACKS[pack].skills;
+  // Helper: install all skills inside a category directory
+  function installCategoryDir(categoryPath, categoryName) {
+    if (!fs.existsSync(categoryPath)) return 0;
+    let count = 0;
+    const entries = fs.readdirSync(categoryPath, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const entryPath = path.join(categoryPath, entry.name);
+      if (isSkillDir(entryPath)) {
+        // Direct skill (e.g. core/webcrawler/)
+        const dest = path.join(destSkillsPath, entry.name);
+        if (copyDirSync(entryPath, dest)) { count++; }
+      } else {
+        // Category dir (e.g. knowledge/frontend/) — recurse one level
+        const skillDirs = fs.readdirSync(entryPath, { withFileTypes: true })
+          .filter((d) => d.isDirectory() && isSkillDir(path.join(entryPath, d.name)));
+        for (const skill of skillDirs) {
+          const src = path.join(entryPath, skill.name);
+          const dest = path.join(destSkillsPath, skill.name);
+          if (copyDirSync(src, dest)) { count++; }
+        }
+      }
+    }
+    return count;
+  }
 
-  for (const group of skillGroups) {
-    const srcSkillsPath = path.join(templatesPath, "skills", group);
-    const destSkillsPath = path.join(targetPath, "skills");
+  if (pack === "custom") {
+    // ── Custom pack: always install core, then per-domain selections ──
+    log.header("Installing Custom pack (core + selected domains)...");
 
-    if (fs.existsSync(srcSkillsPath)) {
-      const entries = fs
-        .readdirSync(srcSkillsPath, { withFileTypes: true })
-        .filter((d) => d.isDirectory());
+    // 1. Core skills always
+    const coreCount = installCategoryDir(
+      path.join(templatesPath, "skills", "core"), "core"
+    );
+    log.success(`Core: ${coreCount} skills installed`);
 
-      for (const entry of entries) {
-        const entryPath = path.join(srcSkillsPath, entry.name);
+    // 2. Selected domains from env (set by promptDomainSelection)
+    const selected = (process.env._AGI_CUSTOM_DOMAINS || "").split(",").filter(Boolean);
 
-        if (isSkillDir(entryPath)) {
-          // Direct skill directory (e.g., core/webcrawler/)
-          const dest = path.join(destSkillsPath, entry.name);
-          if (copyDirSync(entryPath, dest)) {
-            log.success(`Installed skill: ${entry.name}`);
-          }
-        } else {
-          // Category directory (e.g., knowledge/frontend/) — recurse one level
-          const categorySkills = fs
-            .readdirSync(entryPath, { withFileTypes: true })
-            .filter(
-              (d) =>
-                d.isDirectory() && isSkillDir(path.join(entryPath, d.name)),
-            );
+    if (selected.length === 0) {
+      log.warn("No domains selected — core only install.");
+      return;
+    }
 
-          for (const skill of categorySkills) {
-            const src = path.join(entryPath, skill.name);
-            const dest = path.join(destSkillsPath, skill.name);
-            if (copyDirSync(src, dest)) {
-              log.success(`Installed skill: ${skill.name} (${entry.name})`);
+    for (const domainId of selected) {
+      let total = 0;
+      // Install from knowledge/<domain> if it exists
+      const knPath = path.join(templatesPath, "skills", "knowledge", domainId);
+      if (fs.existsSync(knPath)) {
+        const n = installCategoryDir(knPath, domainId);
+        total += n;
+      }
+      // Install from extended/<domain> if it exists
+      const exPath = path.join(templatesPath, "skills", "extended", domainId);
+      if (fs.existsSync(exPath)) {
+        const n = installCategoryDir(exPath, domainId);
+        total += n;
+      }
+      const domainInfo = DOMAINS.find((d) => d.id === domainId);
+      const label = domainInfo ? domainInfo.label : domainId;
+      if (total > 0) {
+        log.success(`Domain ${colors.cyan}${label}${colors.reset}: ${total} skills installed`);
+      } else {
+        log.warn(`Domain ${label}: no skills found (check template paths)`);
+      }
+    }
+
+  } else {
+    // ── Standard pack: iterate skill groups ──
+    log.header(`Installing ${PACKS[pack].name} skills...`);
+    const skillGroups = PACKS[pack].skills;
+
+    for (const group of skillGroups) {
+      const srcSkillsPath = path.join(templatesPath, "skills", group);
+      if (fs.existsSync(srcSkillsPath)) {
+        const entries = fs.readdirSync(srcSkillsPath, { withFileTypes: true })
+          .filter((d) => d.isDirectory());
+
+        for (const entry of entries) {
+          const entryPath = path.join(srcSkillsPath, entry.name);
+          if (isSkillDir(entryPath)) {
+            const dest = path.join(destSkillsPath, entry.name);
+            if (copyDirSync(entryPath, dest)) {
+              log.success(`Installed skill: ${entry.name}`);
+            }
+          } else {
+            const categorySkills = fs.readdirSync(entryPath, { withFileTypes: true })
+              .filter((d) => d.isDirectory() && isSkillDir(path.join(entryPath, d.name)));
+            for (const skill of categorySkills) {
+              const src = path.join(entryPath, skill.name);
+              const dest = path.join(destSkillsPath, skill.name);
+              if (copyDirSync(src, dest)) {
+                log.success(`Installed skill: ${skill.name} (${entry.name})`);
+              }
             }
           }
         }
+      } else {
+        log.warn(`Skills directory not found: ${srcSkillsPath}`);
       }
-    } else {
-      log.warn(`Skills directory not found: ${srcSkillsPath}`);
     }
   }
 }
@@ -801,6 +1095,62 @@ function setupPythonEnv(targetPath) {
   log.info(`Activate with: ${colors.yellow}${activateCmd}${colors.reset}`);
 }
 
+// Ask user about platform orchestration features and apply them
+async function promptPlatformFeatures(targetPath) {
+  const features = { agentTeams: false };
+
+  console.log(`\n${colors.bright}━━━ Platform Orchestration Features ━━━${colors.reset}\n`);
+  console.log(`  ${colors.bright}Agent Teams${colors.reset} (Claude Code only)`);
+  console.log(`  Enables true parallel multi-agent execution — multiple specialist`);
+  console.log(`  agents (frontend, backend, security, etc.) work simultaneously`);
+  console.log(`  rather than one at a time. Best for complex, multi-domain tasks.\n`);
+  console.log(`  ${colors.yellow}Requires:${colors.reset} Claude Code with experimental features enabled.`);
+  console.log(`  ${colors.green}Recommended${colors.reset} if you plan to use @orchestrator or specialist agents.\n`);
+  console.log(`  ${colors.bright}1. Enable Agent Teams${colors.reset} — writes to .claude/settings.json (recommended)`);
+  console.log(`  ${colors.bright}2. Skip${colors.reset}          — you can enable it manually later\n`);
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+  return new Promise((resolve) => {
+    rl.question(`  Enable Agent Teams? (1/2, default: 1): `, (answer) => {
+      rl.close();
+      const choice = answer.trim();
+
+      if (choice === "2" || choice.toLowerCase() === "skip" || choice.toLowerCase() === "n") {
+        log.info("Agent Teams skipped. Enable later by editing .claude/settings.json.");
+        console.log(`  Add this to ${colors.cyan}.claude/settings.json${colors.reset}:`);
+        console.log(`    ${colors.yellow}{ "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" } }${colors.reset}\n`);
+        resolve(features);
+        return;
+      }
+
+      // Write .claude/settings.json
+      try {
+        const claudeDir = path.join(targetPath, ".claude");
+        fs.mkdirSync(claudeDir, { recursive: true });
+        const settingsPath = path.join(claudeDir, "settings.json");
+
+        // Merge with existing settings if present
+        let existing = {};
+        if (fs.existsSync(settingsPath)) {
+          try { existing = JSON.parse(fs.readFileSync(settingsPath, "utf8")); } catch (e) {}
+        }
+        existing.env = existing.env || {};
+        existing.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
+
+        fs.writeFileSync(settingsPath, JSON.stringify(existing, null, 2), "utf8");
+        features.agentTeams = true;
+        log.success(`Agent Teams enabled → ${colors.cyan}${settingsPath}${colors.reset}`);
+        console.log(`  Restart Claude Code in this directory to activate.\n`);
+      } catch (e) {
+        log.warn(`Could not write .claude/settings.json: ${e.message}`);
+      }
+
+      resolve(features);
+    });
+  });
+}
+
 // Auto-run platform setup wizard to pre-configure environment
 function runPlatformSetup(targetPath) {
   const setupScript = path.join(
@@ -860,7 +1210,7 @@ function verifyMemorySetup(targetPath) {
     console.log(
       `  You can verify later: ${colors.yellow}python3 execution/session_boot.py --auto-fix${colors.reset}`,
     );
-    return;
+    return false;
   }
 
   const isWindows = process.platform === "win32";
@@ -875,6 +1225,7 @@ function verifyMemorySetup(targetPath) {
       { stdio: "pipe", timeout: 60000, cwd: targetPath },
     ).toString().trim();
     console.log(`  ${output}`);
+    return true;
   } catch (e) {
     // session_boot exits non-zero when services aren't running — show its output
     const output = (e.stdout || e.stderr || "").toString().trim();
@@ -904,18 +1255,99 @@ function verifyMemorySetup(targetPath) {
     ${colors.yellow}python3 execution/session_boot.py --auto-fix${colors.reset}
     This will pull the embedding model and create the memory collections automatically.
 `);
+    return false;
   }
 }
 
 // Main init function
+// Detect an existing AGI Agent Kit install and ask the user what to do
+async function detectExistingInstall(targetPath) {
+  const agentsMd = path.join(targetPath, "AGENTS.md");
+  const versionFile = path.join(targetPath, ".agi-version");
+
+  if (!fs.existsSync(agentsMd)) {
+    return { action: "install" }; // Clean install
+  }
+
+  // Read installed version if available
+  let installedVersion = "unknown";
+  if (fs.existsSync(versionFile)) {
+    installedVersion = fs.readFileSync(versionFile, "utf8").trim();
+  } else {
+    // Fallback: try to grep it from AGENTS.md
+    const mdContent = fs.readFileSync(agentsMd, "utf8");
+    const match = mdContent.match(/agi-agent-kit[\s@v]+([\d.]+)/);
+    if (match) installedVersion = match[1];
+  }
+
+  // Current package version
+  let incomingVersion = "unknown";
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf8"));
+    incomingVersion = pkg.version || "unknown";
+  } catch (e) {}
+
+  console.log(`\n${colors.bright}━━━ Existing Installation Detected ━━━${colors.reset}\n`);
+  console.log(`  ${colors.yellow}AGI Agent Kit is already installed in this directory.${colors.reset}`);
+  console.log(`    Installed version : ${colors.cyan}${installedVersion}${colors.reset}`);
+  console.log(`    Incoming version  : ${colors.green}${incomingVersion}${colors.reset}\n`);
+
+  const isSameVersion = installedVersion === incomingVersion;
+  if (isSameVersion) {
+    console.log(`  ${colors.yellow}⚠ Same version detected.${colors.reset} Reinstalling will overwrite current files.\n`);
+  } else if (installedVersion !== "unknown" && incomingVersion !== "unknown") {
+    const [iMaj, iMin, iPatch] = installedVersion.split(".").map(Number);
+    const [nMaj, nMin, nPatch] = incomingVersion.split(".").map(Number);
+    const isDowngrade = nMaj < iMaj || (nMaj === iMaj && nMin < iMin) || (nMaj === iMaj && nMin === iMin && nPatch < iPatch);
+    if (isDowngrade) {
+      console.log(`  ${colors.red}⚠ WARNING: Incoming version is OLDER than installed.${colors.reset}`);
+      console.log(`  You are about to downgrade. This may break things.\n`);
+    }
+  }
+
+  console.log(`  What would you like to do?\n`);
+  console.log(`    ${colors.green}1. Update${colors.reset}   — refresh skills, directives & execution scripts`);
+  console.log(`              ${colors.cyan}Preserves${colors.reset} your .env, custom skills, and .agent/ folder`);
+  console.log(`    ${colors.yellow}2. Reinstall${colors.reset} — full overwrite of all files (${colors.red}destructive${colors.reset})`);
+  console.log(`              You will be offered a backup before anything is changed`);
+  console.log(`    ${colors.red}3. Cancel${colors.reset}   — abort, make no changes\n`);
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+  return new Promise((resolve) => {
+    rl.question(`  Your choice (1/2/3, default: 1): `, (answer) => {
+      rl.close();
+      const choice = answer.trim();
+
+      if (choice === "3" || choice.toLowerCase() === "cancel") {
+        log.info("Install cancelled.");
+        process.exit(0);
+      } else if (choice === "2" || choice.toLowerCase() === "reinstall") {
+        log.warn("Full reinstall selected — all existing files will be overwritten.");
+        resolve({ action: "reinstall", installedVersion, incomingVersion });
+      } else {
+        // Default: update
+        log.success(`Update selected — refreshing to v${incomingVersion}, preserving .env and custom files.`);
+        resolve({ action: "update", installedVersion, incomingVersion });
+      }
+    });
+  });
+}
+
 async function init(options) {
   log.header("🚀 AGI Agent Kit Initializer");
+
+  // Detect existing install FIRST — before any scope/pack prompts
+  const existingInstall = await detectExistingInstall(options.path);
+  const isUpdate = existingInstall.action === "update";
 
   // Ask install scope (project vs global) — skip if already set via CLI flag
   await promptInstallScope(options);
 
-  // Offer to back up any existing files before overwriting
-  await backupExistingFiles(options.path);
+  // Offer backup only for reinstall (update preserves files, and backup is implied)
+  if (!isUpdate) {
+    await backupExistingFiles(options.path, options);
+  }
 
   // Determine pack
   let pack = options.pack;
@@ -961,33 +1393,80 @@ async function init(options) {
   setupPythonEnv(options.path);
 
   // Ask user about local Qdrant + Ollama and write .env
-  const infraChoice = await promptLocalInfrastructure();
-  writeEnvFile(options.path, infraChoice);
+  // Skip on update (preserve existing .env settings)
+  let infraChoice = { useLocal: false, detected: {} };
+  if (!isUpdate) {
+    infraChoice = await promptLocalInfrastructure();
+    writeEnvFile(options.path, infraChoice);
+  } else {
+    // On update, read existing MEMORY_ENABLED from .env so hints stay accurate
+    const envPath = path.join(options.path, ".env");
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, "utf8");
+      const memMatch = envContent.match(/^MEMORY_ENABLED=(.+)$/m);
+      infraChoice.useLocal = memMatch && memMatch[1].trim() === "true";
+    }
+    log.info("Update mode: .env preserved, memory setting unchanged.");
+  }
 
   // If memory enabled, verify Qdrant + Ollama are up and configured
+  let memoryVerified = false;
   if (infraChoice.useLocal) {
-    verifyMemorySetup(options.path);
+    memoryVerified = verifyMemorySetup(options.path);
   }
+
+  // Ask about platform features (Agent Teams, MCP, etc.) BEFORE running setup wizard
+  const platformFeatures = await promptPlatformFeatures(options.path);
 
   // Auto-run platform setup wizard
   runPlatformSetup(options.path);
 
-  // Final message
-  log.header("✨ Installation complete!");
+  // For global installs: generate an uninstall script
+  if (options.global) {
+    generateUninstallScript(options.path, options);
+  }
 
-  const memoryHint = infraChoice.useLocal
-    ? `  3. ${colors.green}Memory is ENABLED${colors.reset}. Start local services then boot memory system:\n     ${colors.yellow}docker run -p 6333:6333 qdrant/qdrant${colors.reset}  (Qdrant)\n     ${colors.yellow}ollama serve${colors.reset}  (Ollama)\n     ${colors.yellow}python3 execution/session_boot.py --auto-fix${colors.reset}`
-    : `  3. ${colors.yellow}Memory is DISABLED${colors.reset}. To enable later, set ${colors.cyan}MEMORY_ENABLED=true${colors.reset} in ${colors.cyan}.env${colors.reset}.`;
+  // Write version stamp so future runs can detect the installed version
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf8"));
+    fs.writeFileSync(path.join(options.path, ".agi-version"), pkg.version || "unknown", "utf8");
+  } catch (e) { /* non-fatal */ }
+
+  // Final message
+  const actionLabel = isUpdate ? "🔄 Update complete!" : "✨ Installation complete!";
+  log.header(actionLabel);
+
+  let memoryHint;
+  if (!infraChoice.useLocal) {
+    memoryHint = `  3. ${colors.yellow}Memory is DISABLED${colors.reset}. To enable later, set ${colors.cyan}MEMORY_ENABLED=true${colors.reset} in ${colors.cyan}.env${colors.reset}.`;
+  } else if (memoryVerified) {
+    // Services were already up and verified during install
+    memoryHint = `  3. ${colors.green}✔ Memory is READY${colors.reset} — Qdrant + Ollama verified during setup.\n     Run at any time to check: ${colors.yellow}python3 execution/session_boot.py${colors.reset}`;
+  } else {
+    // User chose to enable but services weren't up yet
+    memoryHint = `  3. ${colors.bright}Start memory services${colors.reset} (open a ${colors.red}NEW terminal tab${colors.reset} for Ollama):\n\n     ${colors.yellow}# Terminal tab 1 — leave this running:${colors.reset}\n     ${colors.yellow}ollama serve${colors.reset}\n\n     ${colors.yellow}# Terminal tab 2 — run once:${colors.reset}\n     ${colors.yellow}docker run -d -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant${colors.reset}\n     ${colors.yellow}python3 execution/session_boot.py --auto-fix${colors.reset}`;
+  }
 
   console.log(`
-Next steps:
-  1. Activate the Python environment:
+${colors.bright}Summary of what was configured:${colors.reset}
+  ${colors.green}✔${colors.reset} Python environment (.venv)
+  ${colors.green}✔${colors.reset} Skills installed (${pack} pack)
+  ${colors.green}✔${colors.reset} AGENTS.md + platform symlinks
+  ${infraChoice.useLocal ? colors.green + "✔" + colors.reset : colors.yellow + "−" + colors.reset} Memory (Qdrant + Ollama): ${infraChoice.useLocal ? colors.green + "enabled" + colors.reset : colors.yellow + "disabled" + colors.reset}
+  ${platformFeatures.agentTeams ? colors.green + "✔" + colors.reset : colors.yellow + "−" + colors.reset} Agent Teams (parallel execution): ${platformFeatures.agentTeams ? colors.green + "enabled" + colors.reset : colors.yellow + "skipped" + colors.reset}
+  ${colors.dim}− MCP Servers: not configured (project-specific, add later)${colors.reset}
+
+${colors.bright}Next steps:${colors.reset}
+  1. Activate Python environment:
      ${colors.yellow}source .venv/bin/activate${colors.reset}
   2. Review ${colors.cyan}AGENTS.md${colors.reset} for architecture overview
-${memoryHint}
-  4. Check ${colors.cyan}skills/${colors.reset} for available capabilities
-  5. Extend ${colors.cyan}.env${colors.reset} with any additional API keys
-  
+${memoryHint}${platformFeatures.agentTeams ? "" : `
+  ▸ To enable Agent Teams later:\n    ${colors.yellow}echo '${JSON.stringify({ env: { CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1" } }, null, 2)}' > .claude/settings.json${colors.reset}`}
+  ▸ To add MCP servers: edit ${colors.cyan}.claude/settings.json${colors.reset} → ${colors.cyan}mcpServers${colors.reset} section
+  ▸ To install Claude plugins (pyright-lsp etc): type inside Claude Code:
+    ${colors.yellow}/plugin install pyright-lsp@claude-plugins-official${colors.reset}
+  ▸ Check ${colors.cyan}skills/${colors.reset} for available capabilities
+
 Happy coding! 🎉
 `);
 }

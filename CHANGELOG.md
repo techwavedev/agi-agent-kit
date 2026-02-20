@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-02-20
+
+### Added
+
+- **Smart Init Wizard** — Complete overhaul of `npx init` with a guided, step-by-step setup experience:
+  - **Existing install detection** — Reads `.agi-version` stamp; offers `Update` (preserve `.env`), `Reinstall` (full overwrite), or `Cancel`. Shows installed vs incoming version with downgrade warning.
+  - **Install scope prompt** — Choose between project-local (current dir) or global (`~/.agent` + platform symlinks) with a compatibility table and pitfalls disclaimer.
+  - **Smart backup** — Scans files that would be overwritten before touching anything. For global installs, also detects real platform dirs that would be replaced by symlinks. Saves timestamped backup.
+  - **Custom domain pack selection** — New `4. custom` option shows all 15 skill domains with ■ professional and ■ community skill counts, supports comma/range multi-select (`1,3,7-9`, `all`).
+  - **Service-aware memory setup** — Detects Ollama, Docker, and Qdrant before asking. If a service is missing, asks whether it's not installed yet (shows install link) or running on a custom URL (prompts for URL + API key, verifies connectivity).
+  - **Agent Teams prompt** — Explicit opt-in to `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` with explanation and safe merge into `.claude/settings.json`.
+  - **Uninstall script** — Global installs generate `~/.agent/uninstall-agi.sh`, a ready-to-run script that removes all symlinks and the install directory.
+  - **Version stamp** — Writes `.agi-version` after every install/update.
+  - **Configurable final summary** — Shows exactly what was configured (memory, Agent Teams, MCP) and what manual steps remain (plugins, MCP servers).
+
+### Changed
+
+- **`verifyMemorySetup()`** — Now returns `true`/`false` so the final message correctly shows "Memory is READY" vs "start services" only when relevant.
+- **`writeEnvFile()`** — Now writes the actual Qdrant URL, Ollama URL, and API key entered during setup instead of always defaulting to localhost.
+- **`copySkills()`** — Refactored to share a helper. Custom pack installs core first then resolves each selected domain from both `knowledge/` and `extended/` tiers.
+- **Platform setup** (`runPlatformSetup`) — Now runs _after_ the new `promptPlatformFeatures` step so user intent is captured before platform scripts apply settings.
+
+### Fixed
+
+- **Next steps message** — No longer suggests starting services when they were already verified during install.
+- **`memoryVerified` bug** — Was referenced but never assigned; `verifyMemorySetup()` return value is now captured.
+
 ## [1.4.2]
 
 - **Fixed README links** — ./skills/SKILLS_CATALOG.md updated to ./templates/skills/SKILLS_CATALOG.md (closes #15)

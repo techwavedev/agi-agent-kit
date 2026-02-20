@@ -47,27 +47,29 @@ npx @techwavedev/agi-agent-kit init
 npx @techwavedev/agi-agent-kit init --global
 ```
 
-You'll be prompted to choose a pack:
+You'll be guided through an interactive wizard:
 
-- **core** — 4 essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)
-- **medium** — Core + 89 specialized skills in 16 categories + `.agent/` structure (API, Security, Design, Architecture)
-- **full** — Complete suite: Medium + 785 community skills from [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills) (878 total)
+1. **Existing install check** — detects a prior install and offers Update / Reinstall / Cancel
+2. **Install scope** — project-local (current dir) or global (`~/.agent` shared across projects)
+3. **Smart backup** — scans files at risk and creates a timestamped backup before touching anything
+4. **Pack selection** — choose skills to install:
+   - **core** — 4 essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)
+   - **medium** — Core + 89 professional skills in 16 categories + `.agent/` structure
+   - **full** — Everything: Medium + 785 community skills (878 total)
+   - **custom** — Core + you pick specific domains (AI Agents, DevOps, Security, Frontend, etc.)
+5. **Memory setup** — detects Ollama/Docker/Qdrant; if missing, asks whether to install locally or use a custom URL (supports Qdrant Cloud, remote servers)
+6. **Agent Teams** — opt-in to parallel multi-agent execution (writes `.claude/settings.json`)
+7. **Summary** — shows exactly what was configured vs what needs manual action
 
-After installation, run the **one-shot setup wizard** to auto-configure your environment:
+After installation the wizard shows your next steps, including:
 
 ```bash
+# Boot the memory system (verifies Qdrant + Ollama, auto-fixes issues)
+python3 execution/session_boot.py --auto-fix
+
+# Run the platform setup wizard (auto-configures your AI platform)
 python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
 ```
-
-This detects your platform, scans the project stack, and configures everything with a single confirmation.
-
-Then **boot the memory system** for automatic token savings:
-
-```bash
-python3 execution/session_boot.py --auto-fix
-```
-
-This checks Qdrant, Ollama, embedding models, and collections — auto-fixing any issues.
 
 ---
 
