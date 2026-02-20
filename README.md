@@ -42,6 +42,9 @@ Scaffold a new agent workspace in seconds:
 
 ```bash
 npx @techwavedev/agi-agent-kit init
+
+# Or install globally to ~/.agent to share skills across projects
+npx @techwavedev/agi-agent-kit init --global
 ```
 
 You'll be prompted to choose a pack:
@@ -341,6 +344,8 @@ If you need to reinstall or update dependencies:
 
 ```bash
 npx @techwavedev/agi-agent-kit init --pack=full
+# To install globally instead of per-project:
+npx @techwavedev/agi-agent-kit init --pack=full --global
 ```
 
 ### Auto-detect platform and configure environment
