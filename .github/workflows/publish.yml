@@ -59,8 +59,14 @@ jobs:
       - name: Smoke test — init with local memory enabled (default)
         run: |
           mkdir -p /tmp/agi-test-enabled
-          # Pipe "1\n" to select pack=core, then "1\n" to confirm Qdrant+Ollama
-          printf '1\n1\n' | node bin/init.js init --path=/tmp/agi-test-enabled --no-symlinks
+          # Wizard prompts in order (new install, no existing-install prompt):
+          #   1. Install scope         → "" (default: project)
+          #   2. Pack selection        → "1" (core)
+          #   3. Enable memory?        → "1" (yes)
+          #   4. Ollama not found?     → "" (default: install locally, skip URL prompt)
+          #   5. Qdrant not found?     → "" (default: run via Docker, skip URL prompt)
+          #   6. Agent Teams?          → "2" (skip — no Claude Code in CI)
+          printf '\n1\n1\n\n\n2\n' | node bin/init.js init --path=/tmp/agi-test-enabled --no-symlinks
           # Verify MEMORY_ENABLED=true was written
           grep "MEMORY_ENABLED=true" /tmp/agi-test-enabled/.env \
             && echo "✅ MEMORY_ENABLED=true confirmed in .env" \
@@ -69,8 +75,12 @@ jobs:
       - name: Smoke test — init with local memory skipped
         run: |
           mkdir -p /tmp/agi-test-disabled
-          # Pipe "1\n" to select pack=core, then "2\n" to skip Qdrant+Ollama
-          printf '1\n2\n' | node bin/init.js init --path=/tmp/agi-test-disabled --no-symlinks
+          # Wizard prompts:
+          #   1. Install scope  → "" (project)
+          #   2. Pack           → "1" (core)
+          #   3. Memory?        → "2" (skip)
+          #   4. Agent Teams?   → "2" (skip)
+          printf '\n1\n2\n2\n' | node bin/init.js init --path=/tmp/agi-test-disabled --no-symlinks
           # Verify MEMORY_ENABLED=false was written
           grep "MEMORY_ENABLED=false" /tmp/agi-test-disabled/.env \
             && echo "✅ MEMORY_ENABLED=false confirmed in .env" \
@@ -79,7 +89,11 @@ jobs:
       - name: Smoke test — global install flag
         run: |
           mkdir -p /tmp/agi-test-global
-          printf '1\n1\n' | node bin/init.js init --path=/tmp/agi-test-global --global --no-symlinks || true
+          # Scope prompt skipped (--global sets it). Remaining prompts:
+          #   1. Pack      → "1" (core)
+          #   2. Memory?   → "2" (skip — no Qdrant/Ollama in CI)
+          #   3. Teams?    → "2" (skip)
+          printf '1\n2\n2\n' | node bin/init.js init --path=/tmp/agi-test-global --global --no-symlinks || true
           echo "✅ Global flag smoke test complete (non-zero exit acceptable if global path not writable in CI)"
 
   publish:
