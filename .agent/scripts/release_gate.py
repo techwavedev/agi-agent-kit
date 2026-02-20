@@ -72,7 +72,7 @@ def scan_secrets():
     # Scan python, js, md files
     for ext in ["py", "js", "md", "json"]:
         for path in ROOT_DIR.rglob(f"*.{ext}"):
-            if "node_modules" in str(path) or ".git" in str(path):
+            if "node_modules" in str(path) or ".git" in str(path) or ".venv" in str(path) or ".idea" in str(path):
                 continue
             try:
                 content = path.read_text(errors="ignore")
