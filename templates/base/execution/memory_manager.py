@@ -42,18 +42,17 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError
 
 # Resolve path to qdrant-memory scripts
-# Resolve path to qdrant-memory scripts
-# Adaptive path: try project root first (2 levels up), then repo template structure (3 levels up)
+# Adaptive path: try project root first, then core subfolder, then repo template structure
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
-skills_path_project = os.path.join(project_root, "skills", "core", "qdrant-memory", "scripts")
-
-if os.path.exists(skills_path_project):
-    SKILL_SCRIPTS_DIR = skills_path_project
-else:
-    # Fallback to repo template structure (templates/base/execution -> templates/skills)
-    repo_root = os.path.dirname(project_root)
-    SKILL_SCRIPTS_DIR = os.path.join(repo_root, "skills", "core", "qdrant-memory", "scripts")
+# Try paths in order of likelihood
+_candidates = [
+    os.path.join(project_root, "skills", "qdrant-memory", "scripts"),
+    os.path.join(project_root, "skills", "core", "qdrant-memory", "scripts"),
+    os.path.join(os.path.dirname(project_root), "skills", "qdrant-memory", "scripts"),
+    os.path.join(os.path.dirname(project_root), "skills", "core", "qdrant-memory", "scripts"),
+]
+SKILL_SCRIPTS_DIR = next((p for p in _candidates if os.path.exists(p)), _candidates[0])
 
 sys.path.insert(0, SKILL_SCRIPTS_DIR)
 
