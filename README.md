@@ -24,7 +24,7 @@ Most AI coding setups give you a prompt and hope for the best. AGI Agent Kit giv
 
 - 🧠 **Hybrid Memory** — Qdrant vectors + BM25 keywords: semantic similarity for concepts, exact matching for error codes and IDs (90-100% token savings)
 - 🎯 **19 Specialist Agents** — Domain-bounded experts (Frontend, Backend, Security, Mobile, Game Dev...) with enforced file ownership
-- ⚡ **853 Curated Skills** — 4 core + 75 professional + 774 community skills across 16 domain categories
+- ⚡ **886 Curated Skills** — 4 core + 89 professional + 793 community skills across 16 domain categories
 - 🔒 **Verification Gates** — No task completes without evidence. TDD enforcement. Two-stage code review.
 - 🌐 **9 Platforms, One Config** — Write once, run on Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE, OpenClaw
 
@@ -47,8 +47,8 @@ npx @techwavedev/agi-agent-kit init
 You'll be prompted to choose a pack:
 
 - **core** — 4 essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)
-- **medium** — Core + 75 specialized skills in 16 categories + `.agent/` structure (API, Security, Design, Architecture)
-- **full** — Complete suite: Medium + 774 community skills from [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills) (853 total)
+- **medium** — Core + 89 specialized skills in 16 categories + `.agent/` structure (API, Security, Design, Architecture)
+- **full** — Complete suite: Medium + 793 community skills from [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills) (886 total)
 
 After installation, run the **one-shot setup wizard** to auto-configure your environment:
 
@@ -73,7 +73,7 @@ This checks Qdrant, Ollama, embedding models, and collections — auto-fixing an
 | Feature                       | Description                                                                                   |
 | ----------------------------- | --------------------------------------------------------------------------------------------- |
 | **Deterministic Execution**   | Separates business logic (Python scripts) from AI reasoning (Directives)                      |
-| **Modular Skill System**      | 853 plug-and-play skills across 3 tiers, organized in 16 domain categories                    |
+| **Modular Skill System**      | 886 plug-and-play skills across 3 tiers, organized in 16 domain categories                    |
 | **Structured Plan Execution** | Batch or subagent-driven execution with two-stage review (spec + quality)                     |
 | **TDD Enforcement**           | Iron-law RED-GREEN-REFACTOR cycle — no production code without failing test                   |
 | **Verification Gates**        | Evidence before claims — no completion without fresh verification output                      |
@@ -96,15 +96,15 @@ The agi framework adopts all best patterns from [obra/superpowers](https://githu
 | Systematic Debugging         |        ✅        | ✅ Adapted + `debugger` agent  |
 | Verification Gates           |        ✅        | ✅ Adapted + 12 audit scripts  |
 | Two-Stage Code Review        |        ✅        |  ✅ Adapted into orchestrator  |
-| Multi-Platform Orchestration |  ❌ Claude only  |         ✅ 4 platforms         |
+| Multi-Platform Orchestration |  ❌ Claude only  |         ✅ 9 platforms         |
 | Semantic Memory (Qdrant)     |        ❌        |    ✅ 90-100% token savings    |
 | 19 Specialist Agents         |        ❌        |      ✅ Domain boundaries      |
 | Agent Boundary Enforcement   |        ❌        |     ✅ File-type ownership     |
 | Dynamic Question Generation  |        ❌        |   ✅ Trade-offs + priorities   |
 | Memory-First Protocol        |        ❌        |       ✅ Auto cache-hit        |
-| Skill Creator + Catalog      |        ❌        |    ✅ 853 composable skills    |
+| Skill Creator + Catalog      |        ❌        |    ✅ 886 composable skills    |
 | Platform Setup Wizard        |        ❌        |       ✅ One-shot config       |
-| Multi-Platform Symlinks      |  ❌ Claude only  |         ✅ 8 platforms         |
+| Multi-Platform Symlinks      |  ❌ Claude only  |         ✅ 9 platforms         |
 
 ---
 
@@ -220,10 +220,10 @@ your-project/
 ├── CLAUDE.md → AGENTS.md
 ├── OPENCODE.md → AGENTS.md
 ├── COPILOT.md → AGENTS.md
-├── skills/                # Up to 853 skills (depends on pack)
+├── skills/                # Up to 886 skills (depends on pack)
 │   ├── webcrawler/        # Documentation harvesting
 │   ├── qdrant-memory/     # Semantic caching & memory
-│   └── ...                # 852 more skills in full pack
+│   └── ...                # 885 more skills in full pack
 ├── .claude/skills → skills/   # Platform-specific symlinks
 ├── .gemini/skills → skills/
 ├── .codex/skills → skills/
@@ -408,43 +408,54 @@ Use these keywords, commands, and phrases to trigger specific capabilities:
 
 ### Agent Mentions (`@agent`)
 
-| Mention                | Specialist              | When To Use                               |
-| ---------------------- | ----------------------- | ----------------------------------------- |
-| `@orchestrator`        | Multi-agent coordinator | Complex multi-domain tasks                |
-| `@project-planner`     | Planning specialist     | Roadmaps, task breakdowns, phase planning |
-| `@frontend-specialist` | UI/UX architect         | Web interfaces, React, Next.js            |
-| `@mobile-developer`    | Mobile specialist       | iOS, Android, React Native, Flutter       |
-| `@backend-specialist`  | API/DB engineer         | Server-side, databases, APIs              |
-| `@security-auditor`    | Security expert         | Vulnerability scanning, audits, hardening |
-| `@debugger`            | Debug specialist        | Complex bug investigation                 |
-| `@game-developer`      | Game dev specialist     | 2D/3D games, multiplayer, VR/AR           |
+| Mention                   | Specialist              | When To Use                                |
+| ------------------------- | ----------------------- | ------------------------------------------ |
+| `@orchestrator`           | Multi-agent coordinator | Complex multi-domain tasks                 |
+| `@project-planner`        | Planning specialist     | Roadmaps, task breakdowns, phase planning  |
+| `@frontend-specialist`    | UI/UX architect         | Web interfaces, React, Next.js             |
+| `@backend-specialist`     | API/DB engineer         | Server-side, databases, APIs               |
+| `@mobile-developer`       | Mobile specialist       | iOS, Android, React Native, Flutter        |
+| `@security-auditor`       | Security expert         | Vulnerability scanning, audits, hardening  |
+| `@debugger`               | Debug specialist        | Complex bug investigation                  |
+| `@game-developer`         | Game dev specialist     | 2D/3D games, multiplayer, VR/AR            |
+| `@devops-engineer`        | DevOps specialist       | CI/CD, containers, cloud infrastructure    |
+| `@database-architect`     | Database specialist     | Schema design, migrations, optimization    |
+| `@documentation-writer`   | Docs specialist         | Technical writing, API docs, READMEs       |
+| `@test-engineer`          | Testing specialist      | Test strategy, automation, coverage        |
+| `@qa-automation-engineer` | QA specialist           | E2E testing, regression, quality gates     |
+| `@performance-optimizer`  | Performance specialist  | Profiling, bottlenecks, optimization       |
+| `@seo-specialist`         | SEO specialist          | Search optimization, meta tags, rankings   |
+| `@penetration-tester`     | Pen testing specialist  | Red team exercises, exploit verification   |
+| `@product-manager`        | Product specialist      | Requirements, user stories, prioritization |
+| `@code-archaeologist`     | Legacy code specialist  | Understanding old codebases, migrations    |
+| `@explorer-agent`         | Discovery specialist    | Codebase exploration, dependency mapping   |
 
 ### Skill Trigger Keywords (Natural Language)
 
-| Category           | Trigger Words / Phrases                                                | Skill Activated                     |
-| ------------------ | ---------------------------------------------------------------------- | ----------------------------------- |
-| **Memory**         | "don't use cache", "no cache", "skip memory", "fresh"                  | Memory opt-out                      |
-| **Research**       | "research my docs", "check my notebooks", "deep search", "@notebooklm" | `notebooklm-rag`                    |
-| **Documentation**  | "update docs", "regenerate catalog", "sync documentation"              | `documentation`                     |
-| **Quality**        | "lint", "format", "check", "validate", "static analysis"               | `lint-and-validate`                 |
-| **Testing**        | "write tests", "run tests", "TDD", "test coverage"                     | `testing-patterns` / `tdd-workflow` |
-| **TDD**            | "test first", "red green refactor", "failing test"                     | `test-driven-development`           |
-| **Plan Execution** | "execute plan", "run the plan", "batch execution"                      | `executing-plans`                   |
-| **Verification**   | "verify", "prove it works", "evidence", "show me the output"           | `verification-before-completion`    |
-| **Debugging**      | "debug", "root cause", "investigate", "why is this failing"            | `systematic-debugging`              |
-| **Architecture**   | "design system", "architecture decision", "ADR", "trade-off"           | `architecture`                      |
-| **Security**       | "security scan", "vulnerability", "audit", "OWASP"                     | `red-team-tactics`                  |
-| **Performance**    | "lighthouse", "bundle size", "core web vitals", "profiling"            | `performance-profiling`             |
-| **Design**         | "design UI", "color scheme", "typography", "layout"                    | `frontend-design`                   |
-| **Deployment**     | "deploy", "rollback", "release", "CI/CD"                               | `deployment-procedures`             |
-| **API**            | "REST API", "GraphQL", "tRPC", "API design"                            | `api-patterns`                      |
-| **Database**       | "schema design", "migration", "query optimization"                     | `database-design`                   |
-| **Planning**       | "plan this", "break down", "task list", "requirements"                 | `plan-writing`                      |
-| **Brainstorming**  | "explore options", "what are the approaches", "pros and cons"          | `brainstorming`                     |
-| **Code Review**    | "review this", "code quality", "best practices"                        | `code-review-checklist`             |
-| **i18n**           | "translate", "localization", "RTL", "locale"                           | `i18n-localization`                 |
-| **AWS**            | "terraform", "EKS", "Lambda", "S3", "CloudFront"                       | `aws` / `aws-terraform`             |
-| **Infrastructure** | "Consul", "service mesh", "OpenSearch"                                 | `consul` / `opensearch`             |
+| Category           | Trigger Words / Phrases                                                | Skill Activated                       |
+| ------------------ | ---------------------------------------------------------------------- | ------------------------------------- |
+| **Memory**         | "don't use cache", "no cache", "skip memory", "fresh"                  | Memory opt-out                        |
+| **Research**       | "research my docs", "check my notebooks", "deep search", "@notebooklm" | `notebooklm-rag`                      |
+| **Documentation**  | "update docs", "regenerate catalog", "sync documentation"              | `documentation`                       |
+| **Quality**        | "lint", "format", "check", "validate", "static analysis"               | `lint-and-validate`                   |
+| **Testing**        | "write tests", "run tests", "TDD", "test coverage"                     | `testing-patterns` / `tdd-workflow`   |
+| **TDD**            | "test first", "red green refactor", "failing test"                     | `test-driven-development`             |
+| **Plan Execution** | "execute plan", "run the plan", "batch execution"                      | `executing-plans`                     |
+| **Verification**   | "verify", "prove it works", "evidence", "show me the output"           | `verification-before-completion`      |
+| **Debugging**      | "debug", "root cause", "investigate", "why is this failing"            | `systematic-debugging`                |
+| **Architecture**   | "design system", "architecture decision", "ADR", "trade-off"           | `architecture`                        |
+| **Security**       | "security scan", "vulnerability", "audit", "OWASP"                     | `red-team-tactics`                    |
+| **Performance**    | "lighthouse", "bundle size", "core web vitals", "profiling"            | `performance-profiling`               |
+| **Design**         | "design UI", "color scheme", "typography", "layout"                    | `frontend-design`                     |
+| **Deployment**     | "deploy", "rollback", "release", "CI/CD"                               | `deployment-procedures`               |
+| **API**            | "REST API", "GraphQL", "tRPC", "API design"                            | `api-patterns`                        |
+| **Database**       | "schema design", "migration", "query optimization"                     | `database-design`                     |
+| **Planning**       | "plan this", "break down", "task list", "requirements"                 | `plan-writing`                        |
+| **Brainstorming**  | "explore options", "what are the approaches", "pros and cons"          | `brainstorming`                       |
+| **Code Review**    | "review this", "code quality", "best practices"                        | `code-review-checklist`               |
+| **i18n**           | "translate", "localization", "RTL", "locale"                           | `i18n-localization`                   |
+| **AWS**            | "terraform", "EKS", "Lambda", "S3", "CloudFront"                       | `aws-skills` / `terraform-skill`      |
+| **Infrastructure** | "service mesh", "Kubernetes", "Helm"                                   | `docker-expert` / `server-management` |
 
 ### Memory System Commands
 
