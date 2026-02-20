@@ -10,7 +10,7 @@
  * Packs:
  *   core   - Base framework + common skills (webcrawler, pdf-reader, qdrant-memory)
  *   medium - Core + 89 specialized skills + .agent structure
- *   full   - Medium + 793 community skills (complete suite)
+ *   full   - Medium + 785 community skills (complete suite)
  *
  * Options:
  *   --path=<dir>    Target directory (default: current)
@@ -61,7 +61,7 @@ const PACKS = {
   full: {
     name: "Full Suite",
     description:
-      "Complete suite (Medium + 793 community skills from antigravity-awesome-skills v5.4.0)",
+      "Complete suite (Medium + 785 community skills from antigravity-awesome-skills v5.4.0)",
     skills: ["core", "knowledge", "extended"],
     includeAgent: true,
   },
@@ -116,7 +116,7 @@ ${colors.bright}Packs:${colors.reset}
   ${colors.blue}medium${colors.reset}    Core + 89 specialized skills + .agent/ structure
            (API, Security, Design, AI, Architecture, Testing...)
   
-  ${colors.yellow}full${colors.reset}      Complete suite (Medium + 793 community skills)
+  ${colors.yellow}full${colors.reset}      Complete suite (Medium + 785 community skills)
            (All antigravity-awesome-skills, AGI-adapted)
 
 ${colors.bright}Examples:${colors.reset}
@@ -146,7 +146,7 @@ async function promptPackSelection() {
       `  2. ${colors.blue}medium${colors.reset}    Core + 89 specialized skills + .agent/ structure`,
     );
     console.log(
-      `  3. ${colors.yellow}full${colors.reset}      Complete suite (Medium + 793 community skills from antigravity-awesome-skills)\n`,
+      `  3. ${colors.yellow}full${colors.reset}      Complete suite (Medium + 785 community skills from antigravity-awesome-skills)\n`,
     );
 
     rl.question(

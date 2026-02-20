@@ -411,6 +411,65 @@ For frequently-used processes, create workflows in `.agent/workflows/`:
 
 ---
 
+## Playbook Engine (Multi-Skill Sequences)
+
+For complex, multi-step tasks, use **playbooks** — pre-defined sequences of skills that guide you through a complete workflow with progress tracking.
+
+### How It Works
+
+Playbooks are defined in `data/workflows.json`. Each playbook is a sequence of steps, and each step recommends specific skills to use. The Workflow Engine (`execution/workflow_engine.py`) manages state, tracks progress, and tells you which skills to activate at each step.
+
+### Quick Start
+
+```bash
+# 1. See available playbooks
+python3 execution/workflow_engine.py list
+
+# 2. Start a playbook
+python3 execution/workflow_engine.py start ship-saas-mvp
+
+# 3. The engine shows Step 1 with recommended skills — execute them
+
+# 4. When step is done, mark it complete and get next step
+python3 execution/workflow_engine.py complete --notes "Planned scope with brainstorming skill"
+
+# 5. Check overall progress at any time
+python3 execution/workflow_engine.py status
+```
+
+### Agent Protocol for Playbooks
+
+When a user says `/playbook`, "run a playbook", or asks for a multi-step workflow:
+
+1. **List playbooks**: `python3 execution/workflow_engine.py list`
+2. **Ask the user** which playbook to run (or auto-select if the intent is clear)
+3. **Start it**: `python3 execution/workflow_engine.py start <id>`
+4. **For each step**:
+   a. Read the step's `goal` and `recommendedSkills` from the engine output
+   b. Read the relevant `SKILL.md` files for the recommended skills
+   c. Execute the step using those skills' instructions
+   d. Mark complete: `python3 execution/workflow_engine.py complete --notes "what was done"`
+5. **If a step is not applicable**, skip it: `python3 execution/workflow_engine.py skip --reason "why"`
+6. **If the user wants to stop**, abort: `python3 execution/workflow_engine.py abort`
+
+### Commands Reference
+
+| Command    | Description                             | When to Use                  |
+| ---------- | --------------------------------------- | ---------------------------- |
+| `list`     | Show all available playbooks            | User asks "what playbooks?"  |
+| `start`    | Begin a playbook, get Step 1            | User selects a playbook      |
+| `next`     | Show current step details               | Need to re-read current step |
+| `status`   | Show progress bar and step statuses     | User asks "where are we?"    |
+| `complete` | Mark current step done, advance to next | Step work is finished        |
+| `skip`     | Skip current step with reason           | Step not applicable          |
+| `abort`    | Cancel the active playbook              | User wants to stop           |
+
+> **State persistence:** Progress is saved in `.tmp/playbook_state.json`. If a session ends mid-playbook, the next session can resume with `python3 execution/workflow_engine.py next`.
+
+> **Skill availability:** The engine checks which recommended skills are actually installed and flags missing ones with ⚠️ so you can adapt.
+
+---
+
 ## Best Practices for Execution Scripts
 
 ### Script Template

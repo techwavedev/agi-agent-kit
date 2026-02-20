@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.2] - 2026-02-20
+
+### Added
+
+- **Workflow Engine** — `execution/workflow_engine.py` — executes multi-skill playbooks from `data/workflows.json` with state persistence, progress tracking, and branching logic (closes #13)
+- **Playbook Protocol in AGENTS.md** — Agents now know how to discover, start, and step through playbooks via the `/playbook` command
+- **4 Missing Slash Commands** — Created `setup.md`, `setup-memory.md`, `update.md`, `checkup.md` workflow files (closes #8)
+- **All 19 Agent Personas Documented** — README now lists all 19 agents instead of only 8 (closes #9)
+
+### Fixed
+
+- **README Skill Counts** — 853→878 (was stale since v1.3.7); breakdown: 4 core + 89 knowledge + 785 extended (closes #6)
+- **README Platform Counts** — Fixed inconsistencies (4/8/9) to consistent 9 platforms everywhere (closes #10)
+- **README Trigger Keywords** — Fixed ghost skill names (`aws`→`aws-skills`, `aws-terraform`→`terraform-skill`, removed `consul`/`opensearch` EC-scoped refs) (closes #11)
+- **10 Skills Missing AGI Framework Integration** — Added `🧠 AGI Framework Integration` section to 10 knowledge skills that lacked it (closes #7)
+- **init.js Skill Counts** — Updated 793→785 to match actual after removals
+- **SKILLS_CATALOG.md Header** — Updated 886→878 to match actual
+
+### Removed
+
+- **8 Duplicate Skills** — Finally removed 8 skills that v1.3.7 CHANGELOG claimed were removed but still existed (closes #12):
+  - `pptx-official`, `docx-official` (duplicates of `pptx`, `docx`)
+  - `brand-guidelines-community`, `brand-guidelines-anthropic` (merged into `brand-guidelines`)
+  - `internal-comms-community`, `internal-comms-anthropic` (merged into `internal-comms`)
+  - `mcp-builder-ms`, `skill-creator-ms` (merged into `mcp-builder`, `skill-creator`)
+- **Skill Count** — 886→878 (net -8 duplicates)
+
 ## [1.4.1] - 2026-02-20
 
 ### Added
