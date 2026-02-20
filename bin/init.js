@@ -22,6 +22,7 @@ const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
 const { execSync } = require("child_process");
+const os = require("os");
 
 // Color utilities for terminal output
 const colors = {
@@ -76,6 +77,7 @@ function parseArgs() {
     path: process.cwd(),
     symlinks: true,
     help: false,
+    global: false,
   };
 
   for (const arg of args) {
@@ -85,6 +87,9 @@ function parseArgs() {
       options.pack = arg.split("=")[1];
     } else if (arg.startsWith("--path=")) {
       options.path = path.resolve(arg.split("=")[1]);
+    } else if (arg === "--global" || arg === "-g") {
+      options.global = true;
+      options.path = path.join(os.homedir() || process.env.HOME || process.env.USERPROFILE || "", ".agent");
     } else if (arg === "--no-symlinks") {
       options.symlinks = false;
     } else if (arg === "--help" || arg === "-h") {
@@ -106,6 +111,7 @@ ${colors.bright}Usage:${colors.reset}
 ${colors.bright}Options:${colors.reset}
   --pack=<pack>    Select skill pack (core, medium, full)
   --path=<dir>     Target directory (default: current)
+  --global, -g     Install globally to ~/.agent directory
   --no-symlinks    Skip GEMINI.md/CLAUDE.md symlink creation
   --help           Show this help message
 
@@ -439,7 +445,7 @@ function copyBaseFiles(targetPath, templatesPath, options) {
 }
 
 // Create symlinks for multi-platform support
-function createSymlinks(targetPath) {
+function createSymlinks(targetPath, options = {}) {
   log.header("Creating symlinks...");
 
   const agentsMd = path.join(targetPath, "AGENTS.md");
@@ -479,19 +485,21 @@ function createSymlinks(targetPath) {
     return;
   }
 
+  const homeDir = os.homedir() || process.env.HOME || process.env.USERPROFILE || "";
+
   const platformDirs = [
-    { platform: ".claude/skills", platformName: "Claude Code" },
-    { platform: ".gemini/skills", platformName: "Gemini CLI" },
-    { platform: ".codex/skills", platformName: "Codex CLI" },
-    { platform: ".cursor/skills", platformName: "Cursor" },
-    { platform: ".adal/skills", platformName: "AdaL CLI" },
-    { platform: ".openclaw/skills", platformName: "OpenClaw" },
+    { platform: ".claude/skills", platformName: "Claude Code", globalPath: path.join(homeDir, ".claude", "skills") },
+    { platform: ".gemini/skills", platformName: "Gemini CLI", globalPath: path.join(homeDir, ".gemini", "skills") },
+    { platform: ".codex/skills", platformName: "Codex CLI", globalPath: path.join(process.env.CODEX_HOME || homeDir, ".codex", "skills") },
+    { platform: ".cursor/skills", platformName: "Cursor", globalPath: path.join(homeDir, ".cursor", "skills") },
+    { platform: ".adal/skills", platformName: "AdaL CLI", globalPath: path.join(homeDir, ".adal", "skills") },
+    { platform: ".openclaw/skills", platformName: "OpenClaw", globalPath: path.join(homeDir, ".openclaw", "skills") },
   ];
 
-  for (const { platform, platformName } of platformDirs) {
-    const parts = platform.split("/");
-    const parentDir = path.join(targetPath, parts[0]);
-    const linkPath = path.join(targetPath, platform);
+  for (const info of platformDirs) {
+    const { platform, platformName, globalPath } = info;
+    const linkPath = options.global ? globalPath : path.join(targetPath, platform);
+    const parentDir = path.dirname(linkPath);
 
     try {
       // Create parent directory (e.g., .claude/)
@@ -704,7 +712,7 @@ async function init(options) {
 
   // Create symlinks
   if (options.symlinks) {
-    createSymlinks(options.path);
+    createSymlinks(options.path, options);
   }
 
   // Copy .agent/ for full pack
@@ -829,7 +837,7 @@ async function update(options) {
   // 4. Update Core Documentation if needed
   // We generally respect user's AGENTS.md, but maybe we update GEMINI.md/CLAUDE.md symlinks?
   if (options.symlinks) {
-    createSymlinks(options.path);
+    createSymlinks(options.path, options);
   }
 
   log.header("✨ Update complete!");
