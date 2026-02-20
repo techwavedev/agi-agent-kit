@@ -6,14 +6,8 @@ on:
 
 jobs:
   # ─────────────────────────────────────────────────────────────
-  # RELEASE GATE
-  # Set the Actions Variable RELEASE_BLOCKED=true (repo Settings →
-  # Actions → Variables) to hard-block any publish until QA is done.
-  #
-  # Current block reason: feat/setup-qdrant-ollama-prompt + global
-  # skills install need to be validated via local `npx` before shipping.
-  # Remove the block (set RELEASE_BLOCKED=false or delete the variable)
-  # only after the integration smoke test passes end-to-end.
+  # RELEASE GATE — set RELEASE_BLOCKED=true in repo Settings →
+  # Actions → Variables to hard-block any publish until QA is done.
   # ─────────────────────────────────────────────────────────────
   release-gate:
     runs-on: ubuntu-latest
@@ -24,22 +18,45 @@ jobs:
         run: |
           if [ "${RELEASE_BLOCKED}" = "true" ]; then
             echo "🚫 Release is currently BLOCKED."
-            echo ""
-            echo "Reason: pending QA validation of:"
-            echo "  • Qdrant + Ollama setup prompt (Issue #22)"
-            echo "  • Global skills/agents install routing"
-            echo ""
-            echo "To unblock: set the Actions Variable RELEASE_BLOCKED=false"
-            echo "in repo Settings → Actions → Variables, then re-publish the release."
+            echo "To unblock: set RELEASE_BLOCKED=false in repo Settings → Actions → Variables."
             exit 1
           fi
-          echo "✅ Release gate: OPEN — proceeding to integration test."
+          echo "✅ Release gate: OPEN"
+
+  # ─────────────────────────────────────────────────────────────
+  # VIRUS SCAN — must pass before publish is allowed
+  # ─────────────────────────────────────────────────────────────
+  virus-scan:
+    runs-on: ubuntu-latest
+    needs: release-gate
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Pack tarball for scanning
+        run: npm pack --dry-run 2>&1 | tail -20
+
+      - name: Scan with ClamAV
+        run: |
+          sudo apt-get install -y clamav > /dev/null 2>&1
+          sudo freshclam --quiet 2>/dev/null || true
+          npm pack
+          TARBALL=$(ls *.tgz)
+          mkdir -p /tmp/scan-dir
+          tar -xzf "$TARBALL" -C /tmp/scan-dir
+          clamscan --recursive --infected --remove=no /tmp/scan-dir \
+            && echo "✅ No threats detected in $TARBALL" \
+            || (echo "❌ Virus scan failed — aborting publish" && exit 1)
 
   # ─────────────────────────────────────────────────────────────
   # INTEGRATION SMOKE TEST
-  # Simulates a local `npx @techwavedev/agi-agent-kit init` run
-  # (non-interactively, accepting defaults) to verify the init
-  # script works correctly with the new prompt flow.
+  # Runs the init wizard non-interactively. CI always skips memory
+  # (no Qdrant/Ollama available) — verifies files are installed.
   # ─────────────────────────────────────────────────────────────
   integration-test:
     runs-on: ubuntu-latest
@@ -56,53 +73,51 @@ jobs:
       - name: Install package locally
         run: npm install --no-save .
 
-      - name: Smoke test — init with local memory enabled (default)
+      - name: Smoke test — core install, memory skipped
         run: |
-          mkdir -p /tmp/agi-test-enabled
-          # Wizard prompts in order (new install, no existing-install prompt):
-          #   1. Install scope         → "" (default: project)
-          #   2. Pack selection        → "1" (core)
-          #   3. Enable memory?        → "1" (yes)
-          #   4. Ollama not found?     → "" (default: install locally, skip URL prompt)
-          #   5. Qdrant not found?     → "" (default: run via Docker, skip URL prompt)
-          #   6. Agent Teams?          → "2" (skip — no Claude Code in CI)
-          printf '\n1\n1\n\n\n2\n' | node bin/init.js init --path=/tmp/agi-test-enabled --no-symlinks
-          # Verify MEMORY_ENABLED=true was written
-          grep "MEMORY_ENABLED=true" /tmp/agi-test-enabled/.env \
-            && echo "✅ MEMORY_ENABLED=true confirmed in .env" \
-            || (echo "❌ MEMORY_ENABLED=true not found in .env" && exit 1)
-
-      - name: Smoke test — init with local memory skipped
-        run: |
-          mkdir -p /tmp/agi-test-disabled
-          # Wizard prompts:
-          #   1. Install scope  → "" (project)
+          mkdir -p /tmp/agi-test-core
+          # Wizard prompts (new install — no existing-install prompt):
+          #   1. Install scope  → "" (default: project)
           #   2. Pack           → "1" (core)
-          #   3. Memory?        → "2" (skip)
-          #   4. Agent Teams?   → "2" (skip)
-          printf '\n1\n2\n2\n' | node bin/init.js init --path=/tmp/agi-test-disabled --no-symlinks
-          # Verify MEMORY_ENABLED=false was written
-          grep "MEMORY_ENABLED=false" /tmp/agi-test-disabled/.env \
+          #   3. Memory?        → "2" (skip — no Qdrant/Ollama in CI)
+          #   4. Agent Teams?   → "2" (skip — no Claude Code in CI)
+          printf '\n1\n2\n2\n' | node bin/init.js init --path=/tmp/agi-test-core --no-symlinks
+          grep "MEMORY_ENABLED=false" /tmp/agi-test-core/.env \
             && echo "✅ MEMORY_ENABLED=false confirmed in .env" \
             || (echo "❌ MEMORY_ENABLED=false not found in .env" && exit 1)
+          test -f /tmp/agi-test-core/AGENTS.md \
+            && echo "✅ AGENTS.md installed" \
+            || (echo "❌ AGENTS.md missing" && exit 1)
+          test -d /tmp/agi-test-core/skills \
+            && echo "✅ skills/ directory present" \
+            || (echo "❌ skills/ directory missing" && exit 1)
+
+      - name: Smoke test — medium pack, memory skipped
+        run: |
+          mkdir -p /tmp/agi-test-medium
+          # Pack "2" = medium, memory skip, teams skip
+          printf '\n2\n2\n2\n' | node bin/init.js init --path=/tmp/agi-test-medium --no-symlinks
+          test -f /tmp/agi-test-medium/AGENTS.md \
+            && echo "✅ Medium pack installed" \
+            || (echo "❌ AGENTS.md missing in medium install" && exit 1)
 
       - name: Smoke test — global install flag
         run: |
           mkdir -p /tmp/agi-test-global
-          # Scope prompt skipped (--global sets it). Remaining prompts:
-          #   1. Pack      → "1" (core)
-          #   2. Memory?   → "2" (skip — no Qdrant/Ollama in CI)
-          #   3. Teams?    → "2" (skip)
+          # --global skips scope prompt. Pack=1, memory=skip, teams=skip
           printf '1\n2\n2\n' | node bin/init.js init --path=/tmp/agi-test-global --global --no-symlinks || true
-          echo "✅ Global flag smoke test complete (non-zero exit acceptable if global path not writable in CI)"
+          echo "✅ Global flag smoke test complete"
 
+  # ─────────────────────────────────────────────────────────────
+  # PUBLISH — only runs after BOTH virus-scan AND integration-test pass
+  # ─────────────────────────────────────────────────────────────
   publish:
     runs-on: ubuntu-latest
-    needs: integration-test
+    needs: [virus-scan, integration-test]
     environment: npm
     permissions:
       contents: read
-      id-token: write # Required for NPM provenance (OIDC)
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
