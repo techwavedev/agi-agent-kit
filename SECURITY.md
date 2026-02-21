@@ -6,10 +6,10 @@ Use the latest version of `@techwavedev/agi-agent-kit` to ensure you have the mo
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.1.6   | :white_check_mark: |
-| 1.1.x   | :white_check_mark: |
-| 1.0.x   | :x:                |
-| < 1.0   | :x:                |
+| 1.5.x   | :white_check_mark: |
+| 1.4.x   | :white_check_mark: |
+| 1.3.x   | :white_check_mark: |
+| < 1.3.0 | :x: (Stale)        |
 
 ## Reporting a Vulnerability
 
