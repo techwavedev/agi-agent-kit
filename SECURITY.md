@@ -9,7 +9,7 @@ Use the latest version of `@techwavedev/agi-agent-kit` to ensure you have the mo
 | 1.5.x   | :white_check_mark: |
 | 1.4.x   | :white_check_mark: |
 | 1.3.x   | :white_check_mark: |
-| < 1.3.0 | :x: (Stale)        |
+| < 1.3.8 | :x: (Stale)        |
 
 ## Reporting a Vulnerability
 
