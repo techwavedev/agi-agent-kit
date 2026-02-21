@@ -30,6 +30,7 @@ $ARGUMENTS
 - Identify required doc types and target audiences.
 - Extract information from code, configs, and comments.
 - Generate docs with consistent terminology and structure.
+- Format & Lint: Run `npx markdownlint-cli "**/*.md" --fix` to resolve formatting issues like MD001, MD041, MD060.
 - Add automation (linting, CI) and validate accuracy.
 - If detailed examples are required, open `resources/implementation-playbook.md`.
 

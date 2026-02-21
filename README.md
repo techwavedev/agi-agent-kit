@@ -1,6 +1,6 @@
-🌐 *[Português (BR)](./README.pt-BR.md)* | English
-
 # 🚀 AGI Agent Kit
+
+🌐 _[Português (BR)](./README.pt-BR.md)_ | English
 
 > **Stop hallucinating. Start executing.**
 
@@ -20,7 +20,7 @@
 
 **AGI Agent Kit** is the enterprise-grade scaffolding that turns any AI coding assistant into a **deterministic production machine**. While LLMs are probabilistic (90% accuracy per step = 59% over 5 steps), this framework forces them through a **3-Layer Architecture** — Intent → Orchestration → Execution — where business logic lives in tested scripts, not hallucinated code.
 
-### Why this exists
+## Why this exists
 
 Most AI coding setups give you a prompt and hope for the best. AGI Agent Kit gives you:
 
@@ -119,7 +119,7 @@ The agi framework adopts all best patterns from [obra/superpowers](https://githu
 
 The framework supports two orchestration modes. Here are **real test results** from `execution/benchmark_modes.py` running on local infrastructure (Qdrant + Ollama `nomic-embed-text`, zero cloud API calls):
 
-```
+```text
 MODE A: SUBAGENTS — Independent, fire-and-forget
   📤 Explore Auth Patterns    → ✅ stored in cache + memory (127ms)
   📤 Query Performance        → ❌ FAILED (timeout — fault tolerant)
@@ -220,7 +220,7 @@ python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir . --dry-
 
 ## 📦 What You Get
 
-```
+```text
 your-project/
 ├── AGENTS.md              # Master instruction file
 ├── GEMINI.md → AGENTS.md  # Platform symlinks
@@ -251,7 +251,7 @@ your-project/
 
 The system operates on three layers:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │  Layer 1: DIRECTIVES (Intent)                           │
 │  └─ SOPs written in Markdown (directives/)              │

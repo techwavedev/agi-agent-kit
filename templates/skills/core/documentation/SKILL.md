@@ -38,9 +38,10 @@ python skills/documentation/scripts/sync_docs.py \
 1. **Detect Changes** — Scan for code changes (added, modified, deleted files)
 2. **Analyze Impact** — Determine which documentation needs updating
 3. **Generate Updates** — Produce updated or new documentation
-4. **Synchronize Catalog** — Update SKILLS_CATALOG.md if skills changed
-5. **Produce Changelog** — Create a changelog entry for significant changes
-6. **Validate** — Verify all documentation is synchronized
+4. **Format & Lint** — Run `npx markdownlint-cli "**/*.md" --fix` to resolve formatting issues like MD001, MD041, MD060
+5. **Synchronize Catalog** — Update SKILLS_CATALOG.md if skills changed
+6. **Produce Changelog** — Create a changelog entry for significant changes
+7. **Validate** — Verify all documentation is synchronized
 
 ---
 

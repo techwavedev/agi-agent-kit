@@ -1,6 +1,6 @@
-🌐 Português (BR) | *[English](./README.md)*
-
 # 🚀 AGI Agent Kit
+
+🌐 Português (BR) | _[English](./README.md)_
 
 > **Pare de alucinar. Comece a executar.**
 
@@ -20,7 +20,7 @@
 
 **AGI Agent Kit** é o scaffolding de nível empresarial que transforma qualquer assistente de código com IA em uma **máquina de produção determinística**. Enquanto LLMs são probabilísticos (90% de precisão por etapa = 59% ao longo de 5 etapas), este framework os força através de uma **Arquitetura de 3 Camadas** — Intenção → Orquestração → Execução — onde a lógica de negócio vive em scripts testados, não em código alucinado.
 
-### Por que isso existe
+## Por que isso existe
 
 A maioria das configurações de IA para código te dá um prompt e torce pelo melhor. O AGI Agent Kit te oferece:
 
@@ -77,18 +77,18 @@ python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
 
 ## ✨ Funcionalidades Principais
 
-| Funcionalidade                    | Descrição                                                                                   |
-| --------------------------------- | ------------------------------------------------------------------------------------------- |
-| **Execução Determinística**       | Separa lógica de negócio (scripts Python) do raciocínio da IA (Diretivas)                   |
-| **Sistema Modular de Skills**     | 878 skills plug-and-play em 3 níveis, organizadas em 16 categorias de domínio               |
-| **Execução de Plano Estruturado** | Execução em lote ou orientada por subagentes com revisão em duas etapas (spec + qualidade)   |
-| **Enforcement de TDD**            | Ciclo RED-GREEN-REFACTOR inquebrantável — sem código de produção sem teste falhando          |
-| **Portões de Verificação**        | Evidência antes de afirmações — sem conclusão sem saída de verificação atualizada            |
+| Funcionalidade                    | Descrição                                                                                     |
+| --------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Execução Determinística**       | Separa lógica de negócio (scripts Python) do raciocínio da IA (Diretivas)                     |
+| **Sistema Modular de Skills**     | 878 skills plug-and-play em 3 níveis, organizadas em 16 categorias de domínio                 |
+| **Execução de Plano Estruturado** | Execução em lote ou orientada por subagentes com revisão em duas etapas (spec + qualidade)    |
+| **Enforcement de TDD**            | Ciclo RED-GREEN-REFACTOR inquebrantável — sem código de produção sem teste falhando           |
+| **Portões de Verificação**        | Evidência antes de afirmações — sem conclusão sem saída de verificação atualizada             |
 | **Adaptativo à Plataforma**       | Auto-detecta Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL, Antigravity |
-| **Orquestração Multi-Agente**     | Agent Teams, subagentes, Powers, ou personas sequenciais — adapta-se à plataforma           |
-| **Memória Híbrida**               | Vetores Qdrant + palavras-chave BM25 com mesclagem de pontuação ponderada (95% de economia) |
-| **Workflows Auto-Reparáveis**     | Agentes leem logs de erro, corrigem scripts e atualizam diretivas automaticamente            |
-| **Configuração em Um Comando**    | Detecção de plataforma + varredura de stack + auto-configuração em um único comando          |
+| **Orquestração Multi-Agente**     | Agent Teams, subagentes, Powers, ou personas sequenciais — adapta-se à plataforma             |
+| **Memória Híbrida**               | Vetores Qdrant + palavras-chave BM25 com mesclagem de pontuação ponderada (95% de economia)   |
+| **Workflows Auto-Reparáveis**     | Agentes leem logs de erro, corrigem scripts e atualizam diretivas automaticamente             |
+| **Configuração em Um Comando**    | Detecção de plataforma + varredura de stack + auto-configuração em um único comando           |
 
 ---
 
@@ -96,22 +96,22 @@ python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
 
 O framework AGI adota todos os melhores padrões do [obra/superpowers](https://github.com/obra/superpowers) e os estende com capacidades que o Superpowers não possui:
 
-| Capacidade                         | obra/superpowers |             Framework AGI              |
-| ---------------------------------- | :--------------: | :------------------------------------: |
-| Enforcement de TDD                 |        ✅        |              ✅ Adaptado               |
-| Execução de Plano + Revisão        |        ✅        | ✅ Adaptado + adaptativo à plataforma  |
-| Debugging Sistemático              |        ✅        |   ✅ Adaptado + agente `debugger`      |
-| Portões de Verificação             |        ✅        |    ✅ Adaptado + 12 scripts de audit   |
-| Revisão de Código em Duas Etapas   |        ✅        |     ✅ Adaptado no orquestrador        |
-| Orquestração Multi-Plataforma      |  ❌ Apenas Claude |           ✅ 9 plataformas             |
-| Memória Semântica (Qdrant)         |        ❌        |      ✅ 90-100% economia de tokens     |
-| 19 Agentes Especialistas           |        ❌        |       ✅ Fronteiras de domínio         |
-| Reforço de Fronteiras de Agente    |        ❌        |    ✅ Propriedade por tipo de arquivo  |
-| Geração Dinâmica de Perguntas      |        ❌        |     ✅ Trade-offs + prioridades        |
-| Protocolo Memory-First             |        ❌        |         ✅ Auto cache-hit              |
-| Criador de Skills + Catálogo       |        ❌        |     ✅ 878 skills combináveis          |
-| Assistente de Configuração         |        ❌        |       ✅ Configuração em um comando    |
-| Symlinks Multi-Plataforma          |  ❌ Apenas Claude |           ✅ 9 plataformas             |
+| Capacidade                       | obra/superpowers |             Framework AGI             |
+| -------------------------------- | :--------------: | :-----------------------------------: |
+| Enforcement de TDD               |        ✅        |              ✅ Adaptado              |
+| Execução de Plano + Revisão      |        ✅        | ✅ Adaptado + adaptativo à plataforma |
+| Debugging Sistemático            |        ✅        |    ✅ Adaptado + agente `debugger`    |
+| Portões de Verificação           |        ✅        |   ✅ Adaptado + 12 scripts de audit   |
+| Revisão de Código em Duas Etapas |        ✅        |      ✅ Adaptado no orquestrador      |
+| Orquestração Multi-Plataforma    | ❌ Apenas Claude |           ✅ 9 plataformas            |
+| Memória Semântica (Qdrant)       |        ❌        |     ✅ 90-100% economia de tokens     |
+| 19 Agentes Especialistas         |        ❌        |       ✅ Fronteiras de domínio        |
+| Reforço de Fronteiras de Agente  |        ❌        |  ✅ Propriedade por tipo de arquivo   |
+| Geração Dinâmica de Perguntas    |        ❌        |      ✅ Trade-offs + prioridades      |
+| Protocolo Memory-First           |        ❌        |           ✅ Auto cache-hit           |
+| Criador de Skills + Catálogo     |        ❌        |       ✅ 878 skills combináveis       |
+| Assistente de Configuração       |        ❌        |     ✅ Configuração em um comando     |
+| Symlinks Multi-Plataforma        | ❌ Apenas Claude |           ✅ 9 plataformas            |
 
 ---
 
@@ -119,7 +119,7 @@ O framework AGI adota todos os melhores padrões do [obra/superpowers](https://g
 
 O framework suporta dois modos de orquestração. Aqui estão **resultados reais de teste** de `execution/benchmark_modes.py` rodando em infraestrutura local (Qdrant + Ollama `nomic-embed-text`, zero chamadas de API na nuvem):
 
-```
+```text
 MODO A: SUBAGENTES — Independentes, fire-and-forget
   📤 Explorar Padrões de Auth   → ✅ armazenado em cache + memória (127ms)
   📤 Performance de Query       → ❌ FALHOU (timeout — tolerante a falhas)
@@ -138,15 +138,15 @@ MODO B: AGENT TEAMS — Contexto compartilhado, coordenado
 
 **2ª execução (cache aquecido):** Todas as consultas atingem o cache com **score 1.000**, reduzindo o tempo total de 314ms → 76ms (Subagentes) e 292ms → 130ms (Agent Teams).
 
-| Métrica              | Subagentes                             | Agent Teams                            |
-| -------------------- | -------------------------------------- | -------------------------------------- |
-| Modelo de execução   | Fire-and-forget (isolado)              | Contexto compartilhado (coordenado)    |
-| Tarefas concluídas   | 2/3 (tolerante a falhas)               | 3/3                                    |
-| Referências cruzadas | 0 (não suportado)                      | 2 (pares leem o trabalho uns dos outros) |
-| Compartilhamento     | ❌ Cada agente isolado                 | ✅ Peer-to-peer via Qdrant             |
-| Revisão em duas etapas | ❌                                   | ✅ Spec + Qualidade                    |
-| Cache hits (2ª exec) | 5/5                                    | 5/5                                    |
-| Provedor de embedding| Ollama local (nomic-embed-text 137M)   | Ollama local (nomic-embed-text 137M)   |
+| Métrica                | Subagentes                           | Agent Teams                              |
+| ---------------------- | ------------------------------------ | ---------------------------------------- |
+| Modelo de execução     | Fire-and-forget (isolado)            | Contexto compartilhado (coordenado)      |
+| Tarefas concluídas     | 2/3 (tolerante a falhas)             | 3/3                                      |
+| Referências cruzadas   | 0 (não suportado)                    | 2 (pares leem o trabalho uns dos outros) |
+| Compartilhamento       | ❌ Cada agente isolado               | ✅ Peer-to-peer via Qdrant               |
+| Revisão em duas etapas | ❌                                   | ✅ Spec + Qualidade                      |
+| Cache hits (2ª exec)   | 5/5                                  | 5/5                                      |
+| Provedor de embedding  | Ollama local (nomic-embed-text 137M) | Ollama local (nomic-embed-text 137M)     |
 
 **Experimente você mesmo:**
 
@@ -192,16 +192,16 @@ O framework detecta automaticamente seu ambiente de codificação com IA e ativa
 
 Skills são instaladas no diretório canônico `skills/` e vinculadas via symlink ao caminho esperado de cada plataforma:
 
-| Plataforma          | Caminho das Skills | Arquivo de Instrução | Estratégia de Orquestração              |
-| ------------------- | ------------------ | -------------------- | --------------------------------------- |
-| **Claude Code**     | `.claude/skills/`  | `CLAUDE.md`          | Agent Teams (paralelo) ou Subagentes    |
-| **Gemini CLI**      | `.gemini/skills/`  | `GEMINI.md`          | Personas sequenciais via `@agent`       |
-| **Codex CLI**       | `.codex/skills/`   | `AGENTS.md`          | Sequencial via prompts                  |
-| **Antigravity IDE** | `.agent/skills/`   | `AGENTS.md`          | Orquestração agêntica completa          |
-| **Cursor**          | `.cursor/skills/`  | `AGENTS.md`          | Baseado em chat via `@skill`            |
-| **GitHub Copilot**  | N/A (colar)        | `COPILOT.md`         | Colar manualmente no contexto           |
-| **OpenCode**        | `.agent/skills/`   | `OPENCODE.md`        | Personas sequenciais via `@agent`       |
-| **AdaL CLI**        | `.adal/skills/`    | `AGENTS.md`          | Carregamento automático sob demanda     |
+| Plataforma          | Caminho das Skills | Arquivo de Instrução | Estratégia de Orquestração           |
+| ------------------- | ------------------ | -------------------- | ------------------------------------ |
+| **Claude Code**     | `.claude/skills/`  | `CLAUDE.md`          | Agent Teams (paralelo) ou Subagentes |
+| **Gemini CLI**      | `.gemini/skills/`  | `GEMINI.md`          | Personas sequenciais via `@agent`    |
+| **Codex CLI**       | `.codex/skills/`   | `AGENTS.md`          | Sequencial via prompts               |
+| **Antigravity IDE** | `.agent/skills/`   | `AGENTS.md`          | Orquestração agêntica completa       |
+| **Cursor**          | `.cursor/skills/`  | `AGENTS.md`          | Baseado em chat via `@skill`         |
+| **GitHub Copilot**  | N/A (colar)        | `COPILOT.md`         | Colar manualmente no contexto        |
+| **OpenCode**        | `.agent/skills/`   | `OPENCODE.md`        | Personas sequenciais via `@agent`    |
+| **AdaL CLI**        | `.adal/skills/`    | `AGENTS.md`          | Carregamento automático sob demanda  |
 
 Execute `/setup` para auto-detectar e configurar sua plataforma, ou use o script de configuração diretamente:
 
@@ -220,7 +220,7 @@ python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir . --dry-
 
 ## 📦 O Que Você Recebe
 
-```
+```text
 seu-projeto/
 ├── AGENTS.md              # Arquivo de instrução principal
 ├── GEMINI.md → AGENTS.md  # Symlinks de plataforma
@@ -251,7 +251,7 @@ seu-projeto/
 
 O sistema opera em três camadas:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │  Camada 1: DIRETIVAS (Intenção)                         │
 │  └─ SOPs escritos em Markdown (directives/)             │
@@ -273,12 +273,12 @@ O sistema opera em três camadas:
 
 Recuperação com motor duplo: similaridade vetorial Qdrant para conceitos semânticos + BM25 SQLite FTS5 para correspondência exata de palavras-chave. Mescla resultados automaticamente com pesos configuráveis.
 
-| Cenário                 | Sem Memória    | Com Memória  | Economia |
-| ----------------------- | -------------- | ------------ | -------- |
-| Pergunta repetida       | ~2000 tokens   | 0 tokens     | **100%** |
-| Arquitetura similar     | ~5000 tokens   | ~500 tokens  | **90%**  |
-| Resolução de erro passado | ~3000 tokens | ~300 tokens  | **90%**  |
-| Busca exata de ID/código | ~3000 tokens  | ~200 tokens  | **93%**  |
+| Cenário                   | Sem Memória  | Com Memória | Economia |
+| ------------------------- | ------------ | ----------- | -------- |
+| Pergunta repetida         | ~2000 tokens | 0 tokens    | **100%** |
+| Arquitetura similar       | ~5000 tokens | ~500 tokens | **90%**  |
+| Resolução de erro passado | ~3000 tokens | ~300 tokens | **90%**  |
+| Busca exata de ID/código  | ~3000 tokens | ~200 tokens | **93%**  |
 
 **Configuração** (requer [Qdrant](https://qdrant.tech/) + [Ollama](https://ollama.com/)):
 
@@ -398,84 +398,84 @@ Use estas palavras-chave, comandos e frases para acionar funcionalidades especí
 
 ### Comandos Slash (Workflows)
 
-| Comando         | O Que Faz                                              |
-| --------------- | ------------------------------------------------------ |
-| `/setup`        | Auto-detecta a plataforma e configura o ambiente       |
-| `/setup-memory` | Inicializa o sistema de memória Qdrant + Ollama        |
-| `/create`       | Inicia diálogo interativo de criação de app            |
-| `/plan`         | Cria um plano de projeto estruturado (sem código)      |
-| `/enhance`      | Adiciona ou atualiza funcionalidades em app existente  |
-| `/debug`        | Ativa modo de debugging sistemático                    |
-| `/test`         | Gera e executa testes                                  |
-| `/deploy`       | Verificações pré-deploy + implantação                  |
-| `/orchestrate`  | Coordenação multi-agente para tarefas complexas        |
-| `/brainstorm`   | Brainstorming estruturado com múltiplas opções         |
-| `/preview`      | Iniciar/parar servidor de desenvolvimento local        |
-| `/status`       | Mostrar progresso do projeto e painel de status        |
-| `/update`       | Atualizar AGI Agent Kit para a versão mais recente     |
-| `/checkup`      | Verificar agentes, workflows, skills e arquivos core   |
+| Comando         | O Que Faz                                             |
+| --------------- | ----------------------------------------------------- |
+| `/setup`        | Auto-detecta a plataforma e configura o ambiente      |
+| `/setup-memory` | Inicializa o sistema de memória Qdrant + Ollama       |
+| `/create`       | Inicia diálogo interativo de criação de app           |
+| `/plan`         | Cria um plano de projeto estruturado (sem código)     |
+| `/enhance`      | Adiciona ou atualiza funcionalidades em app existente |
+| `/debug`        | Ativa modo de debugging sistemático                   |
+| `/test`         | Gera e executa testes                                 |
+| `/deploy`       | Verificações pré-deploy + implantação                 |
+| `/orchestrate`  | Coordenação multi-agente para tarefas complexas       |
+| `/brainstorm`   | Brainstorming estruturado com múltiplas opções        |
+| `/preview`      | Iniciar/parar servidor de desenvolvimento local       |
+| `/status`       | Mostrar progresso do projeto e painel de status       |
+| `/update`       | Atualizar AGI Agent Kit para a versão mais recente    |
+| `/checkup`      | Verificar agentes, workflows, skills e arquivos core  |
 
 ### Menções de Agente (`@agent`)
 
-| Menção                    | Especialista               | Quando Usar                                |
-| ------------------------- | -------------------------- | ------------------------------------------ |
-| `@orchestrator`           | Coordenador multi-agente   | Tarefas complexas multi-domínio            |
-| `@project-planner`        | Especialista em planejamento | Roadmaps, divisão de tarefas, fases       |
-| `@frontend-specialist`    | Arquiteto de UI/UX         | Interfaces web, React, Next.js             |
-| `@backend-specialist`     | Engenheiro de API/BD       | Server-side, bancos de dados, APIs         |
-| `@mobile-developer`       | Especialista mobile        | iOS, Android, React Native, Flutter        |
-| `@security-auditor`       | Especialista em segurança  | Varredura de vulnerabilidades, auditorias  |
-| `@debugger`               | Especialista em debug      | Investigação de bugs complexos             |
-| `@game-developer`         | Especialista em jogos      | Jogos 2D/3D, multiplayer, VR/AR           |
-| `@devops-engineer`        | Especialista DevOps        | CI/CD, containers, infraestrutura cloud    |
-| `@database-architect`     | Especialista em BD         | Design de schema, migrações, otimização    |
-| `@documentation-writer`   | Especialista em docs       | Documentação técnica, APIs, READMEs        |
-| `@test-engineer`          | Especialista em testes     | Estratégia de teste, automação, cobertura  |
-| `@qa-automation-engineer` | Especialista em QA         | Testes E2E, regressão, quality gates       |
-| `@performance-optimizer`  | Especialista em performance| Profiling, gargalos, otimização            |
-| `@seo-specialist`         | Especialista em SEO        | Otimização de busca, meta tags, rankings   |
-| `@penetration-tester`     | Especialista em pen testing| Exercícios red team, verificação de exploits|
-| `@product-manager`        | Especialista em produto    | Requisitos, user stories, priorização      |
+| Menção                    | Especialista                  | Quando Usar                                  |
+| ------------------------- | ----------------------------- | -------------------------------------------- |
+| `@orchestrator`           | Coordenador multi-agente      | Tarefas complexas multi-domínio              |
+| `@project-planner`        | Especialista em planejamento  | Roadmaps, divisão de tarefas, fases          |
+| `@frontend-specialist`    | Arquiteto de UI/UX            | Interfaces web, React, Next.js               |
+| `@backend-specialist`     | Engenheiro de API/BD          | Server-side, bancos de dados, APIs           |
+| `@mobile-developer`       | Especialista mobile           | iOS, Android, React Native, Flutter          |
+| `@security-auditor`       | Especialista em segurança     | Varredura de vulnerabilidades, auditorias    |
+| `@debugger`               | Especialista em debug         | Investigação de bugs complexos               |
+| `@game-developer`         | Especialista em jogos         | Jogos 2D/3D, multiplayer, VR/AR              |
+| `@devops-engineer`        | Especialista DevOps           | CI/CD, containers, infraestrutura cloud      |
+| `@database-architect`     | Especialista em BD            | Design de schema, migrações, otimização      |
+| `@documentation-writer`   | Especialista em docs          | Documentação técnica, APIs, READMEs          |
+| `@test-engineer`          | Especialista em testes        | Estratégia de teste, automação, cobertura    |
+| `@qa-automation-engineer` | Especialista em QA            | Testes E2E, regressão, quality gates         |
+| `@performance-optimizer`  | Especialista em performance   | Profiling, gargalos, otimização              |
+| `@seo-specialist`         | Especialista em SEO           | Otimização de busca, meta tags, rankings     |
+| `@penetration-tester`     | Especialista em pen testing   | Exercícios red team, verificação de exploits |
+| `@product-manager`        | Especialista em produto       | Requisitos, user stories, priorização        |
 | `@code-archaeologist`     | Especialista em código legado | Entendimento de codebases antigos, migrações |
-| `@explorer-agent`         | Especialista em descoberta | Exploração de codebase, mapeamento de deps |
+| `@explorer-agent`         | Especialista em descoberta    | Exploração de codebase, mapeamento de deps   |
 
 ### Palavras-Chave de Ativação de Skills (Linguagem Natural)
 
-| Categoria          | Palavras / Frases de Ativação                                                  | Skill Ativada                         |
-| ------------------ | ------------------------------------------------------------------------------ | ------------------------------------- |
-| **Memória**        | "don't use cache", "no cache", "skip memory", "fresh"                          | Memory opt-out                        |
-| **Pesquisa**       | "research my docs", "check my notebooks", "deep search", "@notebooklm"        | `notebooklm-rag`                      |
-| **Documentação**   | "update docs", "regenerate catalog", "sync documentation"                      | `documentation`                       |
-| **Qualidade**      | "lint", "format", "check", "validate", "static analysis"                       | `lint-and-validate`                   |
-| **Testes**         | "write tests", "run tests", "TDD", "test coverage"                             | `testing-patterns` / `tdd-workflow`   |
-| **TDD**            | "test first", "red green refactor", "failing test"                             | `test-driven-development`             |
-| **Execução de Plano** | "execute plan", "run the plan", "batch execution"                           | `executing-plans`                     |
-| **Verificação**    | "verify", "prove it works", "evidence", "show me the output"                   | `verification-before-completion`      |
-| **Debugging**      | "debug", "root cause", "investigate", "why is this failing"                    | `systematic-debugging`                |
-| **Arquitetura**    | "design system", "architecture decision", "ADR", "trade-off"                   | `architecture`                        |
-| **Segurança**      | "security scan", "vulnerability", "audit", "OWASP"                             | `red-team-tactics`                    |
-| **Performance**    | "lighthouse", "bundle size", "core web vitals", "profiling"                    | `performance-profiling`               |
-| **Design**         | "design UI", "color scheme", "typography", "layout"                            | `frontend-design`                     |
-| **Deploy**         | "deploy", "rollback", "release", "CI/CD"                                       | `deployment-procedures`               |
-| **API**            | "REST API", "GraphQL", "tRPC", "API design"                                    | `api-patterns`                        |
-| **Banco de Dados** | "schema design", "migration", "query optimization"                             | `database-design`                     |
-| **Planejamento**   | "plan this", "break down", "task list", "requirements"                         | `plan-writing`                        |
-| **Brainstorming**  | "explore options", "what are the approaches", "pros and cons"                  | `brainstorming`                       |
-| **Code Review**    | "review this", "code quality", "best practices"                                | `code-review-checklist`               |
-| **i18n**           | "translate", "localization", "RTL", "locale"                                   | `i18n-localization`                   |
-| **AWS**            | "terraform", "EKS", "Lambda", "S3", "CloudFront"                               | `aws-skills` / `terraform-skill`      |
-| **Infraestrutura** | "service mesh", "Kubernetes", "Helm"                                           | `docker-expert` / `server-management` |
+| Categoria             | Palavras / Frases de Ativação                                          | Skill Ativada                         |
+| --------------------- | ---------------------------------------------------------------------- | ------------------------------------- |
+| **Memória**           | "don't use cache", "no cache", "skip memory", "fresh"                  | Memory opt-out                        |
+| **Pesquisa**          | "research my docs", "check my notebooks", "deep search", "@notebooklm" | `notebooklm-rag`                      |
+| **Documentação**      | "update docs", "regenerate catalog", "sync documentation"              | `documentation`                       |
+| **Qualidade**         | "lint", "format", "check", "validate", "static analysis"               | `lint-and-validate`                   |
+| **Testes**            | "write tests", "run tests", "TDD", "test coverage"                     | `testing-patterns` / `tdd-workflow`   |
+| **TDD**               | "test first", "red green refactor", "failing test"                     | `test-driven-development`             |
+| **Execução de Plano** | "execute plan", "run the plan", "batch execution"                      | `executing-plans`                     |
+| **Verificação**       | "verify", "prove it works", "evidence", "show me the output"           | `verification-before-completion`      |
+| **Debugging**         | "debug", "root cause", "investigate", "why is this failing"            | `systematic-debugging`                |
+| **Arquitetura**       | "design system", "architecture decision", "ADR", "trade-off"           | `architecture`                        |
+| **Segurança**         | "security scan", "vulnerability", "audit", "OWASP"                     | `red-team-tactics`                    |
+| **Performance**       | "lighthouse", "bundle size", "core web vitals", "profiling"            | `performance-profiling`               |
+| **Design**            | "design UI", "color scheme", "typography", "layout"                    | `frontend-design`                     |
+| **Deploy**            | "deploy", "rollback", "release", "CI/CD"                               | `deployment-procedures`               |
+| **API**               | "REST API", "GraphQL", "tRPC", "API design"                            | `api-patterns`                        |
+| **Banco de Dados**    | "schema design", "migration", "query optimization"                     | `database-design`                     |
+| **Planejamento**      | "plan this", "break down", "task list", "requirements"                 | `plan-writing`                        |
+| **Brainstorming**     | "explore options", "what are the approaches", "pros and cons"          | `brainstorming`                       |
+| **Code Review**       | "review this", "code quality", "best practices"                        | `code-review-checklist`               |
+| **i18n**              | "translate", "localization", "RTL", "locale"                           | `i18n-localization`                   |
+| **AWS**               | "terraform", "EKS", "Lambda", "S3", "CloudFront"                       | `aws-skills` / `terraform-skill`      |
+| **Infraestrutura**    | "service mesh", "Kubernetes", "Helm"                                   | `docker-expert` / `server-management` |
 
 ### Comandos do Sistema de Memória
 
-| O Que Você Quer                    | Comando / Frase                                                                  |
-| ---------------------------------- | -------------------------------------------------------------------------------- |
-| **Inicializar memória**            | `python3 execution/session_boot.py --auto-fix`                                   |
-| **Verificar antes de uma tarefa**  | `python3 execution/memory_manager.py auto --query "..."`                         |
-| **Armazenar uma decisão**          | `python3 execution/memory_manager.py store --content "..." --type decision`      |
-| **Armazenar resposta em cache**    | `python3 execution/memory_manager.py cache-store --query "..." --response "..."` |
-| **Verificação de saúde**           | `python3 execution/memory_manager.py health`                                     |
-| **Pular cache para esta tarefa**   | Diga "fresh", "no cache" ou "skip memory" no seu prompt                          |
+| O Que Você Quer                   | Comando / Frase                                                                  |
+| --------------------------------- | -------------------------------------------------------------------------------- |
+| **Inicializar memória**           | `python3 execution/session_boot.py --auto-fix`                                   |
+| **Verificar antes de uma tarefa** | `python3 execution/memory_manager.py auto --query "..."`                         |
+| **Armazenar uma decisão**         | `python3 execution/memory_manager.py store --content "..." --type decision`      |
+| **Armazenar resposta em cache**   | `python3 execution/memory_manager.py cache-store --query "..." --response "..."` |
+| **Verificação de saúde**          | `python3 execution/memory_manager.py health`                                     |
+| **Pular cache para esta tarefa**  | Diga "fresh", "no cache" ou "skip memory" no seu prompt                          |
 
 ---
 
@@ -506,12 +506,12 @@ Se essas skills comunitárias te ajudam, considere [dar uma estrela no repositó
 
 ## 🗺️ Roadmap
 
-| Funcionalidade                      | Status     | Descrição                                                                                                                                                                                                                                                              |
-| ----------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Memória Federada de Agentes**     | 🔬 Design  | Compartilhamento de conhecimento entre agentes via coleções Qdrant com escopo de projeto. Agentes no mesmo projeto leem decisões, erros e padrões uns dos outros — construindo inteligência coletiva entre sessões e plataformas.                                       |
-| **Memória Autenticada por Blockchain** | 🔬 Design | Camada de confiança criptográfica para memória compartilhada usando blockchains empresariais (Hyperledger Fabric, MultiChain ou Quorum) — auto-hospedado, sem taxas, sem criptomoeda. Escritas de agentes são assinadas, hashes de conteúdo são ancorados on-chain.     |
-| **Streaming de Agentes Event-Driven** | 🔬 Design | Comunicação em tempo real entre agentes via Kafka/Flink. Agentes publicam decisões e observações em tópicos, habilitando workflows reativos — ex: agente de segurança aciona remediação quando o agente de varredura publica achados.                                  |
-| **Motor de Workflows**              | 📋 Planejado | Execução de playbooks `data/workflows.json` como sequências multi-skill guiadas com rastreamento de progresso e lógica de ramificação.                                                                                                                                |
+| Funcionalidade                         | Status       | Descrição                                                                                                                                                                                                                                                           |
+| -------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Memória Federada de Agentes**        | 🔬 Design    | Compartilhamento de conhecimento entre agentes via coleções Qdrant com escopo de projeto. Agentes no mesmo projeto leem decisões, erros e padrões uns dos outros — construindo inteligência coletiva entre sessões e plataformas.                                   |
+| **Memória Autenticada por Blockchain** | 🔬 Design    | Camada de confiança criptográfica para memória compartilhada usando blockchains empresariais (Hyperledger Fabric, MultiChain ou Quorum) — auto-hospedado, sem taxas, sem criptomoeda. Escritas de agentes são assinadas, hashes de conteúdo são ancorados on-chain. |
+| **Streaming de Agentes Event-Driven**  | 🔬 Design    | Comunicação em tempo real entre agentes via Kafka/Flink. Agentes publicam decisões e observações em tópicos, habilitando workflows reativos — ex: agente de segurança aciona remediação quando o agente de varredura publica achados.                               |
+| **Motor de Workflows**                 | 📋 Planejado | Execução de playbooks `data/workflows.json` como sequências multi-skill guiadas com rastreamento de progresso e lógica de ramificação.                                                                                                                              |
 
 ---
 

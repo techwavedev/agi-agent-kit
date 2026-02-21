@@ -15,9 +15,9 @@ Use the latest version of `@techwavedev/agi-agent-kit` to ensure you have the mo
 
 We take the security of our framework seriously. If you discover a security vulnerability, please follow these steps:
 
-1.  **Do NOT create a public GitHub issue** for sensitive security vulnerabilities.
-2.  Email your findings to `security@techwavedev.net` (or open a strictly private advisory if available).
-3.  Provide a detailed description of the vulnerability and steps to reproduce.
+1. **Do NOT create a public GitHub issue** for sensitive security vulnerabilities.
+2. Email your findings to `security@techwavedev.net` (or open a strictly private advisory if available).
+3. Provide a detailed description of the vulnerability and steps to reproduce.
 
 We will acknowledge your report within 48 hours and work with you to remediate the issue.
 
