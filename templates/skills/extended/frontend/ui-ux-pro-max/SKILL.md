@@ -280,6 +280,34 @@ python3 .claude/skills/ui-ux-pro-max/scripts/search.py "fintech crypto" --design
 
 ---
 
+## Great Design Prompts (Examples)
+
+When requesting a UI, providing specific structural, stylistic, and feature requirements leads to the highest quality output. 
+
+*(Agent Instruction: If the user provides a vague industry like "real estate" and asks for a prompt example, you may generate one using these patterns, or use your web browsing/crawler capabilities to check `https://www.uupm.cc/#styles` for inspiration before answering).*
+
+Here are proven examples:
+
+### Example 1: SaaS Analytics Dashboard
+> "Create a modern SaaS analytics dashboard landing page with glassmorphism cards, hero section showcasing real-time data visualization, feature highlights with icons, pricing table, and trust badges. Focus on clarity and professional feel."
+> *(Reference: <https://www.uupm.cc/demo/saas-analytics-dashboard>)*
+
+### Example 2: Educational Platform
+> "Create a playful educational platform landing page with claymorphism cards, course catalog preview, progress tracking demo, student testimonials, and enrollment CTA. Use vibrant, engaging colors."
+> *(Reference: <https://www.uupm.cc/demo/educational-platform>)*
+
+### Example 3: Pet Grooming Service
+> "Create a friendly pet grooming service landing page with claymorphism cards, service packages, pet gallery, booking system, and testimonials from pet owners. Use playful warm colors."
+> *(Reference: <https://www.uupm.cc/demo/pet-grooming>)*
+
+### Example 4: AI Chatbot Platform
+> "Design a minimal AI chatbot platform landing page with conversational UI preview, streaming text animation demo, feature cards with AI capabilities, integration logos, and a prominent 'Try Now' CTA. Use neutral tones with AI purple accent."
+> *(Reference: <https://www.uupm.cc/demo/ai-chatbot-platform>)*
+
+*(For a complete catalog of 39+ design prompts and live references, visit: <https://www.uupm.cc/#styles>)*
+
+---
+
 ## Common Rules for Professional UI
 
 These are frequently overlooked issues that make UI look unprofessional:
