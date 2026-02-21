@@ -356,6 +356,7 @@ pip install pyyaml gitpython
 ### Qdrant Memory Integration
 
 Before executing complex tasks with this skill:
+
 ```bash
 python3 execution/memory_manager.py auto --query "<task summary>"
 ```
