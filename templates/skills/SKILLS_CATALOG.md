@@ -118,7 +118,7 @@
 | `typescript-advanced-types`                      | 🟡 Full   | Master TypeScript's advanced type system including generics, conditional types,  |
 | `ui-skills`                                      | 🟡 Full   | Opinionated, evolving constraints to guide agents when building interfaces       |
 | `ui-ux-designer`                                 | 🟡 Full   | Create interface designs, wireframes, and design systems. Masters                |
-| `ui-ux-pro-max`                                  | 🟡 Full   | UI/UX design intelligence. 50 styles, 21 palettes, 50 font pairings, 20 charts,  |
+| `ui-ux-pro-max`                                  | 🟡 Full   | UI/UX design intelligence v2.0. 67 styles, 96 palettes, 57 font pairings, 25 charts, 100 AI reasoning rules, 13 stacks. Design system generator with Qdrant memory integration. |
 | `ui-visual-validator`                            | 🟡 Full   | Rigorous visual validation expert specializing in UI testing,                    |
 | `using-superpowers`                              | 🟡 Full   | Use when starting any conversation - establishes how to find and use skills, req |
 | `viral-generator-builder`                        | 🟡 Full   | Expert in building shareable generator tools that go viral - name generators, qu |

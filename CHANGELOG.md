@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-02-21
+
+### Changed
+
+- **UI UX Pro Max v2.0** — Upgraded design intelligence skill with major enhancements:
+  - **Design System Generator** — AI-powered reasoning engine that analyzes project requirements and generates complete, tailored design systems (pattern, style, colors, typography, effects, anti-patterns)
+  - **100 Industry-Specific Reasoning Rules** — Automated style/color/typography selection based on product type and industry
+  - **Expanded Data** — 67 UI styles (was 50), 96 color palettes (was 21), 57 font pairings (was 50), 25 chart types (was 20), 13 tech stacks (was 9), 99 UX guidelines
+  - **Persist Design System** — Master + Overrides pattern for hierarchical retrieval across sessions (`--persist` flag)
+  - **Qdrant Memory Integration** — Design decisions automatically stored and retrieved for project continuity
+  - **SKILLS_CATALOG.md** — Updated `ui-ux-pro-max` description to reflect v2.0 capabilities
+
 ## [1.5.0] - 2026-02-20
 
 ### Added
