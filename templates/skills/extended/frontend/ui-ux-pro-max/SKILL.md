@@ -144,6 +144,9 @@ This command:
 3. Returns complete design system: pattern, style, colors, typography, effects
 4. Includes anti-patterns to avoid
 
+🚨 **CRITICAL OVERRIDE RULE**:
+The generated Design System is a **baseline**. If the User provides explicit, strict design constraints (e.g., "Use Cormorant font", "No bright yellow-golds", "Editorial style"), **the User's constraints ALWAYS override the generated design system.** Never let the script output discard the User's specific aesthetic requirements!
+
 **Example:**
 ```bash
 python3 .claude/skills/ui-ux-pro-max/scripts/search.py "beauty spa wellness service" --design-system -p "Serenity Spa"
@@ -246,7 +249,9 @@ python3 .claude/skills/ui-ux-pro-max/scripts/search.py "elegant luxury serif" --
 python3 .claude/skills/ui-ux-pro-max/scripts/search.py "layout responsive form" --stack html-tailwind
 ```
 
-**Then:** Synthesize design system + detailed searches and implement the design.
+**Then:** Synthesize design system + detailed searches and implement the design. 
+
+⚠️ **CRITICAL PRIORITY CHECK**: Before writing any code, compare the generated Design System against the User's initial prompt. If the user explicitly banned a color (e.g., "no bright yellow"), or mandated a specific font (e.g., "use Cormorant"), or specified a distinct aesthetic (e.g., "Editorial Print"), **YOU MUST SILENTLY DISCARD** any conflicting rules from the generated Design System and apply the user's constraints strictly.
 
 ---
 

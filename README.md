@@ -1,3 +1,5 @@
+🌐 *[Português (BR)](./README.pt-BR.md)* | English
+
 # 🚀 AGI Agent Kit
 
 > **Stop hallucinating. Start executing.**
