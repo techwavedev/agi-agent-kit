@@ -103,6 +103,15 @@ When a sub-agent or team fails, the framework:
 2. Does not corrupt state
 3. Allows re-dispatch after the issue is resolved
 
+### 6. Dynamic State Handoff (Agent Communication)
+
+Sub-agents execute sequentially based on the manifest, but they can dynamically communicate state to the next agent in line via a `handoff_state` object.
+- **Agent A**: Returns a JSON result containing `"handoff_state": { "key": "value" }`
+- **Orchestrator**: Injects the `handoff_state` object into the context payload provided to Agent B
+- **Agent B**: Uses the state to resume work exactly where Agent A left off
+  
+This solves the context-loss problem across deep, multi-stage agent workflows.
+
 ---
 
 ## How to Dispatch a Team

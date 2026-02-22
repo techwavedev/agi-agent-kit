@@ -113,7 +113,9 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path) -> 
         "execution_mode": "sequential",
         "instructions": (
             f"Invoke each sub-agent in order. Read their directive before invoking. "
-            f"Pass the payload JSON as context. Store results to memory with tag '{team_id}'."
+            f"Pass the original payload JSON as context. If a sub-agent returns a 'handoff_state' "
+            f"object, YOU MUST pass that state to the next sub-agent so they can continue the work. "
+            f"Store final results to memory with tag '{team_id}'."
         ),
         "memory_query": f"python3 execution/memory_manager.py auto --query \"{team_id} {payload.get('commit_msg', '')}\"",
         "memory_store": (
