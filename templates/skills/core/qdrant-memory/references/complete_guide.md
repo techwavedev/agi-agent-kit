@@ -378,7 +378,7 @@ python scripts/memory_retrieval.py list \
 
 ```bash
 # Search for Kubernetes errors with specific error code
-python scripts/hybrid_search.py \
+python skills/qdrant-memory/scripts/hybrid_search.py \
   --query "kubernetes deployment failed" \
   --keyword error_code=ImagePullBackOff \
   --keyword namespace=production \
@@ -483,7 +483,7 @@ python scripts/memory_retrieval.py store \
   --tags production error
 
 # Hybrid search with keyword filter
-python scripts/hybrid_search.py \
+python skills/qdrant-memory/scripts/hybrid_search.py \
   --query "image pull error" \
   --keyword type=error \
   --top-k 5
@@ -692,7 +692,7 @@ curl -H "api-key: $QDRANT_API_KEY" http://localhost:6333/collections
 | Store memory    | `python scripts/memory_retrieval.py store --content "..." --type TYPE`  |
 | Retrieve memory | `python scripts/memory_retrieval.py retrieve --query "..."`             |
 | List memories   | `python scripts/memory_retrieval.py list --type TYPE`                   |
-| Hybrid search   | `python scripts/hybrid_search.py --query "..." --keyword key=value`     |
+| Hybrid search   | `python skills/qdrant-memory/scripts/hybrid_search.py --query "..." --keyword key=value`     |
 
 ### Environment Variables
 

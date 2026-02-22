@@ -69,13 +69,13 @@ If you need specific lookup behavior, use `hybrid_search.py` directly:
 
 ```bash
 # True Hybrid (Default) - Best for general refactoring
-python3 scripts/hybrid_search.py --query "fix auth error" --mode hybrid
+python3 skills/qdrant-memory/scripts/hybrid_search.py --query "fix auth error" --mode hybrid
 
 # Vector Only - Best for conceptual research
-python3 scripts/hybrid_search.py --query "authentication patterns" --mode vector
+python3 skills/qdrant-memory/scripts/hybrid_search.py --query "authentication patterns" --mode vector
 
 # Keyword Only - Best for error codes/IDs
-python3 scripts/hybrid_search.py --query "sg-018f20ea63e82eeb5" --mode keyword
+python3 skills/qdrant-memory/scripts/hybrid_search.py --query "sg-018f20ea63e82eeb5" --mode keyword
 ```
 
 ## Memory Type Guide

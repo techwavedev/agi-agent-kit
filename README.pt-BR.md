@@ -314,13 +314,13 @@ python3 execution/memory_manager.py bm25-sync
 
 ```bash
 # Híbrido verdadeiro (padrão): vetorial + BM25 mesclados
-python3 scripts/hybrid_search.py --query "erro ImagePullBackOff" --mode hybrid
+python3 skills/qdrant-memory/scripts/hybrid_search.py --query "erro ImagePullBackOff" --mode hybrid
 
 # Apenas vetorial (semântico puro)
-python3 scripts/hybrid_search.py --query "arquitetura de banco de dados" --mode vector
+python3 skills/qdrant-memory/scripts/hybrid_search.py --query "arquitetura de banco de dados" --mode vector
 
 # Apenas palavras-chave (correspondência exata BM25)
-python3 scripts/hybrid_search.py --query "sg-018f20ea63e82eeb5" --mode keyword
+python3 skills/qdrant-memory/scripts/hybrid_search.py --query "sg-018f20ea63e82eeb5" --mode keyword
 ```
 
 ---
