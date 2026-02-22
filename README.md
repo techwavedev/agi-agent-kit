@@ -314,13 +314,13 @@ python3 execution/memory_manager.py bm25-sync
 
 ```bash
 # True hybrid (default): vector + BM25 merged
-python3 scripts/hybrid_search.py --query "ImagePullBackOff error" --mode hybrid
+python3 skills/qdrant-memory/scripts/hybrid_search.py --query "ImagePullBackOff error" --mode hybrid
 
 # Vector only (pure semantic)
-python3 scripts/hybrid_search.py --query "database architecture" --mode vector
+python3 skills/qdrant-memory/scripts/hybrid_search.py --query "database architecture" --mode vector
 
 # Keyword only (exact BM25 match)
-python3 scripts/hybrid_search.py --query "sg-018f20ea63e82eeb5" --mode keyword
+python3 skills/qdrant-memory/scripts/hybrid_search.py --query "sg-018f20ea63e82eeb5" --mode keyword
 ```
 
 ---

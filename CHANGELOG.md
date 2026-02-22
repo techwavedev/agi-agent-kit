@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3] - 2026-02-22
+
+### Fixed
+
+- **`system_checkup.py` missing after full install** — The script was accidentally removed during the v1.2.7 repository sanitization (`c564459`). Restored `system_checkup.py` to `templates/base/execution/` so `npx init` correctly copies it into new projects. Running `python3 execution/system_checkup.py --verbose` now works as documented.
+- **`hybrid_search.py` incorrect path in documentation** — README, README.pt-BR, `directives/memory_integration.md`, and `qdrant-memory/references/complete_guide.md` all referenced `scripts/hybrid_search.py`, which does not exist. Corrected all 6 occurrences to the actual path: `skills/qdrant-memory/scripts/hybrid_search.py`.
+
 ## [1.5.2] - 2026-02-21
 
 ### Added
