@@ -112,11 +112,13 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path) -> 
         "sub_agents": [load_subagent_directive(root, sa) for sa in subagents],
         "execution_mode": "sequential",
         "instructions": (
-            f"Invoke each sub-agent in order. Read their directive before invoking. "
-            f"Pass the original payload JSON as context. If a sub-agent returns a 'handoff_state' "
-            f"object, store it as raw JSON or optimized machine-readable format to Qdrant memory "
-            f"via `python3 execution/memory_manager.py store` tagged with '{run_id}' so parallel/remote "
-            f"agents can access it cleanly, AND pass it to the next sequential sub-agent. "
+            f"You are the Orchestrator. Invoke each sub-agent in order based on their specialized skills. "
+            f"Pass the original payload JSON as context. If a sub-agent works on a divided task, it MUST "
+            f"return a 'handoff_state' object containing its state, 'next_steps' for the following agent, "
+            f"and 'validation_requirements' for what must be tested. YOU MUST actively verify this plan, "
+            f"store the state as raw JSON to Qdrant memory via `python3 execution/memory_manager.py store` "
+            f"tagged with '{run_id}' against conflicts, AND pass it directly to the next sequential "
+            f"or testing sub-agent so they execute the required validation and next steps precisely. "
             f"Store final results to memory with tag '{team_id}'."
         ),
         "memory_query": f"python3 execution/memory_manager.py auto --query \"{team_id} {payload.get('commit_msg', '')}\"",
