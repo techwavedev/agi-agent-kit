@@ -4,6 +4,9 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+
 jobs:
   # ─────────────────────────────────────────────────────────────
   # RELEASE GATE — set RELEASE_BLOCKED=true in repo Settings →
