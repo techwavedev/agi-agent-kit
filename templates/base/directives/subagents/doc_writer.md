@@ -87,6 +87,7 @@ Return a structured summary:
 ## Quality Rules
 
 - Do NOT guess what code does — read the actual file
-- Write in plain, concise English — no filler phrases
+- **Write in plain, concise English — no filler phrases**. Docs are loaded into context limits, so every token counts.
+- **Keep files small**: If a document becomes too large or extended, break it into smaller files to avoid token-waste.
 - Match the existing doc style in the project
-- Never overwrite docs with less information than they previously had
+- Never overwrite docs with less technical information, but *do* remove conversational filler.

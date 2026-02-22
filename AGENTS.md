@@ -496,6 +496,19 @@ When a user says `/playbook`, "run a playbook", or asks for a multi-step workflo
 
 ---
 
+## Best Practices for Directives and Markdown (Token Optimization)
+
+Markdown files containing instructions, SOPs, and documentation (`.md`) are fed directly into the model's context window. **Long, extended markdown files waste precious tokens and dilute the agent's focus**, making it less effective.
+
+### Rules for Markdown Conciseness:
+
+1. **Keep it Short**: Challenge every sentence. If the LLM already knows the concept (e.g., standard coding patterns), do not explain it. "Assume the agent is already smart."
+2. **Modularize Large Files**: If a directive or documentation file exceeds 1,500 words or 10,000 bytes, split it into smaller, logically separated files and use parent-child references.
+3. **Prefer Examples Over Prose**: Use concise input/output examples rather than verbose textual descriptions of how something should work.
+4. **Remove Filler**: Eliminate conversational filler, redundant instructions, and obvious statements. Focus on the *what* and the *how*.
+
+---
+
 ## Best Practices for Execution Scripts
 
 ### Script Template

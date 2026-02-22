@@ -36,6 +36,7 @@ Validate that documentation written or updated by `doc-writer` is accurate, comp
    - [ ] Edge cases mentioned in code are reflected in docs?
    - [ ] No stale/outdated info left from before the change?
    - [ ] No fabricated details not present in the code?
+   - [ ] Is the document concise, token-efficient, and free of conversational filler?
 4. **Output verdict:**
    - `✅` if all checks pass
    - `❌` with a itemised gap list if checks fail

@@ -198,6 +198,34 @@ def syntax_check():
         sys.exit(1)
     print(f"✅ Python syntax valid ({total} files checked).")
 
+def check_markdown_size():
+    """Warn about excessively large Markdown files that may waste LLM tokens."""
+    print("🔍 Checking Markdown file sizes (Token Optimization)...")
+    exemptions = ["CHANGELOG.md", "README", "AGENTS.md", "SKILLS_CATALOG.md"]
+    warnings = []
+    MAX_SIZE = 15000  # bytes
+
+    for path in ROOT_DIR.rglob("*.md"):
+        if "node_modules" in str(path) or ".git" in str(path) or ".venv" in str(path):
+            continue
+        if any(ex in path.name for ex in exemptions):
+            continue
+            
+        try:
+            size = path.stat().st_size
+            if size > MAX_SIZE:
+                warnings.append(f"{path.relative_to(ROOT_DIR)} ({size // 1024} KB)")
+        except Exception:
+            pass
+
+    if warnings:
+        print(f"⚠️  Found {len(warnings)} large Markdown files. Consider modularizing these to save agent tokens:")
+        for w in warnings:
+            print(f"   - {w}")
+        # Not exiting here as this is a token optimization warning
+    else:
+        print("✅ Markdown files are reasonably sized.")
+
 def main():
     print("🚀 Starting Release Gate Protocol...")
     print("-----------------------------------")
@@ -211,6 +239,7 @@ def main():
     scan_secrets()
     check_versions()
     syntax_check()
+    check_markdown_size()
 
     print("-----------------------------------")
     print("✅ All checks passed. Ready for release.")
