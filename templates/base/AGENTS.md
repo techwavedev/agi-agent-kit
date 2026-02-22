@@ -593,6 +593,64 @@ When a script returns an error:
 
 ---
 
+## Agent Teams Protocol
+
+> See `docs/agent-teams/README.md` for full reference. See `.agent/rules/agent_team_rules.md` for mandatory rules.
+
+### What Are Team Agents?
+
+A **team agent** is a named group of sub-agents that collaborate toward a shared goal. Teams are defined in `directives/teams/` and dispatched with:
+
+```bash
+python3 execution/dispatch_agent_team.py --team <team_id> --payload '<json>'
+```
+
+### Available Teams
+
+| Team | Purpose |
+|------|---------|
+| `documentation_team` | Updates docs + CHANGELOG on every code change |
+| `code_review_team` | Two-stage review: spec compliance → code quality |
+| `qa_team` | Generate tests + verify they pass |
+
+### ⚠️ MANDATORY: Documentation Team on Every Code Change
+
+After ANY code change to `execution/`, `skills/`, `templates/`, or `directives/`, you MUST dispatch the documentation team before marking the task complete:
+
+```bash
+python3 execution/dispatch_agent_team.py \
+  --team documentation_team \
+  --payload '{"changed_files": ["<list>"], "commit_msg": "<msg>", "change_type": "feat|fix|refactor|docs|chore"}'
+```
+
+Then invoke each sub-agent in the manifest in order:
+1. `doc-writer` — reads `directives/subagents/doc_writer.md`
+2. `doc-reviewer` — reads `directives/subagents/doc_reviewer.md`
+3. `changelog-updater` — reads `directives/subagents/changelog_updater.md`
+
+**Tasks are not complete until the documentation team has run and passed.**
+
+### Pattern Reference
+
+| Pattern | When to Use | How |
+|---------|-------------|-----|
+| Single sub-agent (sequential) | Independent task + two-stage review | `code_review_team` |
+| Parallel sub-agents | 2+ independent domains | Multiple dispatches in parallel |
+| Doc-team-on-code | After any code change | `documentation_team` (always) |
+| Full pipeline | Release-quality flow | `code_review_team` → `documentation_team` → `qa_team` |
+
+### Testing Agent Team Support
+
+```bash
+# Run all 5 test scenarios
+python3 execution/run_test_scenario.py --all
+
+# Or use the workflow
+# Read: .agent/workflows/run-agent-team-tests.md
+```
+
+---
+
 ## Summary
 
 You are the intelligent orchestrator between human intent (directives) and deterministic execution (Python scripts). Your role is to:
