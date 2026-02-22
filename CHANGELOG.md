@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4] - 2026-02-22
+
+### Added
+
+- **Agent Teams & Dynamic State Handoff** — Implemented an advanced, purely deterministic sub-agent orchestration framework (closes #20):
+  - **`dispatch_agent_team.py`** — New orchestrator dynamically chains multiple targeted sub-agents, handling state transfer without agent loops or hallucinations.
+  - **Dynamic State Handoff (Pattern 6)** — Agents can pass complex intermediate data schemas directly through Qdrant semantic memory, which is pulled into the context of the next agent automatically.
+  - **Orchestrator Enforcement** — Orchestrator reads `handoff_state` explicitly requiring `next_steps` and `validation_requirements`, validating that sub-agents correctly divide tasks and dictate downstream validation.
+  - **Comprehensive Test Harness** — `execution/run_test_scenario.py` runs 6 sequential and parallel test scenarios, evaluating orchestrator logic, cross-domain parallel runs, and failure-recovery paths.
+  - **Full Team Patterns** — Built `documentation_team` (Writer, Reviewer, Changelog. Updater), `code_review_team` (Spec, Quality), `qa_team`, and `build_deploy_team`.
+
 ## [1.5.3] - 2026-02-22
 
 ### Fixed

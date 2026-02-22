@@ -5,318 +5,259 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4] - 2026-02-22
+
+### Added
+
+- **Agent Teams & Dynamic State Handoff** — Implemented an advanced, purely deterministic sub-agent orchestration framework (closes #20):
+  - **`dispatch_agent_team.py`** — New orchestrator dynamically chains multiple targeted sub-agents, handling state transfer without agent loops or hallucinations.
+  - **Dynamic State Handoff (Pattern 6)** — Agents can pass complex intermediate data schemas directly through Qdrant semantic memory, which is pulled into the context of the next agent automatically.
+  - **Orchestrator Enforcement** — Orchestrator reads `handoff_state` explicitly requiring `next_steps` and `validation_requirements`, validating that sub-agents correctly divide tasks and dictate downstream validation.
+  - **Comprehensive Test Harness** — `execution/run_test_scenario.py` runs 6 sequential and parallel test scenarios, evaluating orchestrator logic, cross-domain parallel runs, and failure-recovery paths.
+  - **Full Team Patterns** — Built `documentation_team` (Writer, Reviewer, Changelog. Updater), `code_review_team` (Spec, Quality), `qa_team`, and `build_deploy_team`.
+
 ## [1.5.3] - 2026-02-22
 
 ### Fixed
 
-- **`system_checkup.py` missing after full install** — Restored `system_checkup.py` to `templates/base/execution/` after it was accidentally removed during the v1.2.7 repository sanitization. Running `python3 execution/system_checkup.py --verbose` now works as documented.
-- **`hybrid_search.py` incorrect path in documentation** — Corrected stale `scripts/hybrid_search.py` references in README.md, README.pt-BR.md, `memory_integration.md`, and the qdrant-memory complete guide. Corrected path: `skills/qdrant-memory/scripts/hybrid_search.py`.
+- **`system_checkup.py` missing after full install** — The script was accidentally removed during the v1.2.7 repository sanitization (`c564459`). Restored `system_checkup.py` to `templates/base/execution/` so `npx init` correctly copies it into new projects. Running `python3 execution/system_checkup.py --verbose` now works as documented.
+- **`hybrid_search.py` incorrect path in documentation** — README, README.pt-BR, `directives/memory_integration.md`, and `qdrant-memory/references/complete_guide.md` all referenced `scripts/hybrid_search.py`, which does not exist. Corrected all 6 occurrences to the actual path: `skills/qdrant-memory/scripts/hybrid_search.py`.
+
+## [1.5.2] - 2026-02-21
+
+### Added
+
+- **Portuguese Localization** — Added `README.pt-BR.md` to support Brazilian Portuguese speakers.
+- **UI UX Pro Max Prompts** — Expanded the `ui-ux-pro-max` skill with proven structural and stylistic prompt examples (SaaS, Educational, Pet Grooming, AI Chatbot).
+
+## [1.5.1] - 2026-02-21
+
+### Changed
+
+- **UI UX Pro Max v2.0** — Upgraded design intelligence skill with major enhancements:
+  - **Design System Generator** — AI-powered reasoning engine that analyzes project requirements and generates complete, tailored design systems (pattern, style, colors, typography, effects, anti-patterns)
+  - **100 Industry-Specific Reasoning Rules** — Automated style/color/typography selection based on product type and industry
+  - **Expanded Data** — 67 UI styles (was 50), 96 color palettes (was 21), 57 font pairings (was 50), 25 chart types (was 20), 13 tech stacks (was 9), 99 UX guidelines
+  - **Persist Design System** — Master + Overrides pattern for hierarchical retrieval across sessions (`--persist` flag)
+  - **Qdrant Memory Integration** — Design decisions automatically stored and retrieved for project continuity
+  - **SKILLS_CATALOG.md** — Updated `ui-ux-pro-max` description to reflect v2.0 capabilities
+
+## [1.5.0] - 2026-02-20
+
+### Added
+
+- **Smart Init Wizard** — Complete overhaul of `npx init` with a guided, step-by-step setup experience:
+  - **Existing install detection** — Reads `.agi-version` stamp; offers `Update` (preserve `.env`), `Reinstall` (full overwrite), or `Cancel`. Shows installed vs incoming version with downgrade warning.
+  - **Install scope prompt** — Choose between project-local (current dir) or global (`~/.agent` + platform symlinks) with a compatibility table and pitfalls disclaimer.
+  - **Smart backup** — Scans files that would be overwritten before touching anything. For global installs, also detects real platform dirs that would be replaced by symlinks. Saves timestamped backup.
+  - **Custom domain pack selection** — New `4. custom` option shows all 15 skill domains with ■ professional and ■ community skill counts, supports comma/range multi-select (`1,3,7-9`, `all`).
+  - **Service-aware memory setup** — Detects Ollama, Docker, and Qdrant before asking. If a service is missing, asks whether it's not installed yet (shows install link) or running on a custom URL (prompts for URL + API key, verifies connectivity).
+  - **Agent Teams prompt** — Explicit opt-in to `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` with explanation and safe merge into `.claude/settings.json`.
+  - **Uninstall script** — Global installs generate `~/.agent/uninstall-agi.sh`, a ready-to-run script that removes all symlinks and the install directory.
+  - **Version stamp** — Writes `.agi-version` after every install/update.
+  - **Configurable final summary** — Shows exactly what was configured (memory, Agent Teams, MCP) and what manual steps remain (plugins, MCP servers).
+
+### Changed
+
+- **`verifyMemorySetup()`** — Now returns `true`/`false` so the final message correctly shows "Memory is READY" vs "start services" only when relevant.
+- **`writeEnvFile()`** — Now writes the actual Qdrant URL, Ollama URL, and API key entered during setup instead of always defaulting to localhost.
+- **`copySkills()`** — Refactored to share a helper. Custom pack installs core first then resolves each selected domain from both `knowledge/` and `extended/` tiers.
+- **Platform setup** (`runPlatformSetup`) — Now runs _after_ the new `promptPlatformFeatures` step so user intent is captured before platform scripts apply settings.
+
+### Fixed
+
+- **Next steps message** — No longer suggests starting services when they were already verified during install.
+- **`memoryVerified` bug** — Was referenced but never assigned; `verifyMemorySetup()` return value is now captured.
+
+## [1.4.2]
+
+- **Fixed README links** — ./skills/SKILLS_CATALOG.md updated to ./templates/skills/SKILLS_CATALOG.md (closes #15)
+- **Removed Stitch Nested Duplicates** — Removed nested design-md/design-md, react-components/react-components, stitch-loop/stitch-loop (closes #16) - 2026-02-20
+
+### Added
+
+- **Workflow Engine** — `execution/workflow_engine.py` — executes multi-skill playbooks from `data/workflows.json` with state persistence, progress tracking, and branching logic (closes #13)
+- **Playbook Protocol in AGENTS.md** — Agents now know how to discover, start, and step through playbooks via the `/playbook` command
+- **4 Missing Slash Commands** — Created `setup.md`, `setup-memory.md`, `update.md`, `checkup.md` workflow files (closes #8)
+- **All 19 Agent Personas Documented** — README now lists all 19 agents instead of only 8 (closes #9)
+
+### Fixed
+
+- **README Skill Counts** — 853→878 (was stale since v1.3.7); breakdown: 4 core + 89 knowledge + 785 extended (closes #6)
+- **README Platform Counts** — Fixed inconsistencies (4/8/9) to consistent 9 platforms everywhere (closes #10)
+- **README Trigger Keywords** — Fixed ghost skill names (`aws`→`aws-skills`, `aws-terraform`→`terraform-skill`, removed `consul`/`opensearch` EC-scoped refs) (closes #11)
+- **10 Skills Missing AGI Framework Integration** — Added `🧠 AGI Framework Integration` section to 10 knowledge skills that lacked it (closes #7)
+- **init.js Skill Counts** — Updated 793→785 to match actual after removals
+- **SKILLS_CATALOG.md Header** — Updated 886→878 to match actual
+
+### Removed
+
+- **8 Duplicate Skills** — Finally removed 8 skills that v1.3.7 CHANGELOG claimed were removed but still existed (closes #12):
+  - `pptx-official`, `docx-official` (duplicates of `pptx`, `docx`)
+  - `brand-guidelines-community`, `brand-guidelines-anthropic` (merged into `brand-guidelines`)
+  - `internal-comms-community`, `internal-comms-anthropic` (merged into `internal-comms`)
+  - `mcp-builder-ms`, `skill-creator-ms` (merged into `mcp-builder`, `skill-creator`)
+- **Skill Count** — 886→878 (net -8 duplicates)
+
+## [1.4.1] - 2026-02-20
+
+### Added
+
+- **11 New Upstream Skills** — Imported and adapted from `antigravity-awesome-skills` latest:
+  - `crypto-bd-agent` — Autonomous crypto business development patterns
+  - `dbos-golang`, `dbos-python`, `dbos-typescript` — DBOS durable workflow SDKs
+  - `ddd-context-mapping`, `ddd-strategic-design`, `ddd-tactical-patterns`, `domain-driven-design` — Domain-Driven Design suite
+  - `laravel-expert`, `laravel-security-audit` — Laravel development and security
+  - `react-flow-architect` — ReactFlow interactive graph applications
+- **Release Gate UX** — Added progress indicators to secret scanning and syntax checking
+
+### Fixed
+
+- **Skill Count Update** — Total skills 875→886, Extended 782→793
+
+## [1.4.0] - 2026-02-20
+
+### Added
+
+- **Workflows Metadata** — Added `data/workflows.json` with 4 guided multi-skill playbooks:
+  - `ship-saas-mvp` — 5-step SaaS delivery
+  - `security-audit-web-app` — 4-step AppSec review
+  - `build-ai-agent-system` — 4-step AI agent design
+  - `qa-browser-automation` — 3-step E2E testing
+
+### Fixed
+
+- **Skill Count Correction** — Updated SKILLS_CATALOG.md and init.js from stale 862/76 to actual 875/89. Core: 4, Knowledge (Medium): 89, Extended (Full): 782.
+
+## [1.3.8] - 2026-02-20
+
+### Fixed
+
+- **Memory System Path Resolution** — Fixed `ModuleNotFoundError` for `embedding_utils` in `memory_manager.py` and `session_init.py` by implementing an adaptive multi-candidate path approach. This ensures correct script initialization inside natively customized workspaces and `npx`-bootstrapped agent projects.
+
+## [1.3.7] - 2026-02-17
+
+### Fixed
+
+- **Skill Conflict Resolution** — Resolved 8 conflicting skill pairs detected in Gemini CLI:
+  - **6 duplicates removed**: `xlsx-official`, `pdf-official`, `pptx-official`, `docx-official`, `brand-guidelines-community`, `internal-comms-community` (identical SKILL.md content, only `__pycache__` differed)
+  - **2 MS-specialized skills merged**: `mcp-builder-ms` → `mcp-builder` (added C#/.NET SDK, Azure MCP ecosystem, Foundry remote MCP), `skill-creator-ms` → `skill-creator` (added Azure SDK Appendix with auth patterns, verb patterns, product categories)
+  - **2 skills renamed**: `brand-guidelines-anthropic` → `brand-guidelines`, `internal-comms-anthropic` → `internal-comms`
+
+### Changed
+
+- **Skill count**: 861 → 853 (8 redundant skill directories removed, 0 content lost)
+- **`mcp-builder`**: Now includes Microsoft MCP ecosystem section (Azure MCP Server, Foundry MCP, Fabric MCP), C#/.NET language support, and transport selection tables
+- **`skill-creator`**: Now includes Azure SDK Skill Patterns appendix with DefaultAzureCredential patterns, standard verb patterns, and product area categories
+
+## [1.3.6] - 2026-02-16
+
+### Security
+
+- **Backend Template Hardening** — Resolved 5 high-severity vulnerabilities in `loki-mode` backend example by upgrading dependencies.
+
+### Added
+
+- **OpenClaw Platform Support** — Complete integration with auto-detection and instruction symlinks.
+  - **Badge**: Added OpenClaw badge to README
+  - **Ecosystem**: Now supporting 9 major AI coding platforms
+
+- **Hybrid BM25+Vector Memory Search** — True hybrid retrieval combining Qdrant vector similarity with SQLite FTS5 keyword search:
+  - **BM25 Index** (`bm25_index.py`): SQLite FTS5 sidecar for exact keyword matching (error codes, IDs, env vars)
+  - **Weighted Score Merge**: `finalScore = 0.7 × vectorScore + 0.3 × textScore` (configurable)
+  - **3 Search Modes**: `hybrid` (default), `vector`, `keyword`
+  - **Auto-indexing**: Every `store_memory()` call automatically indexes into BM25
+  - **`bm25-sync` command**: Rebuild keyword index from existing Qdrant collection
+  - **Graceful fallback**: Falls back to vector-only if BM25 unavailable
+  - **FTS5 query sanitization**: Handles special characters (hyphens, dots) in search terms
+  - **16/16 tests passing**: 4 new BM25 tests (index, hybrid, score merge, fallback)
+
+## [1.3.5] - 2026-02-16
+
+### Added
+
+- **Extended Skills Tier: 861 Total Skills** — Integrated 782 community skills from [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills) (v5.4.0). Restructured skill tiers:
+  - **Core** (4 skills): webcrawler, pdf-reader, qdrant-memory, documentation
+  - **Medium** (75 skills): Core + specialized skills across 16 categories
+  - **Full** (861 skills): Medium + 782 community skills, all adapted for AGI framework
+
+- **Categorized Skill Organization** — All skills organized into 16 domain categories:
+  `frontend/`, `backend/`, `ai-agents/`, `devops/`, `testing/`, `security/`, `architecture/`, `mobile/`, `debugging/`, `documentation/`, `workflow/`, `content/`, `data/`, `gaming/`, `blockchain/`, `other/`
+
+- **8-Platform Support** — Claude Code, Gemini CLI, Codex CLI, Antigravity IDE, Cursor, GitHub Copilot, OpenCode, AdaL CLI
+
+- **AGI Framework Adaptation** — All 782 community skills adapted with:
+  - Qdrant Memory Integration (semantic caching)
+  - Agent Team Collaboration (orchestrator-driven invocation)
+  - Local LLM Support (Ollama embeddings)
+
+- **Automated NPM Publishing** — GitHub Actions workflow: create a release → NPM publishes automatically via OIDC Trusted Publisher
+
+### Credits
+
+This release includes skills aggregated from 50+ open-source contributors including Anthropic, Microsoft, Vercel Labs, Supabase, Trail of Bits, and many more. See [SOURCES.md](https://github.com/sickn33/antigravity-awesome-skills/blob/main/docs/SOURCES.md) for the full attribution ledger.
 
 ## [1.2.8] - 2026-02-14
 
 ### Added
 
-- **Superpowers Adaptation**: Adapted best patterns from [obra/superpowers](https://github.com/obra/superpowers) into the agi framework, extending it with structured execution, TDD enforcement, and verification gates while preserving all existing multi-platform, memory, and agent capabilities.
-
-  **New Skills:**
-  - **`executing-plans`**: Structured plan execution with two modes — Batch (3 tasks + human checkpoint) or Subagent-Driven (fresh agent per task + two-stage review: spec compliance then code quality). Platform-adaptive across Claude Code, Gemini, Kiro, and Opencode.
-  - **`test-driven-development`**: Iron-law TDD enforcement with RED-GREEN-REFACTOR cycle, rationalization prevention table, and verification checklist. "No production code without a failing test first."
-  - **`verification-before-completion`**: Universal evidence gate — no completion claims without fresh verification output. Integrates with agi audit scripts (`checklist.py`, `security_scan.py`, `lint_runner.py`, etc.).
-
-### Changed
-
-- **`systematic-debugging`**: Replaced lightweight 110-line version with comprehensive 4-phase methodology (Root Cause Investigation → Pattern Analysis → Hypothesis Testing → Implementation). Includes iron law, multi-component evidence gathering, rationalization table, and real-world impact stats (95% vs 40% first-time fix rate).
-- **`plan-writing`**: Added TDD step structure template (write test → verify fail → implement → verify pass → commit), bite-sized task granularity (2-5 min per step), and execution handoff to `executing-plans` skill.
-- **`brainstorming`**: Added HARD-GATE (no code before design approval), propose 2-3 approaches step, and design document saving with handoff to `plan-writing`.
-- **`orchestrator`** agent: Added two-stage review protocol (spec compliance then code quality), execution mode selection (batch vs subagent), verification gate, and referenced skills table.
-- **`parallel-agents`**: Added focused agent prompt structure template, explicit "when NOT to use" heuristic, and review-and-integrate protocol with `verification-before-completion` gate.
-- **`debugger`** agent: Added enhanced skills integration table referencing `systematic-debugging`, `test-driven-development`, and `verification-before-completion`.
-- **`SKILLS_CATALOG.md`**: Regenerated with 45 template skills (3 new: `executing-plans`, `test-driven-development`, `verification-before-completion`).
-
-### Why This Is More Complete Than Superpowers
-
-> All superpowers patterns were adopted. The agi framework extends them with capabilities superpowers does not have.
-
-| Capability                    |  obra/superpowers   |                  agi Framework                  |
-| ----------------------------- | :-----------------: | :---------------------------------------------: |
-| TDD Enforcement               |         ✅          |                  ✅ (adapted)                   |
-| Plan Execution with Review    |         ✅          |        ✅ (adapted + platform-adaptive)         |
-| Systematic Debugging          |         ✅          |   ✅ (adapted + `debugger` agent integration)   |
-| Verification Gates            |         ✅          |      ✅ (adapted + agi script integration)      |
-| Two-Stage Code Review         |         ✅          |         ✅ (adapted into orchestrator)          |
-| Git Worktrees                 |         ✅          |           ➖ (standard branches used)           |
-| Multi-Platform Orchestration  | ❌ Claude Code only | ✅ 4 platforms (Claude, Gemini, Kiro, Opencode) |
-| Semantic Memory (Qdrant)      |         ❌          |            ✅ 90-100% token savings             |
-| 19 Specialist Agents          |         ❌          |          ✅ Domain-specific boundaries          |
-| Agent Boundary Enforcement    |         ❌          |         ✅ File-type ownership protocol         |
-| Dynamic Question Generation   |         ❌          |         ✅ Trade-off tables, priorities         |
-| 12 Audit/Verification Scripts |         ❌          |     ✅ Security, lint, UX, SEO, Lighthouse      |
-| Memory-First Protocol         |         ❌          |          ✅ Auto cache-hit before work          |
-| Skill Creator + Catalog       |         ❌          |            ✅ 45+ composable skills             |
-| Platform Setup Wizard         |         ❌          |         ✅ One-shot auto-configuration          |
+- **Superpowers Adaptation** — Adapted best patterns from [obra/superpowers](https://github.com/obra/superpowers):
+  - **`executing-plans`**: Structured plan execution with Batch or Subagent-Driven modes + two-stage review
+  - **`test-driven-development`**: Iron-law TDD enforcement with RED-GREEN-REFACTOR cycle
+  - **`verification-before-completion`**: No completion claims without fresh verification output
+  - **`systematic-debugging`**: Comprehensive 4-phase methodology (Root Cause → Pattern Analysis → Hypothesis → Implementation)
 
 ## [1.2.7] - 2026-02-11
 
 ### Security & Maintenance
 
-- **Repository Sanitization**: Removed all internal development configurations (`.agent`, `.claude`, `.gemini`) and private skills from the public repository.
-- **Workflow Hardening**: Enforced fork-and-PR workflow in `CONTRIBUTING.md`.
-- **Community Standards**: Added issue templates and PR templates.
+- Repository sanitization: removed all internal development configurations from public repository
+- Workflow hardening: enforced fork-and-PR workflow
+- Added issue templates and PR templates
 
 ## [1.2.6] - 2026-02-10
 
 ### Added
 
-- **notebooklm-rag (Deep RAG)**: MCP-first autonomous knowledge backend powered by Google NotebookLM + Gemini. The agent fully manages NotebookLM via MCP tools — authentication, library CRUD, querying with auto follow-ups, and Qdrant caching for token savings and cross-session context keeping. Includes fallback Python scripts (Patchright browser automation) when MCP is unavailable. Opt-in for users with Google accounts; default RAG remains `qdrant-memory`. Based on [PleasePrompto/notebooklm-skill](https://github.com/PleasePrompto/notebooklm-skill) (MIT).
-
-### Removed
-
-- **notebooklm-mcp**: Merged into `notebooklm-rag`. The comprehensive Deep RAG skill supersedes the basic MCP connector.
-
-### Fixed
-
-- **npmignore**: Fixed deep-path glob patterns (`**/__pycache__/`, `**/*.pyc`, `**/data/`) preventing compiled Python files and sensitive data from leaking into the published NPM package.
-
-## [1.2.5] - 2026-02-09
-
-### Fixed
-
-- **Documentation Updates**: README updated to reflect current version and removed internal skill references.
-
-## [1.2.4] - 2026-02-09
-
-### Fixed
-
-- **Minor bug fixes**: Addressed issues from v1.2.3 release.
+- **NotebookLM RAG Skill**: Deep-search RAG powered by Google NotebookLM + Gemini. MCP-first autonomous knowledge backend with Qdrant caching for token savings.
 
 ## [1.2.3] - 2026-02-09
 
 ### Added
 
-- **Auto Python Virtual Environment**: `npx init` now auto-creates `.venv/` and installs all dependencies — eliminates the `externally-managed-environment` error on macOS.
-- **Auto Platform Setup**: `npx init` runs `platform_setup.py --auto` after venv creation, pre-configuring platform-specific settings (`.claude/settings.json`, `.claude/skills/`) and showing remaining manual steps.
-- **Activation Reference Table** (README): Comprehensive reference with 4 sections — 14 slash commands, 8 `@agent` mentions, 18 natural language trigger keyword categories, and 6 memory system commands.
-- **Semantic Memory Section** (README): Setup guide with Qdrant + Ollama commands, token savings table (90-100% savings), and usage examples.
-- **`pyright`** added to `requirements.txt` for Python type checking out of the box.
-
-### Changed
-
-- **`requirements.txt`**: Expanded from 6 to 12 packages across 5 organized sections (Core, Memory, Embeddings, Cloud, Testing & Auditing). Every dependency is documented with inline comments.
-- **`bin/init.js`**: Added `setupPythonEnv()` and `runPlatformSetup()` functions. Uses `child_process.execSync` for venv creation and `pip install`. Cross-platform support (macOS/Linux/Windows paths).
-- **README Prerequisites**: No longer tells users to `pip install` manually — now references auto-created `.venv` with activation command.
-- **Post-install message**: Step 1 is now "Activate the Python environment" instead of "Install Python dependencies."
-- **Templates synced**: `requirements.txt`, `README.md` copied to `templates/base/` for NPX distribution.
-- **Documentation SKILL.md**: `Last Updated` timestamp refreshed to 2026-02-09.
-- **SKILLS_CATALOG.md**: Regenerated with 56 skills.
-
-### Fixed
-
-- **`ModuleNotFoundError: No module named 'yaml'`**: `pyyaml` was missing from `requirements.txt` — `system_checkup.py` crashed on fresh installs. Now included in core dependencies.
-- **Missing dependencies**: `gitpython`, `ollama`, `sentence-transformers`, `playwright` were used by skills but not listed in `requirements.txt`. All now included.
-- **`--auto-apply` flag**: `init.js` called `platform_setup.py` with non-existent `--auto-apply` flag — fixed to use existing `--auto` flag.
-
-## [1.2.2] - 2026-02-09
-
-### Added
-
-- **Platform-Adaptive Multi-Agent Orchestration** (`parallel-agents` v2.0):
-  - **Strategy A: Claude Code Agent Teams** — True parallel multi-agent orchestration via tmux/in-process sessions. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
-  - **Strategy B: Claude Code Subagents** — Background/foreground task orchestration via `Task()` tool with `context: fork`.
-  - **Strategy C: Sequential Personas** — Universal fallback for Gemini, Opencode, and other platforms using `@agent` persona switching.
-  - **Strategy D: Kiro Autonomous Agent** — Async parallel task execution in sandboxed environments with PR-based delivery and cross-repo coordination.
-  - Automatic platform detection and strategy selection.
-  - Subagent configuration reference (frontmatter, tools, permissions, model, memory).
-  - Full Claude Code subagent lifecycle documentation (create, configure, invoke, manage).
-
-- **Kiro IDE Powers & Autonomous Agent Support**:
-  - Full Kiro Powers documentation: `POWER.md` anatomy, frontmatter keywords activation, onboarding sections, steering files, `mcp.json` configuration with auto-namespacing.
-  - Kiro Hooks system (`.kiro/hooks/`) with JSON structure and automated behaviors.
-  - Kiro Autonomous Agent: sandboxed execution, PR-based reviews, cross-repo coordination, learning from code reviews.
-  - 12 curated launch partner Powers documented (Figma, Supabase, Stripe, Neon, Netlify, Postman, Strands, Datadog, Dynatrace, AWS CDK, Terraform, Aurora).
-  - **Antigravity ↔ Kiro mapping guide**: Skill-to-Power conversion workflow, directory mapping, frontmatter translation.
-
-- **Plugin & Extension Auto-Discovery** (`plugin-discovery` v1.1.0 — NEW SKILL):
-  - Cross-platform extension auto-discovery for Claude Code, Kiro IDE, Gemini, and Opencode.
-  - Claude Code: Plugin marketplace guide (official + custom), LSP plugins by language, service integrations, scopes, subagent/skill discovery.
-  - Kiro: Full Powers discovery, installation guide (IDE, kiro.dev, GitHub, local path), setup checklist.
-  - Gemini/Opencode: Skills catalog discovery, MCP server detection.
-  - Cross-platform compatibility map (11 features × 4 platforms).
-
-- **One-Shot Platform Setup Wizard** (`platform_setup.py`):
-  - Auto-detects platform: Claude Code, Kiro IDE, Gemini, Opencode.
-  - Scans project tech stack: languages (JS/TS/Python/Go/Rust/Ruby), frameworks (Next.js/React/Vue/Express/Angular/Svelte/Astro/React Native), services (GitHub/GitLab/Docker/Vercel/Netlify/Stripe/Supabase/Firebase/Terraform).
-  - Generates prioritized recommendations with `🔴 High` / `🟡 Medium` / `🟢 Low` indicators.
-  - Auto-applies configurable settings (Agent Teams, directory creation, hook setup) with single `Y/n` confirmation.
-  - Shows manual instructions for platform-only actions (plugin installs, Power installs).
-  - 4 modes: interactive, `--auto`, `--dry-run`, `--json`.
-  - New `/setup` workflow with `// turbo` annotation for auto-run.
-
-- **Intelligent Routing v2.0** (`intelligent-routing` v2.0):
-  - Platform detection at session start (Claude Code, Kiro IDE, Gemini, Opencode).
-  - Proactive capability announcements per platform.
-  - Team Leader mode for Claude Code with Agent Teams enabled.
-  - Powers-driven orchestration mode for Kiro IDE.
-  - Proactive feature recommendations: suggests Agent Teams, plugins, Powers, Autonomous Agent when not enabled.
-  - Multi-domain task routing adapts to best available parallelism strategy.
-
-- **Memory System Integration** (`session_boot.py` — NEW SCRIPT):
-  - `execution/session_boot.py` — Single entry point for session initialization. Checks Qdrant, Ollama, embedding models, and collections in one command. `--auto-fix` flag auto-pulls missing models and creates collections.
-  - **Session Boot Protocol** added as the **first section** in `AGENTS.md` — agents run `python3 execution/session_boot.py --auto-fix` before any work begins.
-  - `AGENTS.md` Memory-First section rewritten with explicit CLI commands: `memory_manager.py auto`, `store`, `cache-store` with decision tree table.
-  - `platform_setup.py` now detects full memory system: Qdrant status, Ollama status, embedding model presence, collection existence, point counts.
-  - Memory recommendations engine: suggests starting Qdrant/Ollama, pulling embedding model, or initializing collections when issues are detected.
-  - Memory report section (🧠) in platform setup output shows live system status.
-
-### Changed
-
-- **`parallel-agents`**: Rewritten from v1.0 to v2.0 — now platform-adaptive with 4 orchestration strategies instead of 1.
-- **`intelligent-routing`**: Rewritten from v1.0 to v2.0 — now includes platform detection, proactive recommendations, and Kiro support.
-- **Cross-Platform Compatibility Map**: Updated with 2 new rows (Dynamic MCP Loading, Cross-Repo Tasks) and accurate Kiro feature coverage.
-- **`package.json`**: Added `kiro`, `opencode`, and `platform-adaptive` keywords for NPM discoverability.
-- **Templates**: All modified skills (`parallel-agents`, `intelligent-routing`, `plugin-discovery`) and scripts (`platform_setup.py`) synced to `templates/skills/knowledge/` for NPX distribution.
-- **SKILLS_CATALOG.md**: Regenerated with 56 skills, including the new `plugin-discovery` skill.
-- **`bin/init.js`**: NPX init now copies `execution/` scripts (session_boot.py, session_init.py, memory_manager.py) and `directives/` (memory_integration.md) to scaffolded projects. Update function also refreshes these files.
-- **Post-install message**: Now shows `session_boot.py --auto-fix` as step 3 after installation.
-- **`/setup-memory` workflow**: Fixed stale references, now uses correct scripts (session_init.py, memory_manager.py).
-- **`/setup` workflow**: Added memory system troubleshooting section with Docker/Ollama/collection init commands.
-
-### Fixed
-
-- **Stale script references**: `/setup-memory` workflow referenced non-existent `init_memory_system.py` and `memory_middleware.py` — now correctly uses `session_init.py` and `memory_manager.py`.
-- **Memory system unused**: Despite being installed, no agent instructions explicitly told agents WHEN to call the memory scripts. Now enforced via Session Boot Protocol at top of AGENTS.md.
-- **`platform_setup.py` missing memory**: Setup wizard reported platform features but ignored Qdrant/Ollama status — now detects and recommends fixes.
-- **`info` action missing**: Platform setup wizard didn't handle informational recommendations (e.g., "collections are empty") — added `info` action type with ℹ️ status icon.
-- **Templates missing execution scripts**: NPX init created the `execution/` directory but didn't copy any scripts into it — now ships session_boot.py, session_init.py, and memory_manager.py.
+- **Auto Python Virtual Environment**: `npx init` now auto-creates `.venv/` and installs all dependencies
+- **Auto Platform Setup**: `npx init` runs `platform_setup.py --auto` after venv creation
+- **Activation Reference Table**: 14 slash commands, 8 `@agent` mentions, 18 trigger keyword categories, 6 memory commands
+- **Platform-Adaptive Multi-Agent Orchestration**: 4 strategies (Agent Teams, Subagents, Sequential Personas, Kiro Autonomous Agent)
+- **Plugin & Extension Auto-Discovery**: Cross-platform extension discovery for Claude Code, Kiro IDE, Gemini, and Opencode
+- **One-Shot Platform Setup Wizard**: Auto-detects platform, scans project stack, generates recommendations, auto-applies settings
+- **Memory System Integration**: `session_boot.py` — single entry point for Qdrant + Ollama initialization
 
 ## [1.1.7] - 2026-02-07
 
 ### Added
 
-- **NotebookLM RAG Skill** (EC Scoped): New `notebooklm-rag` skill providing deep-search RAG capabilities powered by Google NotebookLM + Gemini 2.5. Complementary to `qdrant-memory` for explicit, document-grounded research.
-  - **B.L.A.S.T. Protocol**: Structured research workflow (Browse → Load → Ask → Synthesize → Transfer).
-  - **4 Research Modes**: Quick (single query), Deep (3-5 iterative), Cross-Ref (multi-notebook), Plan (doc-grounded planning).
-  - **Confidence Classification**: Automatic HIGH/MEDIUM/LOW categorization with source attribution.
-  - `scripts/research_query.py` — Generates structured research questions by mode.
-  - `scripts/research_report.py` — Formats findings into Markdown/JSON reports with confidence levels and knowledge gap analysis.
-  - `scripts/preflight_check.py` — Pre-flight validation checklist for MCP server, auth, and library.
-  - `references/research_patterns.md` — Workflow templates, query optimization, rate limit strategies.
-- **Auto-Update in Skill Creator**: `init_skill.py` now auto-runs `update_catalog.py` and `sync_docs.py` after creating a new skill.
-  - Default ON — use `--no-auto-update` to skip.
-  - New `--skills-dir` flag for specifying catalog update target directory.
-  - Non-fatal: graceful warnings if documentation skill is not installed.
-
-### Changed
-
-- **NotebookLM MCP Skill**: Migrated to `PleasePrompto/notebooklm-mcp` browser-automated implementation with full auth, library management, and stealth mode support.
-- **Skill Creator Documentation** (`SKILL_skillcreator.md`):
-  - Step 3: Documents new auto-update behavior and `--no-auto-update` / `--skills-dir` flags.
-  - Step 6: Notes that manual catalog update is now only needed for modifications/deletions.
-- **SKILLS_CATALOG.md**: Regenerated with 55 skills including `notebooklm-rag`.
-
-### Fixed
-
-- **`init_skill.py` argument parsing**: Migrated from fragile positional parsing (`sys.argv`) to robust `argparse` with proper help text and validation.
-- **`sync_docs.py` invocation**: Fixed `--update-catalog` flag to pass `"true"` as required value (not just the bare flag).
-
-## [1.1.6] - 2026-02-07
-
-### Added
-
-- **37 Knowledge Skills Promoted to Root**: All knowledge-pack skills now live at `skills/` root alongside core skills for unified access:
-  - `api-patterns`, `app-builder`, `architecture`, `bash-linux`, `behavioral-modes`, `brainstorming`, `clean-code`, `code-review-checklist`, `database-design`, `deployment-procedures`, `documentation-templates`, `frontend-design`, `game-development`, `geo-fundamentals`, `i18n-localization`, `intelligent-routing`, `lint-and-validate`, `mcp-builder`, `mobile-design`, `nextjs-best-practices`, `nodejs-best-practices`, `parallel-agents`, `performance-profiling`, `plan-writing`, `powershell-windows`, `python-patterns`, `react-patterns`, `red-team-tactics`, `seo-fundamentals`, `server-management`, `systematic-debugging`, `tailwind-patterns`, `tdd-workflow`, `testing-patterns`, `vulnerability-scanner`, `webapp-testing`.
-- **NotebookLM MCP Skill**: New `notebooklm-mcp` skill to interact with Google NotebookLM via Model Context Protocol, with documentation, example script, and reference assets.
-- **Opencode Support**: Added `OPENCODE.md` configuration file for Opencode editor compatibility with `opencode-antigravity-auth` plugin.
-- **Execution Scripts**: Two new deterministic execution scripts:
-  - `memory_manager.py` — Centralized memory management for Qdrant operations.
-  - `session_init.py` — Session initialization and context bootstrapping.
-- **Stitch Skills in Templates**: `design-md`, `react-components`, and `stitch-loop` now included in knowledge templates (`templates/skills/knowledge/`) for NPX distribution.
-- **Self-Update in Templates**: `self-update` skill with `update_kit.py` added to knowledge templates.
-- **Knowledge SKILLS_CATALOG**: New comprehensive `SKILLS_CATALOG.md` inside `templates/skills/knowledge/` for template-level skill discovery.
-
-### Changed
-
-- **AGENTS.md**: Added "Getting Started" section with installation, dependency, and update instructions.
-- **Memory Integration Directive**: Complete rewrite of `directives/memory_integration.md` — simplified from 211 lines to 95 lines with clearer goal/inputs/execution structure and Ollama embedding documentation.
-- **Skill Creator**: Updated `SKILL_skillcreator.md` with refined skill creation guidelines.
-- **SKILLS_CATALOG.md**: Expanded with 560+ lines of new skill entries covering all promoted knowledge skills.
-- **Documentation Skill**: Updated `skills/documentation/SKILL.md` with improved detection and sync logic.
-- **Template Hierarchy Restructured**: Shifted standalone template skills (`design-md`, `react-components`, `stitch-loop`) into `templates/skills/knowledge/` for consistent NPX packaging.
-
-### Improved
-
-- **Core Skill Definitions**: Refined SKILL.md files across `pdf-reader`, `qdrant-memory`, and `webcrawler` with updated descriptions, triggers, and references.
-- **Qdrant Memory Scripts**: Updated all 7 scripts (`benchmark_token_savings.py`, `embedding_utils.py`, `hybrid_search.py`, `init_collection.py`, `memory_retrieval.py`, `semantic_cache.py`, `test_skill.py`) with improved patterns.
-- **Knowledge Skill Documentation**: Mass update of SKILL.md definitions across 36+ knowledge skills with enhanced frontmatter, triggers, and reference content in templates.
-- **Audit Scripts**: Updated `ux_audit.py`, `security_scan.py`, `lighthouse_audit.py`, `test_runner.py`, `playwright_runner.py`, and `seo_checker.py` in templates.
-
-### Fixed
-
-- **Version Bump**: Package version correctly set to `1.1.6` in `package.json`.
-- **Template Cleanup**: Removed duplicate standalone Stitch skill templates (`templates/skills/design-md/`, `templates/skills/react-components/`, `templates/skills/stitch-loop/`), consolidated into `templates/skills/knowledge/`.
-- **Removed `verify_public_release.py`**: Deprecated top-level verification script removed (functionality integrated into CI/CD pipeline).
+- **NotebookLM MCP Skill**: Interact with Google NotebookLM via Model Context Protocol
+- **37 Knowledge Skills Promoted**: All knowledge-pack skills now live at `skills/` root for unified access
+- **Opencode Support**: Added `OPENCODE.md` configuration
 
 ## [1.1.5] - 2026-01-27
 
 ### Added
 
-- **Stitch Skills Suite**: Added three new skills from Google Stitch:
-  - `design-md`: Analyzes Stitch projects to synthesize semantic `DESIGN.md` systems.
-  - `react-components`: Converts Stitch screens into modular, validating React components.
-  - `stitch-loop`: Orchestrates autonomous iterative website building loops.
-- **Memory Integration**: Integrated `qdrant-memory` into the Stitch skills suite for:
-  - Storing design systems for future retrieval (`design-md`).
-  - Retrieving code patterns and interfaces (`react-components`).
-  - Leveraging past decisions and project context (`stitch-loop`).
-
-## [1.1.2] - 2026-01-23
-
-### Added
-
-- **Self-Update Skill**: New `self-update` skill with `update_kit.py` script for easy framework updates.
-- **System Checkup**: New `system_checkup.py` execution script to verify agents, skills, workflows, and scripts.
-- **Workflows**: Added `/checkup` and `/update` workflows for quick access.
-
-### Changed
-
-- Updated `README.md` with comprehensive Quick Start, Commands, and Architecture sections.
-- Updated `SKILLS_CATALOG.md` to include self-update skill.
-
-## [1.1.01] - 2026-01-23
-
-### Fixed
-
-- Stabilized Full Suite activation.
-- Micro-bump for polish releases.
+- **Stitch Skills Suite**: `design-md`, `react-components`, `stitch-loop` with Qdrant memory integration
 
 ## [1.1.0] - 2026-01-23
 
 ### Added
 
-- **Knowledge Pack**: Imported 36+ new skills from `agents-web` including:
-  - `api-patterns`: Best practices for REST/GraphQL/tRPC.
-  - `frontend-design`: UX/UI principles and audit tools.
-  - `security-auditor`: Vulnerability scanning and red-team tactics.
-  - `mobile-design`: iOS/Android development patterns.
-- **Agent Roles**: Added `project-planner`, `orchestrator`, and `security-auditor` agent personas.
-- **Rules**: Added global `deployment_policy` and `clean-code` standards.
-
-### Changed
-
-- Refactored `init` command to support `knowledge` pack.
-- Enhanced `AGENTS.md` with new agent capabilities.
-- Updated `SKILLS_CATALOG.md` with full list of new skills.
-
-## [1.0.1] - 2026-01-23
-
-### Fixed
-
-- **Security**: Removed all references to private infrastructure from public templates.
-- **Safety**: Added `verify_public_release.py` to prevent accidental publication of private secrets.
-- **Menu**: Fixed `init` menu showing internal options.
+- **Knowledge Pack**: 36+ new skills from `agents-web` (API patterns, frontend design, security, mobile)
+- **Agent Roles**: `project-planner`, `orchestrator`, `security-auditor`
+- **Clean-code** and **deployment** global standards
 
 ## [0.1.0] - 2026-01-23
 
 ### Initial Release
 
-- Core framework with `webcrawler`, `pdf-reader`, and `qdrant-memory`.
-- CLI tool `agi-agent-kit` for scaffolding.
+- Core framework with `webcrawler`, `pdf-reader`, and `qdrant-memory`
+- CLI tool `agi-agent-kit` for scaffolding
