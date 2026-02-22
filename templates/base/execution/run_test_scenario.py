@@ -15,8 +15,8 @@ Usage:
     python3 execution/run_test_scenario.py --all --verbose
 
 Arguments:
-    --scenario  Scenario number to run (1-5)
-    --all       Run all 5 scenarios
+    --scenario  Scenario number to run (1-6)
+    --all       Run all 6 scenarios
     --verbose   Show detailed output for each step
     --dry-run   Validate setup without dispatching agents
 
@@ -80,12 +80,12 @@ def validate_setup(root: Path) -> dict:
         checks[f"script:{script}"] = path.exists()
 
     # Team directives
-    for team in ["documentation_team", "code_review_team", "qa_team"]:
+    for team in ["documentation_team", "code_review_team", "qa_team", "build_deploy_team"]:
         path = root / "directives" / "teams" / f"{team}.md"
         checks[f"team:{team}"] = path.exists()
 
     # Sub-agent directives
-    for sa in ["doc_writer", "doc_reviewer", "changelog_updater", "spec_reviewer", "quality_reviewer"]:
+    for sa in ["doc_writer", "doc_reviewer", "changelog_updater", "spec_reviewer", "quality_reviewer", "asset_compiler", "cloud_deployer"]:
         path = root / "directives" / "subagents" / f"{sa}.md"
         checks[f"subagent:{sa}"] = path.exists()
 
@@ -355,6 +355,61 @@ def scenario_5_failure_recovery(root: Path, verbose: bool, dry_run: bool) -> dic
     }
 
 
+def scenario_6_dynamic_handoff(root: Path, verbose: bool, dry_run: bool) -> dict:
+    """
+    Scenario 6: Dynamic State Handoff
+    Pattern: state-handoff
+    Validates: build_deploy_team dispatch correctly instructs orchestrator to use Qdrant for handoff_state.
+    """
+    scenario_id = "scenario_06_state_handoff"
+    steps = []
+
+    payload = json.dumps({
+        "target_branch": "main",
+        "commit_sha": "fff9999",
+        "task_spec": "Compile production assets and deploy them.",
+        "task_id": "test-task-006"
+    })
+
+    dispatch_args = ["--team", "build_deploy_team", "--payload", payload]
+    if dry_run:
+        dispatch_args.append("--dry-run")
+
+    result = run_script(root, "dispatch_agent_team.py", dispatch_args, verbose)
+    steps.append({"step": "dispatch build_deploy_team", **result})
+
+    manifest = result["output"]
+    sub_agents = manifest.get("sub_agents", [])
+    sub_agent_ids = [sa.get("id") for sa in sub_agents]
+
+    expected = ["asset-compiler", "cloud-deployer"]
+    agents_present = all(ea in sub_agent_ids for ea in expected)
+
+    steps.append({
+        "step": "validate team has compiler and deployer",
+        "expected": expected,
+        "found": sub_agent_ids,
+        "pass": agents_present
+    })
+
+    # Validate the manifest actually references Qdrant / handoff_state
+    instructions = manifest.get("instructions", "")
+    handoff_supported = "handoff_state" in instructions and "Qdrant memory" in instructions
+    
+    steps.append({
+        "step": "validate Qdrant handoff instructions present",
+        "pass": handoff_supported
+    })
+
+    passed = result["exit_code"] == 0 and agents_present and handoff_supported
+    return {
+        "scenario": scenario_id,
+        "pattern": "state-handoff",
+        "status": "pass" if passed else "fail",
+        "steps": steps
+    }
+
+
 # ─── RUNNER ───────────────────────────────────────────────────────────────────
 
 SCENARIOS = {
@@ -363,13 +418,14 @@ SCENARIOS = {
     3: scenario_3_doc_team_on_code,
     4: scenario_4_full_pipeline,
     5: scenario_5_failure_recovery,
+    6: scenario_6_dynamic_handoff,
 }
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--scenario", type=int, choices=range(1, 6), help="Scenario number (1-5)")
-    parser.add_argument("--all", action="store_true", help="Run all 5 scenarios")
+    parser.add_argument("--scenario", type=int, choices=range(1, 7), help="Scenario number (1-6)")
+    parser.add_argument("--all", action="store_true", help="Run all 6 scenarios")
     parser.add_argument("--verbose", action="store_true", help="Show detailed step output")
     parser.add_argument("--dry-run", action="store_true", help="Validate setup without dispatching")
     args = parser.parse_args()
