@@ -25,6 +25,41 @@ SENSITIVE_PATTERNS = [
 ]
 REQUIRED_DOCS = ["README.md", "CHANGELOG.md"]
 
+# ── WIP LOCK ──────────────────────────────────────────────────────────────────
+# Drop a file named PUBLISHING_BLOCKED in the repo root to hard-stop any release.
+LOCK_FILE = ROOT_DIR / "PUBLISHING_BLOCKED"
+
+def check_wip_lock():
+    """Hard-fail if PUBLISHING_BLOCKED file is present in repo root."""
+    if LOCK_FILE.exists():
+        reason = LOCK_FILE.read_text(encoding="utf-8").strip() or "No reason specified."
+        print("🚫 PUBLISHING BLOCKED")
+        print("─" * 40)
+        print(reason)
+        print("─" * 40)
+        print("Remove PUBLISHING_BLOCKED from the repo root to unblock.")
+        sys.exit(1)
+
+def check_release_branch():
+    """Ensure we are on an allowed release branch (main or public)."""
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True, text=True, check=True, cwd=ROOT_DIR
+        )
+        branch = result.stdout.strip()
+    except subprocess.CalledProcessError:
+        branch = "unknown"
+
+    allowed = {"main", "public"}
+    if branch not in allowed:
+        print(f"🚫 PUBLISHING BLOCKED — current branch is '{branch}'")
+        print(f"   Publishing is only allowed from: {', '.join(sorted(allowed))}")
+        print(f"   Merge your work to main/public before releasing.")
+        sys.exit(1)
+    print(f"✅ On release branch: {branch}")
+
+
 def run_command(cmd, cwd=ROOT_DIR):
     """Run a shell command and return output."""
     try:
@@ -95,7 +130,7 @@ def scan_secrets():
     print(f"✅ No hardcoded secrets found ({scanned} files scanned).")
 
 def check_versions():
-    """Check package.json version matches changelog."""
+    """Check package.json version matches changelog and enforce the Patch-99 limit."""
     print("🔍 Checking version consistency...")
     pkg_json = ROOT_DIR / "package.json"
     changelog = ROOT_DIR / "CHANGELOG.md"
@@ -104,6 +139,30 @@ def check_versions():
         data = json.loads(pkg_json.read_text())
         version = data.get("version")
         print(f"ℹ️  Package version: {version}")
+        
+        # Enforce Patch-99 rule against main branch if available
+        try:
+            import subprocess
+            result = subprocess.run(["git", "show", "main:package.json"], capture_output=True, text=True, cwd=str(ROOT_DIR))
+            if result.returncode == 0:
+                old_data = json.loads(result.stdout)
+                old_version = old_data.get("version", "0.0.0")
+                
+                # Split versions into [major, minor, patch]
+                old_parts = [int(v) for v in old_version.split(".")]
+                new_parts = [int(v) for v in version.split(".")]
+                
+                if len(old_parts) == 3 and len(new_parts) == 3:
+                    if new_parts[1] > old_parts[1]:
+                        # Minor version bumped!
+                        if old_parts[2] < 99 and new_parts[0] == old_parts[0]:
+                            print(f"❌ MINOR BUMP REJECTED: You are trying to bump minor ({old_version} -> {version}), but patch has not reached .99 yet.")
+                            print("   Our standard protocol is to exhaust the patch number up to .99 for bug fixes and small features before incrementing minor.")
+                            response = input("Is this a mandated structural overhaul overriding this rule? (y/N): ")
+                            if response.lower() != 'y':
+                                sys.exit(1)
+        except Exception as e:
+            print(f"⚠️  Could not run the Patch-99 git check: {e}")
         
         if changelog.exists():
             content = changelog.read_text()
@@ -142,16 +201,21 @@ def syntax_check():
 def main():
     print("🚀 Starting Release Gate Protocol...")
     print("-----------------------------------")
-    
+
+    # ── Hard blocks (checked first, before anything else) ──
+    check_wip_lock()
+    check_release_branch()
+
     check_git_status()
     check_documentation()
     scan_secrets()
     check_versions()
     syntax_check()
-    
+
     print("-----------------------------------")
     print("✅ All checks passed. Ready for release.")
     sys.exit(0)
+
 
 if __name__ == "__main__":
     main()
