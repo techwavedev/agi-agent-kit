@@ -607,10 +607,12 @@ python3 execution/dispatch_agent_team.py --team <team_id> --payload '<json>'
 
 ### Dynamic State Handoff (Agent Communication)
 
-Sub-agents execute sequentially based on the manifest, but they can pass context to the next agent in line. 
+Sub-agents execute sequentially based on the manifest, but they can pass context to the next agent in line, or to remote agents executing in parallel.
 - If a sub-agent completes part of a task, it should output a `handoff_state` object in its resulting JSON.
-- The Primary Agent orchestrating the team **MUST** take that `handoff_state` and pass it to the next sub-agent as part of their context payload.
-- This allows Agent A to say *"I finished steps 1-3, here are the generated file paths. Agent B, please continue from step 4."*
+- The Primary Agent orchestrating the team **MUST** take that `handoff_state` and:
+  1. Store it to Qdrant memory using `python3 execution/memory_manager.py store` tagged with the team's run ID.
+  2. Pass it directly to the next local sub-agent as part of their context payload.
+- This allows Agent A (or a remote agent) to say *"I finished steps 1-3, here are the generated file paths. Anyone picking up this run_id, please continue from step 4."*
 
 ### Available Teams
 

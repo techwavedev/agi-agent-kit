@@ -105,12 +105,12 @@ When a sub-agent or team fails, the framework:
 
 ### 6. Dynamic State Handoff (Agent Communication)
 
-Sub-agents execute sequentially based on the manifest, but they can dynamically communicate state to the next agent in line via a `handoff_state` object.
+Sub-agents execute sequentially based on the manifest, but they can dynamically communicate state to the next agent in line, or to remote agents executing in parallel, via a `handoff_state` object.
 - **Agent A**: Returns a JSON result containing `"handoff_state": { "key": "value" }`
-- **Orchestrator**: Injects the `handoff_state` object into the context payload provided to Agent B
-- **Agent B**: Uses the state to resume work exactly where Agent A left off
+- **Orchestrator**: Stores the `handoff_state` object to Qdrant memory using `memory_manager.py` tagged with the team's run ID, and also injects it into the context payload provided to Agent B (if local).
+- **Agent B (or Remote Agent)**: Uses the state (either from payload or retrieved from Qdrant) to resume work exactly where Agent A left off.
   
-This solves the context-loss problem across deep, multi-stage agent workflows.
+This solves the context-loss problem across deep, multi-stage, or geographically distributed agent workflows.
 
 ---
 
