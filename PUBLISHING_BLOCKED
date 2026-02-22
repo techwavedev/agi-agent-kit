@@ -1,0 +1,15 @@
+PUBLISHING BLOCKED — Work in progress on feat/test-subagents-and-team-agents
+
+This lock was placed on 2026-02-22 while the sub-agent and team agent framework
+is being developed and tested. Publishing is blocked until:
+
+  [ ] All sub-agent and team agent work is complete and tested
+  [ ] All files are properly committed to the feature branch
+  [ ] The feature branch has been reviewed and merged to main
+  [ ] This lock file has been removed
+
+To unblock:
+  1. Complete the work on feat/test-subagents-and-team-agents
+  2. Merge to main via pull request
+  3. Delete this file from the root of the repository
+  4. Re-run: python3 .agent/scripts/release_gate.py
