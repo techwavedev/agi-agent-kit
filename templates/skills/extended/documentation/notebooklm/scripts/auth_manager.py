@@ -16,6 +16,7 @@ import argparse
 import shutil
 import re
 import sys
+from urllib.parse import urlparse
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -114,7 +115,7 @@ class AuthManager:
             page.goto("https://notebooklm.google.com", wait_until="domcontentloaded")
 
             # Check if already authenticated
-            if "notebooklm.google.com" in page.url and "accounts.google.com" not in page.url:
+            if urlparse(page.url).hostname == "notebooklm.google.com":
                 print("  ✅ Already authenticated!")
                 self._save_browser_state(context)
                 return True
@@ -260,7 +261,7 @@ class AuthManager:
             page.goto("https://notebooklm.google.com", wait_until="domcontentloaded", timeout=30000)
 
             # Check if we can access NotebookLM
-            if "notebooklm.google.com" in page.url and "accounts.google.com" not in page.url:
+            if urlparse(page.url).hostname == "notebooklm.google.com":
                 print("  ✅ Authentication is valid")
                 return True
             else:
