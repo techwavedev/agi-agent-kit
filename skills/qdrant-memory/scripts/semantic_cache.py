@@ -53,6 +53,19 @@ except ImportError:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from embedding_utils import get_embedding
 
+# Agent identity for write signing (optional — graceful if unavailable)
+try:
+    _IDENTITY_SCRIPTS = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__))))),
+        "execution"
+    )
+    sys.path.insert(0, _IDENTITY_SCRIPTS)
+    from agent_identity import load_identity, sign_memory_payload
+    _SIGNING_AVAILABLE = True
+except ImportError:
+    _SIGNING_AVAILABLE = False
+
 # Configuration
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 COLLECTION = os.environ.get("CACHE_COLLECTION", "semantic_cache")
@@ -137,7 +150,25 @@ def store_response(
         "token_count": len(response.split()),
         **(metadata or {})
     }
-    
+
+    # Sign the write if identity is available
+    if _SIGNING_AVAILABLE:
+        try:
+            identity = load_identity()
+            if identity:
+                sig_data = sign_memory_payload(
+                    content=query,
+                    memory_type="cache",
+                    timestamp=payload["timestamp"],
+                    agent_id=identity["agent_id"],
+                )
+                payload["_signature"] = sig_data["signature"]
+                payload["_agent_id"] = sig_data["agent_id"]
+                payload["_content_hash"] = sig_data["content_hash"]
+                payload["_signed_fields"] = sig_data["signed_fields"]
+        except Exception:
+            pass  # Signing failure must never block writes
+
     upsert_payload = {
         "points": [
             {
@@ -162,6 +193,8 @@ def store_response(
         "status": "stored",
         "point_id": point_id,
         "token_count": payload["token_count"],
+        "signed": "_signature" in payload,
+        "agent_id": payload.get("_agent_id"),
         "result": result
     }
 
