@@ -39,6 +39,11 @@ boto3                       # AWS SDK — Bedrock, S3, EKS, Lambda, etc.
 gitpython                   # Git integration — change detection, changelog generation
 
 # ---------------------
+# Agent Identity & Trust
+# ---------------------
+cryptography                # Ed25519 signing — agent identity, write signing
+
+# ---------------------
 # Testing & Auditing
 # ---------------------
 playwright                  # Browser automation — E2E testing, Lighthouse audits

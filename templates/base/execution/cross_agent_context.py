@@ -62,7 +62,7 @@ from embedding_utils import check_embedding_service
 from memory_retrieval import retrieve_context, store_memory, build_filter
 
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
-KNOWN_AGENTS = ["antigravity", "claude", "gemini", "cursor", "copilot", "opencode"]
+KNOWN_AGENTS = ["antigravity", "claude", "gemini", "cursor", "copilot", "opencode", "openclaw"]
 
 
 def store_agent_context(agent: str, action: str, project: str = None, tags: list = None) -> dict:
@@ -204,6 +204,103 @@ def handoff_task(from_agent: str, to_agent: str, task: str, context: str = "", p
     }
 
 
+def broadcast_context(from_agent: str, message: str, project: str = None, tags: list = None) -> dict:
+    """Broadcast a message to ALL agents via Qdrant (shared context for the whole team)."""
+    metadata = {
+        "agent_id": from_agent.lower(),
+        "cross_agent": True,
+        "broadcast": True,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    if project:
+        metadata["project"] = project
+    broadcast_tags = ["cross-agent", "broadcast", f"agent:{from_agent.lower()}"]
+    # Tag for every known agent so they all pick it up
+    for agent in KNOWN_AGENTS:
+        if agent != from_agent.lower():
+            broadcast_tags.append(f"for:{agent}")
+    if tags:
+        broadcast_tags.extend(tags)
+    metadata["tags"] = broadcast_tags
+
+    content = f"[BROADCAST from {from_agent.upper()}] {message}"
+    result = store_memory(content, "decision", metadata)
+    return {
+        "status": "broadcast_sent",
+        "from": from_agent,
+        "message": message,
+        "recipients": [a for a in KNOWN_AGENTS if a != from_agent.lower()],
+        "result": result,
+    }
+
+
+def get_pending_tasks(agent: str, project: str = None) -> dict:
+    """Get tasks handed off TO this agent (pending work from other agents)."""
+    query = f"handoff task for {agent}"
+    filters_must = [
+        {"key": "tags", "match": {"value": "handoff"}},
+        {"key": "tags", "match": {"value": f"for:{agent.lower()}"}},
+    ]
+    if project:
+        filters_must.append({"key": "project", "match": {"value": project}})
+
+    try:
+        context = retrieve_context(
+            query,
+            filters={"must": filters_must},
+            top_k=20,
+            score_threshold=0.2,
+        )
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+    # Also check broadcasts
+    broadcast_query = f"broadcast team update for {agent}"
+    broadcast_filters = [
+        {"key": "tags", "match": {"value": "broadcast"}},
+    ]
+    if project:
+        broadcast_filters.append({"key": "project", "match": {"value": project}})
+
+    try:
+        broadcasts = retrieve_context(
+            broadcast_query,
+            filters={"must": broadcast_filters},
+            top_k=10,
+            score_threshold=0.2,
+        )
+    except Exception:
+        broadcasts = {"chunks": []}
+
+    handoffs = context.get("chunks", [])
+    broadcast_chunks = broadcasts.get("chunks", [])
+
+    return {
+        "status": "ok",
+        "agent": agent,
+        "pending_handoffs": len(handoffs),
+        "handoffs": [
+            {
+                "content": h.get("content", "")[:300],
+                "timestamp": h.get("timestamp", ""),
+                "from_agent": next(
+                    (t.split(":")[1] for t in h.get("tags", []) if t.startswith("agent:")),
+                    "unknown"
+                ),
+            }
+            for h in handoffs
+        ],
+        "broadcasts": len(broadcast_chunks),
+        "broadcast_messages": [
+            {
+                "content": b.get("content", "")[:300],
+                "timestamp": b.get("timestamp", ""),
+            }
+            for b in broadcast_chunks
+        ],
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Cross-agent context sharing via Qdrant",
@@ -236,6 +333,18 @@ def main():
     handoff_p.add_argument("--context", default="", help="Additional context")
     handoff_p.add_argument("--project", help="Project name")
 
+    # Broadcast command
+    broadcast_p = subparsers.add_parser("broadcast", help="Broadcast context to all agents")
+    broadcast_p.add_argument("--agent", required=True, help="Your agent name")
+    broadcast_p.add_argument("--message", required=True, help="Message to broadcast")
+    broadcast_p.add_argument("--project", help="Project name")
+    broadcast_p.add_argument("--tags", nargs="+", help="Additional tags")
+
+    # Pending command
+    pending_p = subparsers.add_parser("pending", help="Check tasks handed off to you")
+    pending_p.add_argument("--agent", required=True, help="Your agent name")
+    pending_p.add_argument("--project", help="Filter by project")
+
     args = parser.parse_args()
 
     try:
@@ -260,6 +369,16 @@ def main():
             )
             print(json.dumps(result, indent=2))
             sys.exit(0)
+
+        elif args.command == "broadcast":
+            result = broadcast_context(args.agent, args.message, args.project, args.tags)
+            print(json.dumps(result, indent=2))
+            sys.exit(0)
+
+        elif args.command == "pending":
+            result = get_pending_tasks(args.agent, args.project)
+            print(json.dumps(result, indent=2))
+            sys.exit(0 if result.get("pending_handoffs", 0) > 0 or result.get("broadcasts", 0) > 0 else 1)
 
     except URLError as e:
         print(json.dumps({

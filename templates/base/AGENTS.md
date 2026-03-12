@@ -245,22 +245,30 @@ Multiple AI agents (Claude, Antigravity/Gemini, Cursor, etc.) share the **same Q
 # At session start: see what other agents have done
 python3 execution/cross_agent_context.py sync --agent "<your-name>" --project <project>
 
+# Check if anyone handed you a task
+python3 execution/cross_agent_context.py pending --agent "<your-name>" --project <project>
+
 # After completing work: share context with teammates
 python3 execution/cross_agent_context.py store --agent "<your-name>" --action "What you did" --project <project>
 
 # Hand off a task to another agent
 python3 execution/cross_agent_context.py handoff --from "<your-name>" --to "<target>" --task "Task description" --project <project>
 
+# Broadcast to ALL agents (breaking changes, major decisions)
+python3 execution/cross_agent_context.py broadcast --agent "<your-name>" --message "Team-wide update" --project <project>
+
 # Team status overview
 python3 execution/cross_agent_context.py status --project <project>
 ```
 
-**Agent names:** `antigravity`, `claude`, `gemini`, `cursor`, `copilot`, `opencode`
+**Agent names:** `antigravity`, `claude`, `gemini`, `cursor`, `copilot`, `opencode`, `openclaw`
 
 **Rules:**
-- At session start, run `sync` to see teammates' recent work before duplicating effort
+- At session start, run `sync` + `pending` to see teammates' work and pending handoffs
 - After key decisions, `store` your context so other agents stay informed
 - Use `handoff` when a task needs another agent's attention
+- Use `broadcast` for breaking changes or decisions that affect all agents
+- See `directives/multi_llm_collaboration.md` for full collaboration patterns
 
 ### 2. Check for Existing Tools First
 
@@ -699,6 +707,55 @@ python3 execution/run_test_scenario.py --all
 # Or use the workflow
 # Read: .agent/workflows/run-agent-team-tests.md
 ```
+
+---
+
+## Framework Self-Development (Dogfooding)
+
+When working on the AGI Agent Kit framework itself, use its own system:
+
+### Key Directives
+
+| Directive | Purpose |
+|-----------|---------|
+| `directives/framework_development.md` | SOP for coding the public framework |
+| `directives/template_sync.md` | Keeping root ↔ templates/base/ in sync |
+| `directives/skill_development.md` | Creating/updating/testing skills |
+| `directives/multi_llm_collaboration.md` | Multi-LLM collaboration via Qdrant |
+
+### Key Workflows
+
+| Workflow | Purpose |
+|----------|---------|
+| `.agent/workflows/sync-templates.md` | Sync root → templates/base/ |
+| `.agent/workflows/add-skill.md` | End-to-end skill creation |
+| `.agent/workflows/update-execution-script.md` | Modify execution scripts safely |
+| `.agent/workflows/upstream-sync.md` | Pull upstream fork updates |
+| `.agent/workflows/publish-npm.md` | Full NPM release workflow |
+| `.agent/workflows/cross-agent-collab.md` | Multi-LLM collaboration protocol |
+
+### Key Scripts
+
+```bash
+# Check root ↔ template drift
+python3 execution/sync_to_template.py --check
+
+# Sync root files to template
+python3 execution/sync_to_template.py --sync
+
+# Validate template integrity
+python3 execution/validate_template.py
+
+# Cross-agent: broadcast to all LLMs
+python3 execution/cross_agent_context.py broadcast --agent "<name>" --message "<msg>" --project agi-agent-kit
+
+# Cross-agent: check pending handoffs
+python3 execution/cross_agent_context.py pending --agent "<name>" --project agi-agent-kit
+```
+
+### Rules
+
+See `.agent/rules/framework_dev_rules.md` — enforces root-is-source-of-truth, mandatory sync, private file protection.
 
 ---
 
