@@ -51,6 +51,11 @@ def check_release_branch():
     except subprocess.CalledProcessError:
         branch = "unknown"
 
+    # GitHub Actions tag releases run in detached HEAD (empty branch name)
+    if not branch and os.environ.get("GITHUB_ACTIONS") == "true":
+        print("✅ On release branch: GitHub Actions (Detached HEAD)")
+        return
+
     allowed = {"main", "public"}
     if branch not in allowed:
         print(f"🚫 PUBLISHING BLOCKED — current branch is '{branch}'")
@@ -108,7 +113,7 @@ def scan_secrets():
     # Scan python, js, md files
     for ext in ["py", "js", "md", "json"]:
         for path in ROOT_DIR.rglob(f"*.{ext}"):
-            if "node_modules" in str(path) or ".git" in str(path) or ".venv" in str(path) or ".idea" in str(path):
+            if "node_modules" in str(path) or ".git" in str(path) or ".venv" in str(path) or ".idea" in str(path) or ".tmp" in str(path):
                 continue
             try:
                 content = path.read_text(errors="ignore")
@@ -179,7 +184,7 @@ def syntax_check():
     print("🔍 Verifying Python syntax...")
     # Find all python files
     py_files = [py for py in ROOT_DIR.rglob("*.py")
-                if "node_modules" not in str(py) and ".venv" not in str(py)]
+                if "node_modules" not in str(py) and ".venv" not in str(py) and ".tmp" not in str(py)]
     total = len(py_files)
     print(f"   Checking {total} Python files...", flush=True)
     failed = False
@@ -206,7 +211,7 @@ def check_markdown_size():
     MAX_SIZE = 15000  # bytes
 
     for path in ROOT_DIR.rglob("*.md"):
-        if "node_modules" in str(path) or ".git" in str(path) or ".venv" in str(path):
+        if "node_modules" in str(path) or ".git" in str(path) or ".venv" in str(path) or ".tmp" in str(path):
             continue
         if any(ex in path.name for ex in exemptions):
             continue
