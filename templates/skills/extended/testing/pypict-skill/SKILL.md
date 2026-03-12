@@ -1,8 +1,9 @@
 ---
 name: pypict-skill
 description: "Pairwise test generation"
-source: "https://github.com/omkamal/pypict-claude-skill/blob/main/SKILL.md"
 risk: safe
+source: "https://github.com/omkamal/pypict-claude-skill/blob/main/SKILL.md"
+date_added: "2026-02-27"
 ---
 
 # Pypict Skill
@@ -21,43 +22,52 @@ This skill provides guidance and patterns for pairwise test generation.
 
 For more information, see the [source repository](https://github.com/omkamal/pypict-claude-skill/blob/main/SKILL.md).
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior test strategies, known flaky tests, and coverage gaps. Cache test infrastructure setup to avoid re-configuring test environments.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior testing/QA context before starting
+python3 execution/memory_manager.py auto --query "test patterns and coverage strategies for Pypict Skill"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store testing/QA decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags pypict-skill <relevant-tags>
+  --content "Testing strategy: integration tests hit real DB (no mocks), 85% line coverage, mutation testing on critical paths" \
+  --type technical --project <project> \
+  --tags pypict-skill testing
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share test results and coverage reports with code review agents so they can verify adequate coverage on changed code.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "QA complete — test suite expanded with 12 new integration tests, all passing" \
+  --project <project>
+```
 
-### Local LLM Support
+### TDD Enforcement
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+This skill integrates with the framework's iron-law RED-GREEN-REFACTOR cycle. No production code without a failing test first.
+
+### Agent Team: QA
+
+Dispatch `qa_team` to generate tests and verify they pass before marking implementation complete.
+
+<!-- AGI-INTEGRATION-END -->

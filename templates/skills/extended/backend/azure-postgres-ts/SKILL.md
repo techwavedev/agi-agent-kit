@@ -1,8 +1,9 @@
 ---
 name: azure-postgres-ts
-description: |
-  Connect to Azure Database for PostgreSQL Flexible Server from Node.js/TypeScript using the pg (node-postgres) package. Use for PostgreSQL queries, connection pooling, transactions, and Microsoft Entra ID (passwordless) authentication. Triggers: "PostgreSQL", "postgres", "pg client", "node-postgres", "Azure PostgreSQL connection", "PostgreSQL TypeScript", "pg Pool", "passwordless postgres".
-package: pg
+description: Connect to Azure Database for PostgreSQL Flexible Server from Node.js/TypeScript using the pg (node-postgres) package.
+risk: unknown
+source: community
+date_added: '2026-02-27'
 ---
 
 # Azure PostgreSQL for TypeScript (node-postgres)
@@ -476,43 +477,51 @@ import {
 | Azure PostgreSQL Docs | https://learn.microsoft.com/azure/postgresql/flexible-server/ |
 | Passwordless Connection | https://learn.microsoft.com/azure/postgresql/flexible-server/how-to-connect-with-managed-identity |
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior API design decisions, database schema choices, and error handling patterns. Cache API response templates for consistent error formatting.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior backend/API context before starting
+python3 execution/memory_manager.py auto --query "API design patterns and architecture decisions for Azure Postgres Ts"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store backend/API decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags azure-postgres-ts <relevant-tags>
+  --content "API architecture: REST with HATEOAS, JWT auth, rate limiting at 100 req/min per tenant" \
+  --type decision --project <project> \
+  --tags azure-postgres-ts backend
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share API contract changes with frontend agents so they update their client code, and with QA agents for test coverage.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Implemented API endpoints — 5 new routes with OpenAPI spec and integration tests" \
+  --project <project>
+```
 
-### Local LLM Support
+### Agent Team: Code Review
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+After implementation, dispatch `code_review_team` for two-stage review (spec compliance + code quality) before merging.
+
+<!-- AGI-INTEGRATION-END -->

@@ -1,0 +1,129 @@
+---
+name: fp-pipe-ref
+description: Quick reference for pipe and flow. Use when user needs to chain functions, compose operations, or build data pipelines in fp-ts.
+version: 1.0.0
+tags: [fp-ts, pipe, flow, composition, quick-reference]
+---
+
+# pipe & flow Quick Reference
+
+## pipe - Transform a Value
+
+```typescript
+import { pipe } from 'fp-ts/function'
+
+// pipe(startValue, fn1, fn2, fn3)
+// = fn3(fn2(fn1(startValue)))
+
+const result = pipe(
+  '  hello world  ',
+  s => s.trim(),
+  s => s.toUpperCase(),
+  s => s.split(' ')
+)
+// ['HELLO', 'WORLD']
+```
+
+## flow - Create Reusable Pipeline
+
+```typescript
+import { flow } from 'fp-ts/function'
+
+// flow(fn1, fn2, fn3) returns a new function
+const process = flow(
+  (s: string) => s.trim(),
+  s => s.toUpperCase(),
+  s => s.split(' ')
+)
+
+process('  hello world  ') // ['HELLO', 'WORLD']
+process('  foo bar  ')     // ['FOO', 'BAR']
+```
+
+## When to Use
+
+| Use | When |
+|-----|------|
+| `pipe` | Transform a specific value now |
+| `flow` | Create reusable transformation |
+
+## With fp-ts Types
+
+```typescript
+import * as O from 'fp-ts/Option'
+import * as A from 'fp-ts/Array'
+
+// Option chain
+pipe(
+  O.fromNullable(user),
+  O.map(u => u.email),
+  O.getOrElse(() => 'no email')
+)
+
+// Array chain
+pipe(
+  users,
+  A.filter(u => u.active),
+  A.map(u => u.name)
+)
+```
+
+## Common Pattern
+
+```typescript
+// Data last enables partial application
+const getActiveNames = flow(
+  A.filter((u: User) => u.active),
+  A.map(u => u.name)
+)
+
+// Reuse anywhere
+getActiveNames(users1)
+getActiveNames(users2)
+```
+
+---
+
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
+
+> **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
+> Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
+
+### Memory-First Protocol
+
+Retrieve prior design decisions (color palettes, typography, spacing scales) to maintain visual consistency across sessions. Cache generated design tokens.
+
+```bash
+# Check for prior frontend/design context before starting
+python3 execution/memory_manager.py auto --query "design system decisions and component patterns for Fp Pipe Ref"
+```
+
+### Storing Results
+
+After completing work, store frontend/design decisions for future sessions:
+
+```bash
+python3 execution/memory_manager.py store \
+  --content "Design system: adopted 8px grid, Inter font family, HSL color tokens with dark mode support" \
+  --type decision --project <project> \
+  --tags fp-pipe-ref frontend
+```
+
+### Multi-Agent Collaboration
+
+Share design decisions with backend agents (API contract changes) and QA agents (visual regression baselines).
+
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Implemented UI components — new design system with accessibility compliance (WCAG 2.1 AA)" \
+  --project <project>
+```
+
+### Design Memory Persistence
+
+Store design system tokens and component decisions in Qdrant so any agent on any platform (Claude, Gemini, Cursor) can retrieve and apply consistent styling.
+
+<!-- AGI-INTEGRATION-END -->

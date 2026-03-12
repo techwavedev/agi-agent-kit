@@ -1,6 +1,9 @@
 ---
 name: web3-testing
-description: Test smart contracts comprehensively using Hardhat and Foundry with unit tests, integration tests, and mainnet forking. Use when testing Solidity contracts, setting up blockchain test suites, or validating DeFi protocols.
+description: "Test smart contracts comprehensively using Hardhat and Foundry with unit tests, integration tests, and mainnet forking. Use when testing Solidity contracts, setting up blockchain test suites, or va..."
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 # Web3 Smart Contract Testing
@@ -426,43 +429,48 @@ jobs:
 9. **Fuzzing**: Use property-based testing
 10. **CI/CD**: Automate testing on every commit
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior smart contract patterns, gas optimization techniques, and audit findings. Cache ABI definitions and deployment addresses.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior blockchain/Web3 context before starting
+python3 execution/memory_manager.py auto --query "smart contract patterns and blockchain architecture for Web3 Testing"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store blockchain/Web3 decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags web3-testing <relevant-tags>
+  --content "Smart contract: ERC-721 with royalty enforcement, gas-optimized batch minting, OpenZeppelin base" \
+  --type technical --project <project> \
+  --tags web3-testing blockchain
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share contract ABIs and deployment addresses with frontend agents for DApp integration.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Smart contract deployed — audit findings addressed, gas benchmarks documented" \
+  --project <project>
+```
 
-### Local LLM Support
+### Blockchain Trust Layer
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+The framework's own blockchain identity system (Ed25519 + MultiChain anchoring) uses similar cryptographic patterns — apply learnings bidirectionally.
+
+<!-- AGI-INTEGRATION-END -->

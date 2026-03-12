@@ -1,6 +1,9 @@
 ---
 name: documentation-generation-doc-generate
-description: "You are a documentation expert specializing in creating comprehensive, maintainable documentation from code. Generate API docs, architecture diagrams, user guides, and technical references using AI-powered analysis and industry best practices."
+description: "You are a documentation expert specializing in creating comprehensive, maintainable documentation from code. Generate API docs, architecture diagrams, user guides, and technical references using AI..."
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 # Automated Documentation Generation
@@ -30,7 +33,6 @@ $ARGUMENTS
 - Identify required doc types and target audiences.
 - Extract information from code, configs, and comments.
 - Generate docs with consistent terminology and structure.
-- Format & Lint: Run `npx markdownlint-cli "**/*.md" --fix` to resolve formatting issues like MD001, MD041, MD060.
 - Add automation (linting, CI) and validate accuracy.
 - If detailed examples are required, open `resources/implementation-playbook.md`.
 
@@ -48,43 +50,48 @@ $ARGUMENTS
 
 - `resources/implementation-playbook.md` for detailed examples and templates.
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior documentation structure and content to maintain consistency. Cache generated docs to avoid regenerating unchanged sections.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior documentation context before starting
+python3 execution/memory_manager.py auto --query "documentation patterns and prior content for Documentation Generation Doc Generate"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store documentation decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags documentation-generation-doc-generate <relevant-tags>
+  --content "Documentation: API reference generated from OpenAPI spec, deployment guide updated with new env vars" \
+  --type technical --project <project> \
+  --tags documentation-generation-doc-generate documentation
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share documentation changes with all agents so they reference the latest guides and APIs.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Documentation updated — API reference, deployment guide, and CHANGELOG all current" \
+  --project <project>
+```
 
-### Local LLM Support
+### Agent Team: Documentation
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+This skill pairs with `documentation_team` — dispatched automatically after any code change to keep docs in sync.
+
+<!-- AGI-INTEGRATION-END -->

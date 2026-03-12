@@ -1,9 +1,9 @@
 ---
 name: azure-eventhub-py
-description: |
-  Azure Event Hubs SDK for Python streaming. Use for high-throughput event ingestion, producers, consumers, and checkpointing.
-  Triggers: "event hubs", "EventHubProducerClient", "EventHubConsumerClient", "streaming", "partitions".
-package: azure-eventhub
+description: Azure Event Hubs SDK for Python streaming. Use for high-throughput event ingestion, producers, consumers, and checkpointing.
+risk: unknown
+source: community
+date_added: '2026-02-27'
 ---
 
 # Azure Event Hubs SDK for Python
@@ -235,47 +235,55 @@ with producer:
 
 | File | Contents |
 |------|----------|
-| [references/checkpointing.md](references/checkpointing.md) | Checkpoint store patterns, blob checkpointing, checkpoint strategies |
-| [references/partitions.md](references/partitions.md) | Partition management, load balancing, starting positions |
-| [scripts/setup_consumer.py](scripts/setup_consumer.py) | CLI for Event Hub info, consumer setup, and event sending/receiving |
+| references/checkpointing.md | Checkpoint store patterns, blob checkpointing, checkpoint strategies |
+| references/partitions.md | Partition management, load balancing, starting positions |
+| scripts/setup_consumer.py | CLI for Event Hub info, consumer setup, and event sending/receiving |
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior deployment configurations, rollback procedures, and incident post-mortems. Avoid re-discovering infrastructure patterns.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior infrastructure context before starting
+python3 execution/memory_manager.py auto --query "deployment configuration and patterns for Azure Eventhub Py"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store infrastructure decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags azure-eventhub-py <relevant-tags>
+  --content "Deployment pipeline: configured blue-green deployment with health checks on port 8080" \
+  --type technical --project <project> \
+  --tags azure-eventhub-py devops
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Broadcast deployment changes so frontend and backend agents update their configurations accordingly.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Deployed infrastructure changes — updated CI/CD pipeline with new health check endpoints" \
+  --project <project>
+```
 
-### Local LLM Support
+### Playbook Integration
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+Use the `ship-saas-mvp` or `full-stack-deploy` playbook to sequence this skill with testing, documentation, and deployment verification.
+
+<!-- AGI-INTEGRATION-END -->
