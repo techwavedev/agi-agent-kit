@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CodeQL CWE-20 Fix** — Replaced URL substring checks with `urlparse` hostname comparison to prevent incomplete URL sanitization (`46739fc`)
 - **Workflow Permissions** — Added explicit least-privilege permissions to `publish.yml` and `virustotal.yml` workflows (`70715d4`)
 - **CVE-2026-27606** — Updated rollup in todo app example to resolve dependency vulnerability (`34b28d1`)
+- **VirusTotal Action** — Bumped `crazy-max/ghaction-virustotal` from v4 to v5
 
 ## [1.5.3] - 2026-02-22
 
