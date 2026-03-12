@@ -58,6 +58,10 @@ DIR_SYNC_MAP = {
     # Agent workflows (public-facing only)
     ".agent/workflows/memory-usage.md": ".agent/workflows/memory-usage.md",
     ".agent/workflows/run-agent-team-tests.md": ".agent/workflows/run-agent-team-tests.md",
+    # Architecture and Design
+    "directives/control_tower.md": "directives/control_tower.md",
+    "directives/blockchain_agent_trust.md": "directives/blockchain_agent_trust.md",
+    "directives/event_driven_agent_streaming.md": "directives/event_driven_agent_streaming.md",
 }
 
 # Files that must NEVER be synced to template
