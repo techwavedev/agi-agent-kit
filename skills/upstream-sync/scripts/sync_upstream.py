@@ -28,9 +28,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent.parent
+SCRIPT_DIR = Path(__file__).resolve().parent.parent  # skills/upstream-sync/
 REGISTRY_FILE = SCRIPT_DIR / "upstream_registry.json"
-PROJECT_ROOT = SCRIPT_DIR.parent  # skills/upstream-sync -> root
+PROJECT_ROOT = SCRIPT_DIR.parent.parent  # skills/upstream-sync -> skills -> root
 TMP_DIR = PROJECT_ROOT / ".tmp" / "upstream-sync"
 
 AGI_START_MARKER = "<!-- AGI-INTEGRATION-START -->"

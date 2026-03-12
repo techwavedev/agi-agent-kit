@@ -1,6 +1,9 @@
 ---
 name: azd-deployment
-description: Deploy containerized applications to Azure Container Apps using Azure Developer CLI (azd). Use when setting up azd projects, writing azure.yaml configuration, creating Bicep infrastructure for Container Apps, configuring remote builds with ACR, implementing idempotent deployments, managing environment variables across local/.azure/Bicep, or troubleshooting azd up failures. Triggers on requests for azd configuration, Container Apps deployment, multi-service deployments, and infrastructure-as-code with Bicep.
+description: "Deploy containerized applications to Azure Container Apps using Azure Developer CLI (azd). Use when setting up azd projects, writing azure.yaml configuration, creating Bicep infrastructure for Cont..."
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 # Azure Developer CLI (azd) Container Apps Deployment
@@ -283,9 +286,9 @@ az containerapp logs show -n <app> -g <rg> --follow  # Stream logs
 
 ## Reference Files
 
-- **Bicep patterns**: See [references/bicep-patterns.md](references/bicep-patterns.md) for Container Apps modules
-- **Troubleshooting**: See [references/troubleshooting.md](references/troubleshooting.md) for common issues
-- **azure.yaml schema**: See [references/azure-yaml-schema.md](references/azure-yaml-schema.md) for full options
+- **Bicep patterns**: See references/bicep-patterns.md for Container Apps modules
+- **Troubleshooting**: See references/troubleshooting.md for common issues
+- **azure.yaml schema**: See references/azure-yaml-schema.md for full options
 
 ## Critical Reminders
 
@@ -295,43 +298,44 @@ az containerapp logs show -n <app> -g <rg> --follow  # Stream logs
 4. **Service tags (`azd-service-name`)** - Required for azd to find Container Apps
 5. **`|| true` in hooks** - Prevent RBAC "already exists" errors from failing deploy
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
+
+<!-- AGI-INTEGRATION-START -->
 
 ## 🧠 AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Qdrant Memory Integration
 
 Before executing complex tasks with this skill:
 ```bash
 python3 execution/memory_manager.py auto --query "<task summary>"
 ```
-
-**Decision Tree:**
 - **Cache hit?** Use cached response directly — no need to re-process.
 - **Memory match?** Inject `context_chunks` into your reasoning.
 - **No match?** Proceed normally, then store results:
-
 ```bash
-python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
+python3 execution/memory_manager.py store \\
+  --content "Description of what was decided/solved" \\
+  --type decision \\
   --tags azd-deployment <relevant-tags>
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
-
 ### Agent Team Collaboration
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+- This skill can be invoked by the `orchestrator` agent via intelligent routing.
+- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
+- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
 
 ### Local LLM Support
 
 When available, use local Ollama models for embedding and lightweight inference:
 - Embeddings: `nomic-embed-text` via Qdrant memory system
 - Lightweight analysis: Local models reduce API costs for repetitive patterns
+
+<!-- AGI-INTEGRATION-END -->

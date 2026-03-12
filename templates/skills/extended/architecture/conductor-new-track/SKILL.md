@@ -1,8 +1,9 @@
 ---
 name: conductor-new-track
-description: Create a new track with specification and phased implementation plan
-metadata:
-  argument-hint: <feature|bug|chore|refactor> <name>
+description: "Create a new track with specification and phased implementation plan"
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 # New Track
@@ -261,7 +262,7 @@ After spec approval, generate `conductor/tracks/{trackId}/plan.md`:
 # Implementation Plan: {Track Title}
 
 **Track ID:** {trackId}
-**Spec:** [spec.md](./spec.md)
+**Spec:** spec.md
 **Created:** {YYYY-MM-DD}
 **Status:** [ ] Not Started
 
@@ -385,8 +386,8 @@ After plan approval:
 
    ## Documents
 
-   - [Specification](./spec.md)
-   - [Implementation Plan](./plan.md)
+   - Specification
+   - Implementation Plan
 
    ## Progress
 
@@ -395,8 +396,8 @@ After plan approval:
 
    ## Quick Links
 
-   - [Back to Tracks](../../tracks.md)
-   - [Product Context](../../product.md)
+   - Back to Tracks
+   - Product Context
    ```
 
 4. Register in `conductor/tracks.md`:
@@ -432,43 +433,41 @@ Next steps:
 - If any file write fails: Clean up partial track, report error
 - If tracks.md update fails: Warn user to manually register track
 
-
 ---
+
+<!-- AGI-INTEGRATION-START -->
 
 ## 🧠 AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Qdrant Memory Integration
 
 Before executing complex tasks with this skill:
 ```bash
 python3 execution/memory_manager.py auto --query "<task summary>"
 ```
-
-**Decision Tree:**
 - **Cache hit?** Use cached response directly — no need to re-process.
 - **Memory match?** Inject `context_chunks` into your reasoning.
 - **No match?** Proceed normally, then store results:
-
 ```bash
-python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
+python3 execution/memory_manager.py store \\
+  --content "Description of what was decided/solved" \\
+  --type decision \\
   --tags conductor-new-track <relevant-tags>
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
-
 ### Agent Team Collaboration
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+- This skill can be invoked by the `orchestrator` agent via intelligent routing.
+- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
+- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
 
 ### Local LLM Support
 
 When available, use local Ollama models for embedding and lightweight inference:
 - Embeddings: `nomic-embed-text` via Qdrant memory system
 - Lightweight analysis: Local models reduce API costs for repetitive patterns
+
+<!-- AGI-INTEGRATION-END -->

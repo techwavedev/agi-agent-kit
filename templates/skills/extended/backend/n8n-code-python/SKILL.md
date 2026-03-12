@@ -1,8 +1,6 @@
 ---
 name: n8n-code-python
-description: "Write Python code in n8n Code nodes. Use when writing Python in n8n, using _input/_json/_node syntax, working with standard library, or need to understand Python limitations in n8n Code nodes."
-source: "https://github.com/czlonkowski/n8n-skills/tree/main/skills/n8n-code-python"
-risk: safe
+description: Write Python code in n8n Code nodes. Use when writing Python in n8n, using _input/_json/_node syntax, working with standard library, or need to understand Python limitations in n8n Code nodes.
 ---
 
 # Python Code Node (Beta)
@@ -233,7 +231,7 @@ return [{
 }]
 ```
 
-**See**: [DATA_ACCESS.md](DATA_ACCESS.md) for comprehensive guide
+**See**: DATA_ACCESS.md for comprehensive guide
 
 ---
 
@@ -257,7 +255,7 @@ name = webhook_data.get("name")
 
 **Why**: Webhook node wraps all request data under `body` property. This includes POST data, query parameters, and JSON payloads.
 
-**See**: [DATA_ACCESS.md](DATA_ACCESS.md) for full webhook structure details
+**See**: DATA_ACCESS.md for full webhook structure details
 
 ---
 
@@ -320,7 +318,7 @@ return [{"data": value}]  # Should be {"json": value}
 
 **Why it matters**: Next nodes expect list format. Incorrect format causes workflow execution to fail.
 
-**See**: [ERROR_PATTERNS.md](ERROR_PATTERNS.md) #2 for detailed error solutions
+**See**: ERROR_PATTERNS.md #2 for detailed error solutions
 
 ---
 
@@ -370,7 +368,7 @@ import statistics  # ✅ Statistical functions
 - ✅ Use **HTTP Request node** + **HTML Extract node**
 - ✅ Or switch to **JavaScript** with regex/string methods
 
-**See**: [STANDARD_LIBRARY.md](STANDARD_LIBRARY.md) for complete reference
+**See**: STANDARD_LIBRARY.md for complete reference
 
 ---
 
@@ -490,7 +488,7 @@ else:
     return [{"json": {"error": "No values found"}}]
 ```
 
-**See**: [COMMON_PATTERNS.md](COMMON_PATTERNS.md) for 10 detailed Python patterns
+**See**: COMMON_PATTERNS.md for 10 detailed Python patterns
 
 ---
 
@@ -554,7 +552,7 @@ email = _json["body"]["email"]
 email = _json.get("body", {}).get("email", "no-email")
 ```
 
-**See**: [ERROR_PATTERNS.md](ERROR_PATTERNS.md) for comprehensive error guide
+**See**: ERROR_PATTERNS.md for comprehensive error guide
 
 ---
 
@@ -598,7 +596,7 @@ from statistics import mean, median, stdev
 average = mean([1, 2, 3, 4, 5])
 ```
 
-**See**: [STANDARD_LIBRARY.md](STANDARD_LIBRARY.md) for complete reference
+**See**: STANDARD_LIBRARY.md for complete reference
 
 ---
 
@@ -736,10 +734,10 @@ Before deploying Python Code nodes, verify:
 ## Additional Resources
 
 ### Related Files
-- [DATA_ACCESS.md](DATA_ACCESS.md) - Comprehensive Python data access patterns
-- [COMMON_PATTERNS.md](COMMON_PATTERNS.md) - 10 Python patterns for n8n
-- [ERROR_PATTERNS.md](ERROR_PATTERNS.md) - Top 5 errors and solutions
-- [STANDARD_LIBRARY.md](STANDARD_LIBRARY.md) - Complete standard library reference
+- DATA_ACCESS.md - Comprehensive Python data access patterns
+- COMMON_PATTERNS.md - 10 Python patterns for n8n
+- ERROR_PATTERNS.md - Top 5 errors and solutions
+- STANDARD_LIBRARY.md - Complete standard library reference
 
 ### n8n Documentation
 - Code Node Guide: https://docs.n8n.io/code/code-node/
@@ -749,43 +747,41 @@ Before deploying Python Code nodes, verify:
 
 **Ready to write Python in n8n Code nodes - but consider JavaScript first!** Use Python for specific needs, reference the error patterns guide to avoid common mistakes, and leverage the standard library effectively.
 
-
 ---
+
+<!-- AGI-INTEGRATION-START -->
 
 ## 🧠 AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Qdrant Memory Integration
 
 Before executing complex tasks with this skill:
 ```bash
 python3 execution/memory_manager.py auto --query "<task summary>"
 ```
-
-**Decision Tree:**
 - **Cache hit?** Use cached response directly — no need to re-process.
 - **Memory match?** Inject `context_chunks` into your reasoning.
 - **No match?** Proceed normally, then store results:
-
 ```bash
-python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
+python3 execution/memory_manager.py store \\
+  --content "Description of what was decided/solved" \\
+  --type decision \\
   --tags n8n-code-python <relevant-tags>
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
-
 ### Agent Team Collaboration
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+- This skill can be invoked by the `orchestrator` agent via intelligent routing.
+- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
+- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
 
 ### Local LLM Support
 
 When available, use local Ollama models for embedding and lightweight inference:
 - Embeddings: `nomic-embed-text` via Qdrant memory system
 - Lightweight analysis: Local models reduce API costs for repetitive patterns
+
+<!-- AGI-INTEGRATION-END -->

@@ -1,8 +1,9 @@
 ---
 name: m365-agents-dotnet
-description: |
-  Microsoft 365 Agents SDK for .NET. Build multichannel agents for Teams/M365/Copilot Studio with ASP.NET Core hosting, AgentApplication routing, and MSAL-based auth. Triggers: "Microsoft 365 Agents SDK", "Microsoft.Agents", "AddAgentApplicationOptions", "AgentApplication", "AddAgentAspNetAuthentication", "Copilot Studio client", "IAgentHttpAdapter".
-package: Microsoft.Agents.Hosting.AspNetCore, Microsoft.Agents.Authentication.Msal, Microsoft.Agents.CopilotStudio.Client
+description: Microsoft 365 Agents SDK for .NET. Build multichannel agents for Teams/M365/Copilot Studio with ASP.NET Core hosting, AgentApplication routing, and MSAL-based auth.
+risk: unknown
+source: community
+date_added: '2026-02-27'
 ---
 
 # Microsoft 365 Agents SDK (.NET)
@@ -276,7 +277,7 @@ await foreach (var activity in client.AskQuestionAsync("Hello!", null))
 
 | File | Contents |
 | --- | --- |
-| [references/acceptance-criteria.md](references/acceptance-criteria.md) | Import paths, hosting pipeline, Copilot Studio client patterns, anti-patterns |
+| references/acceptance-criteria.md | Import paths, hosting pipeline, Copilot Studio client patterns, anti-patterns |
 
 ## Reference Links
 
@@ -289,43 +290,44 @@ await foreach (var activity in client.AskQuestionAsync("Hello!", null))
 | Copilot Studio integration | https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/integrate-with-mcs |
 | GitHub samples | https://github.com/microsoft/agents |
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
+
+<!-- AGI-INTEGRATION-START -->
 
 ## 🧠 AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Qdrant Memory Integration
 
 Before executing complex tasks with this skill:
 ```bash
 python3 execution/memory_manager.py auto --query "<task summary>"
 ```
-
-**Decision Tree:**
 - **Cache hit?** Use cached response directly — no need to re-process.
 - **Memory match?** Inject `context_chunks` into your reasoning.
 - **No match?** Proceed normally, then store results:
-
 ```bash
-python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
+python3 execution/memory_manager.py store \\
+  --content "Description of what was decided/solved" \\
+  --type decision \\
   --tags m365-agents-dotnet <relevant-tags>
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
-
 ### Agent Team Collaboration
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+- This skill can be invoked by the `orchestrator` agent via intelligent routing.
+- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
+- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
 
 ### Local LLM Support
 
 When available, use local Ollama models for embedding and lightweight inference:
 - Embeddings: `nomic-embed-text` via Qdrant memory system
 - Lightweight analysis: Local models reduce API costs for repetitive patterns
+
+<!-- AGI-INTEGRATION-END -->

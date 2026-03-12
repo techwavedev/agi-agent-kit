@@ -1,7 +1,9 @@
 ---
 name: azure-cosmos-db-py
-description: Build Azure Cosmos DB NoSQL services with Python/FastAPI following production-grade patterns. Use when implementing database client setup with dual auth (DefaultAzureCredential + emulator), service layer classes with CRUD operations, partition key strategies, parameterized queries, or TDD patterns for Cosmos. Triggers on phrases like "Cosmos DB", "NoSQL database", "document store", "add persistence", "database service layer", or "Python Cosmos SDK".
-package: azure-cosmos
+description: "Build Azure Cosmos DB NoSQL services with Python/FastAPI following production-grade patterns. Use when implementing database client setup with dual auth (DefaultAzureCredential + emulator), service..."
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 # Cosmos DB Service Implementation
@@ -108,7 +110,7 @@ async def get_container():
     return _cosmos_container
 ```
 
-**Full implementation**: See [references/client-setup.md](references/client-setup.md)
+**Full implementation**: See references/client-setup.md
 
 ### 2. Pydantic Model Hierarchy
 
@@ -148,7 +150,7 @@ class ProjectService:
         return self._doc_to_model(doc)
 ```
 
-**Full patterns**: See [references/service-layer.md](references/service-layer.md)
+**Full patterns**: See references/service-layer.md
 
 ## Core Principles
 
@@ -191,25 +193,25 @@ async def test_get_project_by_id_returns_project(mock_cosmos_container):
     assert result.name == "Test"
 ```
 
-**Full testing guide**: See [references/testing.md](references/testing.md)
+**Full testing guide**: See references/testing.md
 
 ## Reference Files
 
 | File | When to Read |
 |------|--------------|
-| [references/client-setup.md](references/client-setup.md) | Setting up Cosmos client with dual auth, SSL config, singleton pattern |
-| [references/service-layer.md](references/service-layer.md) | Implementing full service class with CRUD, conversions, graceful degradation |
-| [references/testing.md](references/testing.md) | Writing pytest tests, mocking Cosmos, integration test setup |
-| [references/partitioning.md](references/partitioning.md) | Choosing partition keys, cross-partition queries, move operations |
-| [references/error-handling.md](references/error-handling.md) | Handling CosmosResourceNotFoundError, logging, HTTP error mapping |
+| references/client-setup.md | Setting up Cosmos client with dual auth, SSL config, singleton pattern |
+| references/service-layer.md | Implementing full service class with CRUD, conversions, graceful degradation |
+| references/testing.md | Writing pytest tests, mocking Cosmos, integration test setup |
+| references/partitioning.md | Choosing partition keys, cross-partition queries, move operations |
+| references/error-handling.md | Handling CosmosResourceNotFoundError, logging, HTTP error mapping |
 
 ## Template Files
 
 | File | Purpose |
 |------|---------|
-| [assets/cosmos_client_template.py](assets/cosmos_client_template.py) | Ready-to-use client module |
-| [assets/service_template.py](assets/service_template.py) | Service class skeleton |
-| [assets/conftest_template.py](assets/conftest_template.py) | pytest fixtures for Cosmos mocking |
+| assets/cosmos_client_template.py | Ready-to-use client module |
+| assets/service_template.py | Service class skeleton |
+| assets/conftest_template.py | pytest fixtures for Cosmos mocking |
 
 ## Quality Attributes (NFRs)
 
@@ -238,43 +240,44 @@ async def test_get_project_by_id_returns_project(mock_cosmos_container):
 - Async wrapping prevents blocking FastAPI event loop
 - Minimal document conversion overhead
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
+
+<!-- AGI-INTEGRATION-START -->
 
 ## 🧠 AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Qdrant Memory Integration
 
 Before executing complex tasks with this skill:
 ```bash
 python3 execution/memory_manager.py auto --query "<task summary>"
 ```
-
-**Decision Tree:**
 - **Cache hit?** Use cached response directly — no need to re-process.
 - **Memory match?** Inject `context_chunks` into your reasoning.
 - **No match?** Proceed normally, then store results:
-
 ```bash
-python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
+python3 execution/memory_manager.py store \\
+  --content "Description of what was decided/solved" \\
+  --type decision \\
   --tags azure-cosmos-db-py <relevant-tags>
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
-
 ### Agent Team Collaboration
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+- This skill can be invoked by the `orchestrator` agent via intelligent routing.
+- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
+- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
 
 ### Local LLM Support
 
 When available, use local Ollama models for embedding and lightweight inference:
 - Embeddings: `nomic-embed-text` via Qdrant memory system
 - Lightweight analysis: Local models reduce API costs for repetitive patterns
+
+<!-- AGI-INTEGRATION-END -->

@@ -28,6 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Upstream Sync Skill** — `skills/upstream-sync/` with `sync_upstream.py` and `upstream_registry.json` for pulling updates from forked skill sources
 
+- **Upstream Sync: antigravity-awesome-skills** — Synced latest from `sickn33/antigravity-awesome-skills` via `skill-adapt` strategy. 406 new skills added, 756 updated with preserved AGI integration blocks. New skills include: `explain-like-socrates`, `ai-md`, `yes-md`, `local-llm-expert`, `keyword-extractor`, and 400+ more across all categories. Total extended skills: 1,181.
+
+- **Upstream Sync: superpowers v5.0.1** — Synced 14 skills from `obra/superpowers` via `skill-diff` strategy: `brainstorming`, `dispatching-parallel-agents`, `executing-plans`, `finishing-a-development-branch`, `receiving-code-review`, `requesting-code-review`, `subagent-driven-development`, `systematic-debugging`, `test-driven-development`, `using-git-worktrees`, `using-superpowers`, `verification-before-completion`, `writing-plans`, `writing-skills`. All adapted with Qdrant hybrid memory integration.
+
+- **Upstream Sync: ui-ux-pro-max** — Full-replace sync from `nextlevelbuilder/ui-ux-pro-max-skill`. 319 files synced including new `slides` skill (HTML presentations with Chart.js), `banner-design` skill (22 styles, multi-platform), `logo` generation (55 styles, Gemini AI), `icon` design (15 styles, SVG), `social-photos` (HTML-to-screenshot), corporate identity program (CIP), and expanded Google Fonts collection with Chinese-to-English translations.
+
+- **Upstream Sync: Yuan3.0** — Reference-only inspection of `Yuan-lab-LLM/Yuan3.0` (8,804 files). Yuan3.0 MoE 40B model with RAPO reinforcement learning. No direct skill mapping — used as research reference for MoE/RAPO patterns.
+
 - **Skills Catalog** — `skills/SKILLS_CATALOG.md` — complete auto-generated catalog of all installed skills
 
 - **Workflow Playbooks Data** — `data/workflows.json` with guided multi-skill sequences
@@ -38,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Memory Writes** — `store_memory()` and `store_response()` return `signed` and `agent_id` fields indicating cryptographic signing status.
 - **AGENTS.md** — Added cross-agent collaboration section and framework self-development documentation. Symlinked as `CLAUDE.md` and `GEMINI.md` for cross-agent instruction sharing.
 - **Roadmap** — Added: Blockchain Agent Trust & Tenancy (design), Apache Pulsar streaming (design), Control Tower Orchestrator (active), Secrets Management via Vault (design).
+- **Upstream Sync Script** — Fixed `PROJECT_ROOT` resolution in `sync_upstream.py` (was resolving to `skills/` instead of repo root, causing `adapt_script_missing` errors).
 
 ### Security
 

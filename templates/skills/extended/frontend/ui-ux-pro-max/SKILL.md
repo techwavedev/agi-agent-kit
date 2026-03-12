@@ -1,6 +1,9 @@
 ---
 name: ui-ux-pro-max
-description: "UI/UX design intelligence. 50 styles, 21 palettes, 50 font pairings, 20 charts, 9 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui). Actions: plan, build, create, design, implement, review, fix, improve, optimize, enhance, refactor, check UI/UX code. Projects: website, landing page, dashboard, admin panel, e-commerce, SaaS, portfolio, blog, mobile app, .html, .tsx, .vue, .svelte. Elements: button, modal, navbar, sidebar, card, table, form, chart. Styles: glassmorphism, claymorphism, minimalism, brutalism, neumorphism, bento grid, dark mode, responsive, skeuomorphism, flat design. Topics: color palette, accessibility, animation, layout, typography, font pairing, spacing, hover, shadow, gradient. Integrations: shadcn/ui MCP for component search and examples."
+description: "UI/UX design intelligence. 50 styles, 21 palettes, 50 font pairings, 20 charts, 9 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui). Actions: plan, build, cr..."
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 # UI/UX Pro Max - Design Intelligence
@@ -144,9 +147,6 @@ This command:
 3. Returns complete design system: pattern, style, colors, typography, effects
 4. Includes anti-patterns to avoid
 
-🚨 **CRITICAL OVERRIDE RULE**:
-The generated Design System is a **baseline**. If the User provides explicit, strict design constraints (e.g., "Use Cormorant font", "No bright yellow-golds", "Editorial style"), **the User's constraints ALWAYS override the generated design system.** Never let the script output discard the User's specific aesthetic requirements!
-
 **Example:**
 ```bash
 python3 .claude/skills/ui-ux-pro-max/scripts/search.py "beauty spa wellness service" --design-system -p "Serenity Spa"
@@ -249,9 +249,7 @@ python3 .claude/skills/ui-ux-pro-max/scripts/search.py "elegant luxury serif" --
 python3 .claude/skills/ui-ux-pro-max/scripts/search.py "layout responsive form" --stack html-tailwind
 ```
 
-**Then:** Synthesize design system + detailed searches and implement the design. 
-
-⚠️ **CRITICAL PRIORITY CHECK**: Before writing any code, compare the generated Design System against the User's initial prompt. If the user explicitly banned a color (e.g., "no bright yellow"), or mandated a specific font (e.g., "use Cormorant"), or specified a distinct aesthetic (e.g., "Editorial Print"), **YOU MUST SILENTLY DISCARD** any conflicting rules from the generated Design System and apply the user's constraints strictly.
+**Then:** Synthesize design system + detailed searches and implement the design.
 
 ---
 
@@ -277,34 +275,6 @@ python3 .claude/skills/ui-ux-pro-max/scripts/search.py "fintech crypto" --design
 4. **Always check UX** - Search "animation", "z-index", "accessibility" for common issues
 5. **Use stack flag** - Get implementation-specific best practices
 6. **Iterate** - If first search doesn't match, try different keywords
-
----
-
-## Great Design Prompts (Examples)
-
-When requesting a UI, providing specific structural, stylistic, and feature requirements leads to the highest quality output. 
-
-*(Agent Instruction: If the user provides a vague industry like "real estate" and asks for a prompt example, you may generate one using these patterns, or use your web browsing/crawler capabilities to check `https://www.uupm.cc/#styles` for inspiration before answering).*
-
-Here are proven examples:
-
-### Example 1: SaaS Analytics Dashboard
-> "Create a modern SaaS analytics dashboard landing page with glassmorphism cards, hero section showcasing real-time data visualization, feature highlights with icons, pricing table, and trust badges. Focus on clarity and professional feel."
-> *(Reference: <https://www.uupm.cc/demo/saas-analytics-dashboard>)*
-
-### Example 2: Educational Platform
-> "Create a playful educational platform landing page with claymorphism cards, course catalog preview, progress tracking demo, student testimonials, and enrollment CTA. Use vibrant, engaging colors."
-> *(Reference: <https://www.uupm.cc/demo/educational-platform>)*
-
-### Example 3: Pet Grooming Service
-> "Create a friendly pet grooming service landing page with claymorphism cards, service packages, pet gallery, booking system, and testimonials from pet owners. Use playful warm colors."
-> *(Reference: <https://www.uupm.cc/demo/pet-grooming>)*
-
-### Example 4: AI Chatbot Platform
-> "Design a minimal AI chatbot platform landing page with conversational UI preview, streaming text animation demo, feature cards with AI capabilities, integration logos, and a prominent 'Try Now' CTA. Use neutral tones with AI purple accent."
-> *(Reference: <https://www.uupm.cc/demo/ai-chatbot-platform>)*
-
-*(For a complete catalog of 39+ design prompts and live references, visit: <https://www.uupm.cc/#styles>)*
 
 ---
 
@@ -383,43 +353,44 @@ Before delivering UI code, verify these items:
 - [ ] Color is not the only indicator
 - [ ] `prefers-reduced-motion` respected
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
+
+<!-- AGI-INTEGRATION-START -->
 
 ## 🧠 AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Qdrant Memory Integration
 
 Before executing complex tasks with this skill:
 ```bash
 python3 execution/memory_manager.py auto --query "<task summary>"
 ```
-
-**Decision Tree:**
 - **Cache hit?** Use cached response directly — no need to re-process.
 - **Memory match?** Inject `context_chunks` into your reasoning.
 - **No match?** Proceed normally, then store results:
-
 ```bash
-python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
+python3 execution/memory_manager.py store \\
+  --content "Description of what was decided/solved" \\
+  --type decision \\
   --tags ui-ux-pro-max <relevant-tags>
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
-
 ### Agent Team Collaboration
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+- This skill can be invoked by the `orchestrator` agent via intelligent routing.
+- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
+- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
 
 ### Local LLM Support
 
 When available, use local Ollama models for embedding and lightweight inference:
 - Embeddings: `nomic-embed-text` via Qdrant memory system
 - Lightweight analysis: Local models reduce API costs for repetitive patterns
+
+<!-- AGI-INTEGRATION-END -->

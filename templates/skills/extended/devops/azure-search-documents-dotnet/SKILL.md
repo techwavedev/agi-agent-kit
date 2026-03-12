@@ -1,8 +1,9 @@
 ---
 name: azure-search-documents-dotnet
-description: |
-  Azure AI Search SDK for .NET (Azure.Search.Documents). Use for building search applications with full-text, vector, semantic, and hybrid search. Covers SearchClient (queries, document CRUD), SearchIndexClient (index management), and SearchIndexerClient (indexers, skillsets). Triggers: "Azure Search .NET", "SearchClient", "SearchIndexClient", "vector search C#", "semantic search .NET", "hybrid search", "Azure.Search.Documents".
-package: Azure.Search.Documents
+description: Azure AI Search SDK for .NET (Azure.Search.Documents). Use for building search applications with full-text, vector, semantic, and hybrid search.
+risk: unknown
+source: community
+date_added: '2026-02-27'
 ---
 
 # Azure.Search.Documents (.NET)
@@ -207,7 +208,7 @@ var suggestions = await searchClient.SuggestAsync<Hotel>("lux", "suggester-name"
 
 ## Vector Search
 
-See [references/vector-search.md](references/vector-search.md) for detailed patterns.
+See references/vector-search.md for detailed patterns.
 
 ```csharp
 using Azure.Search.Documents.Models;
@@ -232,7 +233,7 @@ var results = await searchClient.SearchAsync<Hotel>(null, options);
 
 ## Semantic Search
 
-See [references/semantic-search.md](references/semantic-search.md) for detailed patterns.
+See references/semantic-search.md for detailed patterns.
 
 ```csharp
 var options = new SearchOptions
@@ -335,46 +336,47 @@ catch (RequestFailedException ex)
 
 | File | Contents |
 |------|----------|
-| [references/vector-search.md](references/vector-search.md) | Vector search, hybrid search, vectorizers |
-| [references/semantic-search.md](references/semantic-search.md) | Semantic ranking, captions, answers |
+| references/vector-search.md | Vector search, hybrid search, vectorizers |
+| references/semantic-search.md | Semantic ranking, captions, answers |
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
+
+<!-- AGI-INTEGRATION-START -->
 
 ## 🧠 AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Qdrant Memory Integration
 
 Before executing complex tasks with this skill:
 ```bash
 python3 execution/memory_manager.py auto --query "<task summary>"
 ```
-
-**Decision Tree:**
 - **Cache hit?** Use cached response directly — no need to re-process.
 - **Memory match?** Inject `context_chunks` into your reasoning.
 - **No match?** Proceed normally, then store results:
-
 ```bash
-python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
+python3 execution/memory_manager.py store \\
+  --content "Description of what was decided/solved" \\
+  --type decision \\
   --tags azure-search-documents-dotnet <relevant-tags>
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
-
 ### Agent Team Collaboration
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+- This skill can be invoked by the `orchestrator` agent via intelligent routing.
+- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
+- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
 
 ### Local LLM Support
 
 When available, use local Ollama models for embedding and lightweight inference:
 - Embeddings: `nomic-embed-text` via Qdrant memory system
 - Lightweight analysis: Local models reduce API costs for repetitive patterns
+
+<!-- AGI-INTEGRATION-END -->

@@ -1,40 +1,29 @@
 ---
 name: commit
-description: "Create commit messages following Sentry conventions. Use when committing code changes, writing commit messages, or formatting git history. Follows conventional commits with Sentry-specific issue references."
-source: "https://github.com/getsentry/skills/tree/main/plugins/sentry-skills/skills/commit"
-risk: safe
+description: ALWAYS use this skill when committing code changes — never commit directly without it. Creates commits following Sentry conventions with proper conventional commit format and issue references. Trigger on any commit, git commit, save changes, or commit message task.
 ---
 
 # Sentry Commit Messages
 
 Follow these conventions when creating commits for Sentry projects.
 
-## When to Use This Skill
-
-Use this skill when:
-- Committing code changes
-- Writing commit messages
-- Formatting git history
-- Following Sentry commit conventions
-- Referencing Sentry issues in commits
-
 ## Prerequisites
 
-Before committing, ensure you're working on a feature branch, not the main branch.
+Before committing, always check the current branch:
 
 ```bash
-# Check current branch
 git branch --show-current
 ```
 
-If you're on `main` or `master`, create a new branch first:
+**If you're on `main` or `master`, you MUST create a feature branch first** — unless the user explicitly asked to commit to main. Do not ask the user whether to create a branch; just proceed with branch creation. The `create-branch` skill will still propose a branch name for the user to confirm.
+
+Use the `create-branch` skill to create the branch. After `create-branch` completes, verify the current branch has changed before proceeding:
 
 ```bash
-# Create and switch to a new branch
-git checkout -b <type>/<short-description>
+git branch --show-current
 ```
 
-Branch naming should follow the pattern: `<type>/<short-description>` where type matches the commit type (e.g., `feat/add-user-auth`, `fix/null-pointer-error`, `ref/extract-validation`).
+If still on `main` or `master` (e.g., the user aborted branch creation), stop — do not commit.
 
 ## Format
 
@@ -170,43 +159,41 @@ Reason: Caused performance regression in production.
 
 - [Sentry Commit Messages](https://develop.sentry.dev/engineering-practices/commit-messages/)
 
-
 ---
+
+<!-- AGI-INTEGRATION-START -->
 
 ## 🧠 AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Qdrant Memory Integration
 
 Before executing complex tasks with this skill:
 ```bash
 python3 execution/memory_manager.py auto --query "<task summary>"
 ```
-
-**Decision Tree:**
 - **Cache hit?** Use cached response directly — no need to re-process.
 - **Memory match?** Inject `context_chunks` into your reasoning.
 - **No match?** Proceed normally, then store results:
-
 ```bash
-python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
+python3 execution/memory_manager.py store \\
+  --content "Description of what was decided/solved" \\
+  --type decision \\
   --tags commit <relevant-tags>
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
-
 ### Agent Team Collaboration
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+- This skill can be invoked by the `orchestrator` agent via intelligent routing.
+- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
+- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
 
 ### Local LLM Support
 
 When available, use local Ollama models for embedding and lightweight inference:
 - Embeddings: `nomic-embed-text` via Qdrant memory system
 - Lightweight analysis: Local models reduce API costs for repetitive patterns
+
+<!-- AGI-INTEGRATION-END -->
