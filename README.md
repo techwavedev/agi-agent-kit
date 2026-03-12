@@ -26,7 +26,7 @@ Most AI coding setups give you a prompt and hope for the best. AGI Agent Kit giv
 
 - 🧠 **Hybrid Memory** — Qdrant vectors + BM25 keywords: semantic similarity for concepts, exact matching for error codes and IDs (90-100% token savings)
 - 🎯 **19 Specialist Agents** — Domain-bounded experts (Frontend, Backend, Security, Mobile, Game Dev...) with enforced file ownership
-- ⚡ **878 Curated Skills** — 4 core + 89 professional + 785 community skills across 16 domain categories
+- ⚡ **1,191 Curated Skills** — 4 core + 89 professional + 1,098 community skills across 16 domain categories
 - 🔒 **Verification Gates** — No task completes without evidence. TDD enforcement. Two-stage code review.
 - 🌐 **9 Platforms, One Config** — Write once, run on Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE, OpenClaw
 
@@ -57,7 +57,7 @@ You'll be guided through an interactive wizard:
 4. **Pack selection** — choose skills to install:
    - **core** — 4 essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)
    - **medium** — Core + 89 professional skills in 16 categories + `.agent/` structure
-   - **full** — Everything: Medium + 785 community skills (878 total)
+   - **full** — Everything: Medium + 1,098 community skills (1,191 total)
    - **custom** — Core + you pick specific domains (AI Agents, DevOps, Security, Frontend, etc.)
 5. **Memory setup** — detects Ollama/Docker/Qdrant; if missing, asks whether to install locally or use a custom URL (supports Qdrant Cloud, remote servers)
 6. **Agent Teams** — opt-in to parallel multi-agent execution (writes `.claude/settings.json`)
@@ -80,7 +80,7 @@ python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
 | Feature                       | Description                                                                                   |
 | ----------------------------- | --------------------------------------------------------------------------------------------- |
 | **Deterministic Execution**   | Separates business logic (Python scripts) from AI reasoning (Directives)                      |
-| **Modular Skill System**      | 878 plug-and-play skills across 3 tiers, organized in 16 domain categories                    |
+| **Modular Skill System**      | 1,191 plug-and-play skills across 3 tiers, organized in 16 domain categories                  |
 | **Structured Plan Execution** | Batch or subagent-driven execution with two-stage review (spec + quality)                     |
 | **TDD Enforcement**           | Iron-law RED-GREEN-REFACTOR cycle — no production code without failing test                   |
 | **Verification Gates**        | Evidence before claims — no completion without fresh verification output                      |
@@ -109,7 +109,7 @@ The agi framework adopts all best patterns from [obra/superpowers](https://githu
 | Agent Boundary Enforcement   |        ❌        |     ✅ File-type ownership     |
 | Dynamic Question Generation  |        ❌        |   ✅ Trade-offs + priorities   |
 | Memory-First Protocol        |        ❌        |       ✅ Auto cache-hit        |
-| Skill Creator + Catalog      |        ❌        |    ✅ 878 composable skills    |
+| Skill Creator + Catalog      |        ❌        |  ✅ 1,191 composable skills   |
 | Platform Setup Wizard        |        ❌        |       ✅ One-shot config       |
 | Multi-Platform Symlinks      |  ❌ Claude only  |         ✅ 9 platforms         |
 
@@ -227,7 +227,7 @@ your-project/
 ├── CLAUDE.md → AGENTS.md
 ├── OPENCODE.md → AGENTS.md
 ├── COPILOT.md → AGENTS.md
-├── skills/                # Up to 878 skills (depends on pack)
+├── skills/                # Up to 1,191 skills (depends on pack)
 │   ├── webcrawler/        # Documentation harvesting
 │   ├── qdrant-memory/     # Semantic caching & memory
 │   └── ...                # 877 more skills in full pack

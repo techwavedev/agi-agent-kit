@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Workflow Playbooks Data** — `data/workflows.json` with guided multi-skill sequences
 
+- **Contextual AGI Integration Blocks** — Replaced generic copy-paste AGI blocks across all 1,184 extended skills with domain-specific content. 16 category templates (security, architecture, testing, debugging, AI agents, DevOps, frontend, backend, workflow, documentation, data, content, mobile, blockchain, gaming, default) each showing real framework features relevant to that skill's domain — signed audit trails for security, TDD enforcement for testing, BM25 exact match for debugging, Control Tower for architecture, etc. Added `scripts/contextualize_agi_blocks.py` for future upstream sync re-runs.
+
 ### Changed
 
 - **Session Boot** — Now checks/generates agent identity (Step 2.5) and auto-registers with Control Tower (Step 4). Reports `agent_id` in summary output.
