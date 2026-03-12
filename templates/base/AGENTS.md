@@ -237,6 +237,31 @@ python3 execution/memory_usage_proof.py --report
 
 > See `directives/memory_integration.md` for full protocol and token savings reference.
 
+#### Cross-Agent Collaboration (Multi-LLM Context Sharing)
+
+Multiple AI agents (Claude, Antigravity/Gemini, Cursor, etc.) share the **same Qdrant memory**. Use `execution/cross_agent_context.py` to coordinate:
+
+```bash
+# At session start: see what other agents have done
+python3 execution/cross_agent_context.py sync --agent "<your-name>" --project <project>
+
+# After completing work: share context with teammates
+python3 execution/cross_agent_context.py store --agent "<your-name>" --action "What you did" --project <project>
+
+# Hand off a task to another agent
+python3 execution/cross_agent_context.py handoff --from "<your-name>" --to "<target>" --task "Task description" --project <project>
+
+# Team status overview
+python3 execution/cross_agent_context.py status --project <project>
+```
+
+**Agent names:** `antigravity`, `claude`, `gemini`, `cursor`, `copilot`, `opencode`
+
+**Rules:**
+- At session start, run `sync` to see teammates' recent work before duplicating effort
+- After key decisions, `store` your context so other agents stay informed
+- Use `handoff` when a task needs another agent's attention
+
 ### 2. Check for Existing Tools First
 
 Before writing any new script:
@@ -493,6 +518,19 @@ When a user says `/playbook`, "run a playbook", or asks for a multi-step workflo
 > **State persistence:** Progress is saved in `.tmp/playbook_state.json`. If a session ends mid-playbook, the next session can resume with `python3 execution/workflow_engine.py next`.
 
 > **Skill availability:** The engine checks which recommended skills are actually installed and flags missing ones with ⚠️ so you can adapt.
+
+---
+
+## Best Practices for Directives and Markdown (Token Optimization)
+
+Markdown files containing instructions, SOPs, and documentation (`.md`) are fed directly into the model's context window. **Long, extended markdown files waste precious tokens and dilute the agent's focus**, making it less effective.
+
+### Rules for Markdown Conciseness:
+
+1. **Keep it Short**: Challenge every sentence. If the LLM already knows the concept (e.g., standard coding patterns), do not explain it. "Assume the agent is already smart."
+2. **Modularize Large Files**: If a directive or documentation file exceeds 1,500 words or 10,000 bytes, split it into smaller, logically separated files and use parent-child references.
+3. **Prefer Examples Over Prose**: Use concise input/output examples rather than verbose textual descriptions of how something should work.
+4. **Remove Filler**: Eliminate conversational filler, redundant instructions, and obvious statements. Focus on the *what* and the *how*.
 
 ---
 
