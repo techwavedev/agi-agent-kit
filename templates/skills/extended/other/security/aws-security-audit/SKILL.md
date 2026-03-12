@@ -368,3 +368,37 @@ kiro-cli chat "Generate a security audit report with aws-security-audit"
 - [AWS Security Best Practices](https://aws.amazon.com/security/best-practices/)
 - [CIS AWS Foundations Benchmark](https://www.cisecurity.org/benchmark/amazon_web_services)
 - [AWS Security Hub](https://aws.amazon.com/security-hub/)
+
+---
+
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
+
+> **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
+> Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
+
+### Hybrid Memory Integration (Qdrant + BM25)
+
+Before executing this skill, check memory for prior context:
+```bash
+python3 execution/memory_manager.py auto --query "<skill-related query>"
+```
+
+After completing work, store the results:
+```bash
+python3 execution/memory_manager.py store --content "<summary>" --type decision --project <project>
+```
+
+### Agent Team Collaboration
+
+Share outcomes with other agents:
+```bash
+python3 execution/cross_agent_context.py store --agent "<name>" --action "<what was done>" --project <project>
+```
+
+### Local LLM Support
+
+This skill works with any LLM provider. For local inference, ensure Ollama is running with the required model.
+
+<!-- AGI-INTEGRATION-END -->

@@ -396,3 +396,37 @@ kiro-cli chat "Create a least privilege policy with aws-iam-best-practices"
 - [IAM Best Practices](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html)
 - [IAM Policy Simulator](https://policysim.aws.amazon.com/)
 - [IAM Access Analyzer](https://aws.amazon.com/iam/features/analyze-access/)
+
+---
+
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
+
+> **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
+> Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
+
+### Hybrid Memory Integration (Qdrant + BM25)
+
+Before executing this skill, check memory for prior context:
+```bash
+python3 execution/memory_manager.py auto --query "<skill-related query>"
+```
+
+After completing work, store the results:
+```bash
+python3 execution/memory_manager.py store --content "<summary>" --type decision --project <project>
+```
+
+### Agent Team Collaboration
+
+Share outcomes with other agents:
+```bash
+python3 execution/cross_agent_context.py store --agent "<name>" --action "<what was done>" --project <project>
+```
+
+### Local LLM Support
+
+This skill works with any LLM provider. For local inference, ensure Ollama is running with the required model.
+
+<!-- AGI-INTEGRATION-END -->
