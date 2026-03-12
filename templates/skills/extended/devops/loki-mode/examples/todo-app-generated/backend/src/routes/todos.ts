@@ -1,11 +1,20 @@
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import db from '../db/db';
 import { ApiResponse, Todo } from '../types/index';
 
 const router = Router();
 
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests from this IP, please try again after 15 minutes.' },
+});
+
 // GET /api/todos - Retrieve all todos
-router.get('/todos', (_req: Request, res: Response): void => {
+router.get('/todos', apiLimiter, (_req: Request, res: Response): void => {
   db.all('SELECT * FROM todos ORDER BY createdAt DESC', (err: any, rows: Todo[]) => {
     if (err) {
       const errorResponse: ApiResponse<null> = {
@@ -25,7 +34,7 @@ router.get('/todos', (_req: Request, res: Response): void => {
 });
 
 // POST /api/todos - Create new todo
-router.post('/todos', (req: Request, res: Response): void => {
+router.post('/todos', apiLimiter, (req: Request, res: Response): void => {
   const { title } = req.body;
 
   // Validation
@@ -64,7 +73,7 @@ router.post('/todos', (req: Request, res: Response): void => {
 });
 
 // PATCH /api/todos/:id - Update todo completion status
-router.patch('/todos/:id', (req: Request, res: Response): void => {
+router.patch('/todos/:id', apiLimiter, (req: Request, res: Response): void => {
   const { id } = req.params;
   const { completed } = req.body;
 
@@ -116,7 +125,7 @@ router.patch('/todos/:id', (req: Request, res: Response): void => {
 });
 
 // DELETE /api/todos/:id - Delete todo by id
-router.delete('/todos/:id', (req: Request, res: Response): void => {
+router.delete('/todos/:id', apiLimiter, (req: Request, res: Response): void => {
   const { id } = req.params;
 
   // Validation - check if id is a valid number
