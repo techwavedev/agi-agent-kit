@@ -181,27 +181,39 @@ soffice --headless --accept="socket,host=localhost,port=8100;urp;"
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing this skill, check memory for prior context:
+Cache workflow configurations and automation patterns. Retrieve prior pipeline designs to avoid re-building similar flows from scratch.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<skill-related query>"
+# Check for prior workflow/automation context before starting
+python3 execution/memory_manager.py auto --query "automation patterns and workflow configurations for Impress"
 ```
 
-After completing work, store the results:
+### Storing Results
+
+After completing work, store workflow/automation decisions for future sessions:
+
 ```bash
-python3 execution/memory_manager.py store --content "<summary>" --type decision --project <project>
+python3 execution/memory_manager.py store \
+  --content "Workflow: automated data pipeline with retry logic, dead-letter queue, and Slack alerts on failure" \
+  --type technical --project <project> \
+  --tags impress workflow
 ```
 
-### Agent Team Collaboration
+### Multi-Agent Collaboration
 
-Share outcomes with other agents:
+Share workflow state with other agents so they can trigger, monitor, or extend the automation.
+
 ```bash
-python3 execution/cross_agent_context.py store --agent "<name>" --action "<what was done>" --project <project>
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Workflow automation deployed — pipeline processing 1000+ events/day with 99.9% success rate" \
+  --project <project>
 ```
 
-### Local LLM Support
+### Playbook Engine
 
-This skill works with any LLM provider. For local inference, ensure Ollama is running with the required model.
+Combine this skill with others using the Playbook Engine (`execution/workflow_engine.py`) for guided multi-step automation with progress tracking.
 
 <!-- AGI-INTEGRATION-END -->

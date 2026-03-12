@@ -144,27 +144,39 @@ Using Matrix Exponentiation, we can reduce this to $O(\log n)$. Implementation f
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing this skill, check memory for prior context:
+Retrieve prior documentation structure and content to maintain consistency. Cache generated docs to avoid regenerating unchanged sections.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<skill-related query>"
+# Check for prior documentation context before starting
+python3 execution/memory_manager.py auto --query "documentation patterns and prior content for Research Engineer"
 ```
 
-After completing work, store the results:
+### Storing Results
+
+After completing work, store documentation decisions for future sessions:
+
 ```bash
-python3 execution/memory_manager.py store --content "<summary>" --type decision --project <project>
+python3 execution/memory_manager.py store \
+  --content "Documentation: API reference generated from OpenAPI spec, deployment guide updated with new env vars" \
+  --type technical --project <project> \
+  --tags research-engineer documentation
 ```
 
-### Agent Team Collaboration
+### Multi-Agent Collaboration
 
-Share outcomes with other agents:
+Share documentation changes with all agents so they reference the latest guides and APIs.
+
 ```bash
-python3 execution/cross_agent_context.py store --agent "<name>" --action "<what was done>" --project <project>
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Documentation updated — API reference, deployment guide, and CHANGELOG all current" \
+  --project <project>
 ```
 
-### Local LLM Support
+### Agent Team: Documentation
 
-This skill works with any LLM provider. For local inference, ensure Ollama is running with the required model.
+This skill pairs with `documentation_team` — dispatched automatically after any code change to keep docs in sync.
 
 <!-- AGI-INTEGRATION-END -->

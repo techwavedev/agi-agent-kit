@@ -474,27 +474,43 @@ kiro-cli chat "Create a rotation audit report with aws-secrets-rotation"
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing this skill, check memory for prior context:
+Cache compliance check results to avoid re-running expensive AWS API calls. Retrieve prior audit findings to track remediation progress across sessions.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<skill-related query>"
+# Check for prior security context before starting
+python3 execution/memory_manager.py auto --query "prior security audit results for Aws Secrets Rotation"
 ```
 
-After completing work, store the results:
+### Storing Results
+
+After completing work, store security decisions for future sessions:
+
 ```bash
-python3 execution/memory_manager.py store --content "<summary>" --type decision --project <project>
+python3 execution/memory_manager.py store \
+  --content "Audit findings: 3 critical IAM misconfigurations found and remediated" \
+  --type technical --project <project> \
+  --tags aws-secrets-rotation security
 ```
 
-### Agent Team Collaboration
+### Multi-Agent Collaboration
 
-Share outcomes with other agents:
+Share security findings with other agents so they avoid introducing vulnerabilities in their code changes.
+
 ```bash
-python3 execution/cross_agent_context.py store --agent "<name>" --action "<what was done>" --project <project>
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Completed security audit — 3 critical findings fixed, compliance score 94%" \
+  --project <project>
 ```
 
-### Local LLM Support
+### Signed Audit Trail
 
-This skill works with any LLM provider. For local inference, ensure Ollama is running with the required model.
+All security findings are cryptographically signed with the agent's Ed25519 identity, providing tamper-proof audit logs for compliance reporting.
+
+### Semantic Cache for Compliance
+
+Cache compliance check results (`semantic_cache.py`) to avoid redundant AWS API calls. Cache hit at similarity >0.92 returns prior results instantly.
 
 <!-- AGI-INTEGRATION-END -->

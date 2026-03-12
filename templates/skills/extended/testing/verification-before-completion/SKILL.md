@@ -145,29 +145,45 @@ This is non-negotiable.
 ## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
-> Original source: [superpowers](https://github.com/obra/superpowers)
+> Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing this skill, check memory for prior context:
+Retrieve prior test strategies, known flaky tests, and coverage gaps. Cache test infrastructure setup to avoid re-configuring test environments.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<skill-related query>"
+# Check for prior testing/QA context before starting
+python3 execution/memory_manager.py auto --query "test patterns and coverage strategies for Verification Before Completion"
 ```
 
-After completing work, store the results:
+### Storing Results
+
+After completing work, store testing/QA decisions for future sessions:
+
 ```bash
-python3 execution/memory_manager.py store --content "<summary>" --type decision --project <project>
+python3 execution/memory_manager.py store \
+  --content "Testing strategy: integration tests hit real DB (no mocks), 85% line coverage, mutation testing on critical paths" \
+  --type technical --project <project> \
+  --tags verification-before-completion testing
 ```
 
-### Agent Team Collaboration
+### Multi-Agent Collaboration
 
-Share outcomes with other agents:
+Share test results and coverage reports with code review agents so they can verify adequate coverage on changed code.
+
 ```bash
-python3 execution/cross_agent_context.py store --agent "<name>" --action "<what was done>" --project <project>
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "QA complete — test suite expanded with 12 new integration tests, all passing" \
+  --project <project>
 ```
 
-### Local LLM Support
+### TDD Enforcement
 
-This skill works with any LLM provider. For local inference, ensure Ollama is running with the required model.
+This skill integrates with the framework's iron-law RED-GREEN-REFACTOR cycle. No production code without a failing test first.
+
+### Agent Team: QA
+
+Dispatch `qa_team` to generate tests and verify they pass before marking implementation complete.
 
 <!-- AGI-INTEGRATION-END -->

@@ -245,37 +245,40 @@ This skill focuses on **facts and best practices**, not architectural opinions:
 
 <!-- AGI-INTEGRATION-START -->
 
-## 🧠 AGI Framework Integration
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Qdrant Memory Integration
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve platform-specific patterns (iOS/Android), build configurations, and device compatibility notes from prior sessions.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
-```
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
-```bash
-python3 execution/memory_manager.py store \\
-  --content "Description of what was decided/solved" \\
-  --type decision \\
-  --tags swiftui-expert-skill <relevant-tags>
+# Check for prior mobile development context before starting
+python3 execution/memory_manager.py auto --query "mobile architecture and platform-specific patterns for Swiftui Expert Skill"
 ```
 
-### Agent Team Collaboration
+### Storing Results
 
-- This skill can be invoked by the `orchestrator` agent via intelligent routing.
-- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
-- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
+After completing work, store mobile development decisions for future sessions:
 
-### Local LLM Support
+```bash
+python3 execution/memory_manager.py store \
+  --content "Mobile: React Native with Expo, offline-first with SQLite sync, push notifications via FCM" \
+  --type decision --project <project> \
+  --tags swiftui-expert-skill mobile
+```
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+### Multi-Agent Collaboration
+
+Share API contract changes with backend agents and coordinate release timing with QA agents.
+
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Mobile feature implemented — cross-platform component with native performance optimizations" \
+  --project <project>
+```
 
 <!-- AGI-INTEGRATION-END -->

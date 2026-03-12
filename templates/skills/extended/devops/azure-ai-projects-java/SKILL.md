@@ -158,37 +158,44 @@ This skill is applicable to execute the workflow or actions described in the ove
 
 <!-- AGI-INTEGRATION-START -->
 
-## 🧠 AGI Framework Integration
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Qdrant Memory Integration
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior deployment configurations, rollback procedures, and incident post-mortems. Avoid re-discovering infrastructure patterns.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
-```
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
-```bash
-python3 execution/memory_manager.py store \\
-  --content "Description of what was decided/solved" \\
-  --type decision \\
-  --tags azure-ai-projects-java <relevant-tags>
+# Check for prior infrastructure context before starting
+python3 execution/memory_manager.py auto --query "deployment configuration and patterns for Azure Ai Projects Java"
 ```
 
-### Agent Team Collaboration
+### Storing Results
 
-- This skill can be invoked by the `orchestrator` agent via intelligent routing.
-- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
-- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
+After completing work, store infrastructure decisions for future sessions:
 
-### Local LLM Support
+```bash
+python3 execution/memory_manager.py store \
+  --content "Deployment pipeline: configured blue-green deployment with health checks on port 8080" \
+  --type technical --project <project> \
+  --tags azure-ai-projects-java devops
+```
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+### Multi-Agent Collaboration
+
+Broadcast deployment changes so frontend and backend agents update their configurations accordingly.
+
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Deployed infrastructure changes — updated CI/CD pipeline with new health check endpoints" \
+  --project <project>
+```
+
+### Playbook Integration
+
+Use the `ship-saas-mvp` or `full-stack-deploy` playbook to sequence this skill with testing, documentation, and deployment verification.
 
 <!-- AGI-INTEGRATION-END -->

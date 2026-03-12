@@ -196,37 +196,44 @@ This skill is applicable to execute the workflow or actions described in the ove
 
 <!-- AGI-INTEGRATION-START -->
 
-## 🧠 AGI Framework Integration
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Qdrant Memory Integration
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Cache workflow configurations and automation patterns. Retrieve prior pipeline designs to avoid re-building similar flows from scratch.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
-```
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
-```bash
-python3 execution/memory_manager.py store \\
-  --content "Description of what was decided/solved" \\
-  --type decision \\
-  --tags slack-automation <relevant-tags>
+# Check for prior workflow/automation context before starting
+python3 execution/memory_manager.py auto --query "automation patterns and workflow configurations for Slack Automation"
 ```
 
-### Agent Team Collaboration
+### Storing Results
 
-- This skill can be invoked by the `orchestrator` agent via intelligent routing.
-- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
-- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
+After completing work, store workflow/automation decisions for future sessions:
 
-### Local LLM Support
+```bash
+python3 execution/memory_manager.py store \
+  --content "Workflow: automated data pipeline with retry logic, dead-letter queue, and Slack alerts on failure" \
+  --type technical --project <project> \
+  --tags slack-automation workflow
+```
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+### Multi-Agent Collaboration
+
+Share workflow state with other agents so they can trigger, monitor, or extend the automation.
+
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Workflow automation deployed — pipeline processing 1000+ events/day with 99.9% success rate" \
+  --project <project>
+```
+
+### Playbook Engine
+
+Combine this skill with others using the Playbook Engine (`execution/workflow_engine.py`) for guided multi-step automation with progress tracking.
 
 <!-- AGI-INTEGRATION-END -->

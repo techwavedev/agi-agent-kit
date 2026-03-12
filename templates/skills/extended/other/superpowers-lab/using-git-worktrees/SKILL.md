@@ -227,27 +227,35 @@ Ready to implement auth feature
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [superpowers](https://github.com/obra/superpowers)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing this skill, check memory for prior context:
+Retrieve prior decisions and patterns to avoid re-discovering solutions. Cache results for instant retrieval in future sessions.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<skill-related query>"
+# Check for prior development context before starting
+python3 execution/memory_manager.py auto --query "prior work and patterns related to Using Git Worktrees"
 ```
 
-After completing work, store the results:
+### Storing Results
+
+After completing work, store development decisions for future sessions:
+
 ```bash
-python3 execution/memory_manager.py store --content "<summary>" --type decision --project <project>
+python3 execution/memory_manager.py store \
+  --content "Completed task with key insights documented for future reference" \
+  --type decision --project <project> \
+  --tags using-git-worktrees default
 ```
 
-### Agent Team Collaboration
+### Multi-Agent Collaboration
 
-Share outcomes with other agents:
+Share outcomes with other agents so the team stays aligned and avoids duplicate work.
+
 ```bash
-python3 execution/cross_agent_context.py store --agent "<name>" --action "<what was done>" --project <project>
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Task completed — results documented and shared with team" \
+  --project <project>
 ```
-
-### Local LLM Support
-
-This skill works with any LLM provider. For local inference, ensure Ollama is running with the required model.
 
 <!-- AGI-INTEGRATION-END -->

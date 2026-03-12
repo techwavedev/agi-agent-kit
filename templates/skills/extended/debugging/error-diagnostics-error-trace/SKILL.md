@@ -54,37 +54,48 @@ Focus on providing comprehensive error visibility, intelligent alerting, and qui
 
 <!-- AGI-INTEGRATION-START -->
 
-## 🧠 AGI Framework Integration
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Qdrant Memory Integration
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior error resolutions and debugging strategies. The hybrid search excels here — BM25 finds exact error codes/stack traces while vectors find semantically similar past issues.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
-```
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
-```bash
-python3 execution/memory_manager.py store \\
-  --content "Description of what was decided/solved" \\
-  --type decision \\
-  --tags error-diagnostics-error-trace <relevant-tags>
+# Check for prior debugging/diagnostics context before starting
+python3 execution/memory_manager.py auto --query "error patterns and debugging solutions for Error Diagnostics Error Trace"
 ```
 
-### Agent Team Collaboration
+### Storing Results
 
-- This skill can be invoked by the `orchestrator` agent via intelligent routing.
-- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
-- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
+After completing work, store debugging/diagnostics decisions for future sessions:
 
-### Local LLM Support
+```bash
+python3 execution/memory_manager.py store \
+  --content "Root cause: memory leak from unclosed DB connections in pool — fixed with context manager" \
+  --type error --project <project> \
+  --tags error-diagnostics-error-trace debugging
+```
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+### Multi-Agent Collaboration
+
+Store error resolutions so any agent encountering the same issue retrieves the fix instantly instead of re-debugging.
+
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Debugged and resolved critical issue — root cause documented for future reference" \
+  --project <project>
+```
+
+### Self-Annealing Loop
+
+When this skill resolves an error, store the fix in memory AND update the relevant directive. The system gets stronger with each resolved issue.
+
+### BM25 Exact Match
+
+Error codes, stack traces, and log messages are best found via BM25 keyword search. The hybrid system automatically uses exact matching for these patterns.
 
 <!-- AGI-INTEGRATION-END -->

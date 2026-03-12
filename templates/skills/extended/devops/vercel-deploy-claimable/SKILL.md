@@ -132,27 +132,39 @@ Deployment failed due to network restrictions. To fix this:
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing this skill, check memory for prior context:
+Retrieve prior deployment configurations, rollback procedures, and incident post-mortems. Avoid re-discovering infrastructure patterns.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<skill-related query>"
+# Check for prior infrastructure context before starting
+python3 execution/memory_manager.py auto --query "deployment configuration and patterns for Vercel Deploy Claimable"
 ```
 
-After completing work, store the results:
+### Storing Results
+
+After completing work, store infrastructure decisions for future sessions:
+
 ```bash
-python3 execution/memory_manager.py store --content "<summary>" --type decision --project <project>
+python3 execution/memory_manager.py store \
+  --content "Deployment pipeline: configured blue-green deployment with health checks on port 8080" \
+  --type technical --project <project> \
+  --tags vercel-deploy-claimable devops
 ```
 
-### Agent Team Collaboration
+### Multi-Agent Collaboration
 
-Share outcomes with other agents:
+Broadcast deployment changes so frontend and backend agents update their configurations accordingly.
+
 ```bash
-python3 execution/cross_agent_context.py store --agent "<name>" --action "<what was done>" --project <project>
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Deployed infrastructure changes — updated CI/CD pipeline with new health check endpoints" \
+  --project <project>
 ```
 
-### Local LLM Support
+### Playbook Integration
 
-This skill works with any LLM provider. For local inference, ensure Ollama is running with the required model.
+Use the `ship-saas-mvp` or `full-stack-deploy` playbook to sequence this skill with testing, documentation, and deployment verification.
 
 <!-- AGI-INTEGRATION-END -->

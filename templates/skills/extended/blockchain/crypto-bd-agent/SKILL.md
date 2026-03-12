@@ -238,37 +238,44 @@ Buzz BD Agent (SolCex Exchange):
 
 <!-- AGI-INTEGRATION-START -->
 
-## 🧠 AGI Framework Integration
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Qdrant Memory Integration
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior smart contract patterns, gas optimization techniques, and audit findings. Cache ABI definitions and deployment addresses.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
-```
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
-```bash
-python3 execution/memory_manager.py store \\
-  --content "Description of what was decided/solved" \\
-  --type decision \\
-  --tags crypto-bd-agent <relevant-tags>
+# Check for prior blockchain/Web3 context before starting
+python3 execution/memory_manager.py auto --query "smart contract patterns and blockchain architecture for Crypto Bd Agent"
 ```
 
-### Agent Team Collaboration
+### Storing Results
 
-- This skill can be invoked by the `orchestrator` agent via intelligent routing.
-- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
-- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
+After completing work, store blockchain/Web3 decisions for future sessions:
 
-### Local LLM Support
+```bash
+python3 execution/memory_manager.py store \
+  --content "Smart contract: ERC-721 with royalty enforcement, gas-optimized batch minting, OpenZeppelin base" \
+  --type technical --project <project> \
+  --tags crypto-bd-agent blockchain
+```
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+### Multi-Agent Collaboration
+
+Share contract ABIs and deployment addresses with frontend agents for DApp integration.
+
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Smart contract deployed — audit findings addressed, gas benchmarks documented" \
+  --project <project>
+```
+
+### Blockchain Trust Layer
+
+The framework's own blockchain identity system (Ed25519 + MultiChain anchoring) uses similar cryptographic patterns — apply learnings bidirectionally.
 
 <!-- AGI-INTEGRATION-END -->

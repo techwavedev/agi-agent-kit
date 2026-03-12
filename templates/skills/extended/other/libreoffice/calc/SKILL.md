@@ -208,27 +208,35 @@ soffice --headless --accept="socket,host=localhost,port=8100;urp;"
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing this skill, check memory for prior context:
+Cache data schemas, transformation rules, and query patterns. BM25 excels at finding specific column names, table references, and SQL patterns.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<skill-related query>"
+# Check for prior data engineering context before starting
+python3 execution/memory_manager.py auto --query "data processing patterns and pipeline configurations for Calc"
 ```
 
-After completing work, store the results:
+### Storing Results
+
+After completing work, store data engineering decisions for future sessions:
+
 ```bash
-python3 execution/memory_manager.py store --content "<summary>" --type decision --project <project>
+python3 execution/memory_manager.py store \
+  --content "Data pipeline: ETL from PostgreSQL to Qdrant, 50K records/batch, incremental sync via updated_at" \
+  --type technical --project <project> \
+  --tags calc data
 ```
 
-### Agent Team Collaboration
+### Multi-Agent Collaboration
 
-Share outcomes with other agents:
+Share data schema changes with backend and frontend agents so they update their models accordingly.
+
 ```bash
-python3 execution/cross_agent_context.py store --agent "<name>" --action "<what was done>" --project <project>
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Data pipeline implemented — ETL processing with validation, deduplication, and error recovery" \
+  --project <project>
 ```
-
-### Local LLM Support
-
-This skill works with any LLM provider. For local inference, ensure Ollama is running with the required model.
 
 <!-- AGI-INTEGRATION-END -->

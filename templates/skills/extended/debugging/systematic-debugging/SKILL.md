@@ -303,29 +303,45 @@ From debugging sessions:
 ## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
-> Original source: [superpowers](https://github.com/obra/superpowers)
+> Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing this skill, check memory for prior context:
+Retrieve prior error resolutions and debugging strategies. The hybrid search excels here — BM25 finds exact error codes/stack traces while vectors find semantically similar past issues.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<skill-related query>"
+# Check for prior debugging/diagnostics context before starting
+python3 execution/memory_manager.py auto --query "error patterns and debugging solutions for Systematic Debugging"
 ```
 
-After completing work, store the results:
+### Storing Results
+
+After completing work, store debugging/diagnostics decisions for future sessions:
+
 ```bash
-python3 execution/memory_manager.py store --content "<summary>" --type decision --project <project>
+python3 execution/memory_manager.py store \
+  --content "Root cause: memory leak from unclosed DB connections in pool — fixed with context manager" \
+  --type error --project <project> \
+  --tags systematic-debugging debugging
 ```
 
-### Agent Team Collaboration
+### Multi-Agent Collaboration
 
-Share outcomes with other agents:
+Store error resolutions so any agent encountering the same issue retrieves the fix instantly instead of re-debugging.
+
 ```bash
-python3 execution/cross_agent_context.py store --agent "<name>" --action "<what was done>" --project <project>
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Debugged and resolved critical issue — root cause documented for future reference" \
+  --project <project>
 ```
 
-### Local LLM Support
+### Self-Annealing Loop
 
-This skill works with any LLM provider. For local inference, ensure Ollama is running with the required model.
+When this skill resolves an error, store the fix in memory AND update the relevant directive. The system gets stronger with each resolved issue.
+
+### BM25 Exact Match
+
+Error codes, stack traces, and log messages are best found via BM25 keyword search. The hybrid system automatically uses exact matching for these patterns.
 
 <!-- AGI-INTEGRATION-END -->

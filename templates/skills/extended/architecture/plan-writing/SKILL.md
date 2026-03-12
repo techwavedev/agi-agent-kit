@@ -154,29 +154,41 @@ After saving the plan:
 ## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
-> Original source: [superpowers](https://github.com/obra/superpowers)
+> Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing this skill, check memory for prior context:
+Retrieve prior Architecture Decision Records (ADRs), trade-off analyses, and system design rationale. Critical for maintaining consistency across long-running projects.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<skill-related query>"
+# Check for prior architecture/design context before starting
+python3 execution/memory_manager.py auto --query "architecture decisions and trade-off analysis for Writing Plans"
 ```
 
-After completing work, store the results:
+### Storing Results
+
+After completing work, store architecture/design decisions for future sessions:
+
 ```bash
-python3 execution/memory_manager.py store --content "<summary>" --type decision --project <project>
+python3 execution/memory_manager.py store \
+  --content "Architecture: event-driven microservices with CQRS, Pulsar for messaging, Qdrant for semantic search" \
+  --type decision --project <project> \
+  --tags writing-plans architecture
 ```
 
-### Agent Team Collaboration
+### Multi-Agent Collaboration
 
-Share outcomes with other agents:
+Broadcast architecture decisions to ALL agents so implementation stays aligned with the chosen patterns.
+
 ```bash
-python3 execution/cross_agent_context.py store --agent "<name>" --action "<what was done>" --project <project>
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Completed architecture review — ADR documented, trade-offs analyzed, team aligned" \
+  --project <project>
 ```
 
-### Local LLM Support
+### Control Tower Coordination
 
-This skill works with any LLM provider. For local inference, ensure Ollama is running with the required model.
+Register architecture tasks in the Control Tower so all agents across machines know the current system design and constraints.
 
 <!-- AGI-INTEGRATION-END -->

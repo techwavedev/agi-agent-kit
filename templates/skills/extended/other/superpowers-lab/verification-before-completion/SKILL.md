@@ -148,27 +148,39 @@ This is non-negotiable.
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [superpowers](https://github.com/obra/superpowers)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing this skill, check memory for prior context:
+Retrieve prior design decisions (color palettes, typography, spacing scales) to maintain visual consistency across sessions. Cache generated design tokens.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<skill-related query>"
+# Check for prior frontend/design context before starting
+python3 execution/memory_manager.py auto --query "design system decisions and component patterns for Verification Before Completion"
 ```
 
-After completing work, store the results:
+### Storing Results
+
+After completing work, store frontend/design decisions for future sessions:
+
 ```bash
-python3 execution/memory_manager.py store --content "<summary>" --type decision --project <project>
+python3 execution/memory_manager.py store \
+  --content "Design system: adopted 8px grid, Inter font family, HSL color tokens with dark mode support" \
+  --type decision --project <project> \
+  --tags verification-before-completion frontend
 ```
 
-### Agent Team Collaboration
+### Multi-Agent Collaboration
 
-Share outcomes with other agents:
+Share design decisions with backend agents (API contract changes) and QA agents (visual regression baselines).
+
 ```bash
-python3 execution/cross_agent_context.py store --agent "<name>" --action "<what was done>" --project <project>
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Implemented UI components — new design system with accessibility compliance (WCAG 2.1 AA)" \
+  --project <project>
 ```
 
-### Local LLM Support
+### Design Memory Persistence
 
-This skill works with any LLM provider. For local inference, ensure Ollama is running with the required model.
+Store design system tokens and component decisions in Qdrant so any agent on any platform (Claude, Gemini, Cursor) can retrieve and apply consistent styling.
 
 <!-- AGI-INTEGRATION-END -->

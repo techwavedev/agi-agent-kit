@@ -275,37 +275,44 @@ Synthesize and respond to user
 
 <!-- AGI-INTEGRATION-START -->
 
-## 🧠 AGI Framework Integration
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Qdrant Memory Integration
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior documentation structure and content to maintain consistency. Cache generated docs to avoid regenerating unchanged sections.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
-```
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
-```bash
-python3 execution/memory_manager.py store \\
-  --content "Description of what was decided/solved" \\
-  --type decision \\
-  --tags notebooklm <relevant-tags>
+# Check for prior documentation context before starting
+python3 execution/memory_manager.py auto --query "documentation patterns and prior content for Notebooklm"
 ```
 
-### Agent Team Collaboration
+### Storing Results
 
-- This skill can be invoked by the `orchestrator` agent via intelligent routing.
-- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
-- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
+After completing work, store documentation decisions for future sessions:
 
-### Local LLM Support
+```bash
+python3 execution/memory_manager.py store \
+  --content "Documentation: API reference generated from OpenAPI spec, deployment guide updated with new env vars" \
+  --type technical --project <project> \
+  --tags notebooklm documentation
+```
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+### Multi-Agent Collaboration
+
+Share documentation changes with all agents so they reference the latest guides and APIs.
+
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Documentation updated — API reference, deployment guide, and CHANGELOG all current" \
+  --project <project>
+```
+
+### Agent Team: Documentation
+
+This skill pairs with `documentation_team` — dispatched automatically after any code change to keep docs in sync.
 
 <!-- AGI-INTEGRATION-END -->
