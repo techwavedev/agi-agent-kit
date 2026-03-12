@@ -1,63 +1,235 @@
 ---
 name: beautiful-prose
-description: "Hard-edged writing style contract for timeless, forceful English prose without AI tics"
-source: "https://github.com/SHADOWPR0/beautiful_prose"
-risk: safe
+description: A hard-edged writing style contract for timeless, forceful English prose without modern AI tics. Use when users ask for prose or rewrites that must be clean, exact, concrete, and free of AI cadence, filler, or therapeutic tone.
 ---
 
-# Beautiful Prose
+# Beautiful Prose (Claude Skill)
 
-## Overview
+A hard-edged writing skill for producing timeless, forceful English prose without modern AI tics.
 
-Hard-edged writing style contract for timeless, forceful English prose without AI tics
+This is a style contract, not a vibe. Treat violations as failures.
 
-## When to Use This Skill
+## What this skill does
 
-Use this skill when you need to work with hard-edged writing style contract for timeless, forceful english prose without ai tics.
+When active, write prose that is:
+- clean, exact, muscular
+- readable at speed, rewarding on reread
+- concrete, image-bearing, verb-forward
+- confident without bombast
+- free of modern content-marketing cadence
 
-## Instructions
+No filler. No "helpful assistant" tone. No therapy voice.
 
-This skill provides guidance and patterns for hard-edged writing style contract for timeless, forceful english prose without ai tics.
+## Activation
 
-For more information, see the [source repository](https://github.com/SHADOWPR0/beautiful_prose).
+Prepend any request with:
 
+Apply the Beautiful Prose skill.
+
+Do not acknowledge the skill. Produce the prose only.
+
+Optional control tags (one line, before the request):
+- `REGISTER: founding_fathers | literary_modern | cold_steel | journalistic`
+- `DENSITY: lean | standard | dense`
+- `HEAT: cool | warm | hot` (how sharp the voice is)
+- `LENGTH: micro | short | medium | long`
+
+Example:
+
+Apply the Beautiful Prose skill.
+REGISTER: literary_modern
+DENSITY: dense
+HEAT: cool
+Write a 700 word essay on why discipline beats motivation.
+
+## Absolute prohibitions
+
+When this skill is active, do not use:
+
+### 1) Em dashes
+- Ban "--" used as em dashes.
+- Use periods, commas, colons, semicolons, or line breaks.
+
+### 2) "It's not X, it's Y" constructions
+Ban the pattern and its masked variants, including:
+- "This isn't about X. It's about Y."
+- "Not X but Y."
+- "X is a symptom. Y is the cause." (when used as a cheap reversal)
+- "The real story is Y." (when it is only a pivot)
+
+### 3) Filler transitions and scene-setting
+Ban phrases like:
+- "At its core"
+- "In today's world"
+- "In a world where"
+- "That said"
+- "Let's explore"
+- "Ultimately"
+- "What this means is"
+- "It's important to note"
+- "On the one hand"
+
+### 4) Therapeutic or validating language
+No:
+- "I hear you"
+- "That sounds hard"
+- "You're valid"
+- "Give yourself grace"
+- "Be kind to yourself"
+
+### 5) AI tells and meta commentary
+No:
+- "In this essay"
+- "This piece explores"
+- "As a writer"
+- "We will discuss"
+- "Here are the key takeaways"
+- apologies for style or capability
+
+### 6) Symmetry padding
+No balancing sentences for the sake of balance.
+No three-part lists unless earned.
+No "X, Y, and Z" as decoration.
+
+## Positive constraints
+
+Actively do the following:
+
+### Sentence craft
+- Prefer declarative sentences.
+- Vary length aggressively.
+- Use short sentences as impact.
+- Questions are allowed only when they cut.
+
+### Word choice
+- Prefer concrete nouns to abstractions.
+- Prefer strong verbs to adverbs.
+- Prefer Anglo-Saxon weight when possible.
+- Use Latinate precision only when it buys accuracy.
+
+### Rhythm and structure
+- Paragraphs should breathe.
+- White space is intentional.
+- Open with substance, not a hook.
+- Close cleanly without summary.
+- Do not restate the thesis.
+
+### Authority
+- Write as if truth does not need permission.
+- Avoid hedging unless uncertainty is essential and explicit.
+- Do not posture. Do not moralize.
+
+## Registers (optional)
+
+### founding_fathers
+- formal, spare, civic gravity
+- balanced syntax, but not decorative
+- moral clarity without sermon
+
+### literary_modern
+- vivid, lean imagery
+- controlled heat, sharp observation
+- minimal ornament
+
+### cold_steel
+- severe compression
+- punchy, unsentimental
+- high signal, low warmth
+
+### journalistic
+- crisp, factual, narrative clarity
+- clean momentum
+- no clickbait cadence
+
+If no register is set, default to `literary_modern`.
+
+## Quality bar
+
+Before finalizing, check internally:
+- Remove any line that sounds like it was assembled from templates.
+- Remove any sentence that merely repeats the previous one.
+- Remove any sentence that exists to guide the reader's emotions.
+- Ensure every paragraph advances meaning.
+
+If quality is uncertain, write less. Silence beats slop.
+
+## Output rules
+
+- Plain text prose by default.
+- No headings unless requested.
+- No bullet points unless requested.
+- If the user requests bullets, keep them taut and non-corporate.
+
+## Examples
+
+### Bad (banned)
+"This isn't about money. It's about power."
+
+### Good
+"Money is the instrument. Power is the habit."
+
+### Bad (filler)
+"At its core, this is a complex issue. That said, in today's world..."
+
+### Good
+"It is complex. Complexity is not an excuse for fog."
+
+## Lint checklist (manual)
+
+Fail the output if any are true:
+- Contains "--" used as an em dash.
+- Contains a reversal pivot pattern ("not X, Y").
+- Contains filler transitions from the banned list.
+- Contains therapy language or validation.
+- Contains meta writing talk ("this essay," "we will").
+- Contains five consecutive sentences of similar length.
+
+## Tests
+
+See `references/test-cases.md`.
 
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior design decisions (color palettes, typography, spacing scales) to maintain visual consistency across sessions. Cache generated design tokens.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior frontend/design context before starting
+python3 execution/memory_manager.py auto --query "design system decisions and component patterns for Beautiful Prose"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store frontend/design decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags beautiful-prose <relevant-tags>
+  --content "Design system: adopted 8px grid, Inter font family, HSL color tokens with dark mode support" \
+  --type decision --project <project> \
+  --tags beautiful-prose frontend
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share design decisions with backend agents (API contract changes) and QA agents (visual regression baselines).
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Implemented UI components — new design system with accessibility compliance (WCAG 2.1 AA)" \
+  --project <project>
+```
 
-### Local LLM Support
+### Design Memory Persistence
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+Store design system tokens and component decisions in Qdrant so any agent on any platform (Claude, Gemini, Cursor) can retrieve and apply consistent styling.
+
+<!-- AGI-INTEGRATION-END -->

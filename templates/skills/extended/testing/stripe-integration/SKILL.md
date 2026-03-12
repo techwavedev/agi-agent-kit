@@ -1,6 +1,9 @@
 ---
 name: stripe-integration
-description: Implement Stripe payment processing for robust, PCI-compliant payment flows including checkout, subscriptions, and webhooks. Use when integrating Stripe payments, building subscription systems, or implementing secure checkout flows.
+description: "Implement Stripe payment processing for robust, PCI-compliant payment flows including checkout, subscriptions, and webhooks. Use when integrating Stripe payments, building subscription systems, or ..."
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 # Stripe Integration
@@ -453,43 +456,52 @@ def test_payment_flow():
 - **No Retry Logic**: Implement retries for API calls
 - **Ignoring Test Mode**: Test all edge cases with test cards
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior test strategies, known flaky tests, and coverage gaps. Cache test infrastructure setup to avoid re-configuring test environments.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior testing/QA context before starting
+python3 execution/memory_manager.py auto --query "test patterns and coverage strategies for Stripe Integration"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store testing/QA decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags stripe-integration <relevant-tags>
+  --content "Testing strategy: integration tests hit real DB (no mocks), 85% line coverage, mutation testing on critical paths" \
+  --type technical --project <project> \
+  --tags stripe-integration testing
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share test results and coverage reports with code review agents so they can verify adequate coverage on changed code.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "QA complete — test suite expanded with 12 new integration tests, all passing" \
+  --project <project>
+```
 
-### Local LLM Support
+### TDD Enforcement
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+This skill integrates with the framework's iron-law RED-GREEN-REFACTOR cycle. No production code without a failing test first.
+
+### Agent Team: QA
+
+Dispatch `qa_team` to generate tests and verify they pass before marking implementation complete.
+
+<!-- AGI-INTEGRATION-END -->

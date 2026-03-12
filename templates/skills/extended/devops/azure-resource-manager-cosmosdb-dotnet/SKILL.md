@@ -1,8 +1,9 @@
 ---
 name: azure-resource-manager-cosmosdb-dotnet
-description: |
-  Azure Resource Manager SDK for Cosmos DB in .NET. Use for MANAGEMENT PLANE operations: creating/managing Cosmos DB accounts, databases, containers, throughput settings, and RBAC via Azure Resource Manager. NOT for data plane operations (CRUD on documents) - use Microsoft.Azure.Cosmos for that. Triggers: "Cosmos DB account", "create Cosmos account", "manage Cosmos resources", "ARM Cosmos", "CosmosDBAccountResource", "provision Cosmos DB".
-package: Azure.ResourceManager.CosmosDB
+description: Azure Resource Manager SDK for Cosmos DB in .NET.
+risk: unknown
+source: community
+date_added: '2026-02-27'
 ---
 
 # Azure.ResourceManager.CosmosDB (.NET)
@@ -238,9 +239,9 @@ catch (RequestFailedException ex)
 
 | File | When to Read |
 |------|--------------|
-| [references/account-management.md](references/account-management.md) | Account CRUD, failover, keys, connection strings, networking |
-| [references/sql-resources.md](references/sql-resources.md) | SQL databases, containers, stored procedures, triggers, UDFs |
-| [references/throughput.md](references/throughput.md) | Manual/autoscale throughput, migration between modes |
+| references/account-management.md | Account CRUD, failover, keys, connection strings, networking |
+| references/sql-resources.md | SQL databases, containers, stored procedures, triggers, UDFs |
+| references/throughput.md | Manual/autoscale throughput, migration between modes |
 
 ## Related SDKs
 
@@ -249,43 +250,51 @@ catch (RequestFailedException ex)
 | `Microsoft.Azure.Cosmos` | Data plane (document CRUD, queries) | `dotnet add package Microsoft.Azure.Cosmos` |
 | `Azure.ResourceManager.CosmosDB` | Management plane (this SDK) | `dotnet add package Azure.ResourceManager.CosmosDB` |
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior deployment configurations, rollback procedures, and incident post-mortems. Avoid re-discovering infrastructure patterns.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior infrastructure context before starting
+python3 execution/memory_manager.py auto --query "deployment configuration and patterns for Azure Resource Manager Cosmosdb Dotnet"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store infrastructure decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags azure-resource-manager-cosmosdb-dotnet <relevant-tags>
+  --content "Deployment pipeline: configured blue-green deployment with health checks on port 8080" \
+  --type technical --project <project> \
+  --tags azure-resource-manager-cosmosdb-dotnet devops
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Broadcast deployment changes so frontend and backend agents update their configurations accordingly.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Deployed infrastructure changes — updated CI/CD pipeline with new health check endpoints" \
+  --project <project>
+```
 
-### Local LLM Support
+### Playbook Integration
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+Use the `ship-saas-mvp` or `full-stack-deploy` playbook to sequence this skill with testing, documentation, and deployment verification.
+
+<!-- AGI-INTEGRATION-END -->

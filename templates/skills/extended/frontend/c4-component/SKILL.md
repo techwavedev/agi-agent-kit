@@ -1,12 +1,9 @@
 ---
 name: c4-component
-description: Expert C4 Component-level documentation specialist. Synthesizes C4
-  Code-level documentation into Component-level architecture, defining component
-  boundaries, interfaces, and relationships. Creates component diagrams and
-  documentation. Use when synthesizing code-level documentation into logical
-  components.
-metadata:
-  model: sonnet
+description: Expert C4 Component-level documentation specialist. Synthesizes C4 Code-level documentation into Component-level architecture, defining component boundaries, interfaces, and relationships.
+risk: unknown
+source: community
+date_added: '2026-02-27'
 ---
 
 # C4 Component Level: [Component Name]
@@ -49,8 +46,8 @@ metadata:
 
 This component contains the following code-level elements:
 
-- [c4-code-file-1.md](./c4-code-file-1.md) - [Description]
-- [c4-code-file-2.md](./c4-code-file-2.md) - [Description]
+- c4-code-file-1.md - [Description]
+- c4-code-file-2.md - [Description]
 
 ## Interfaces
 
@@ -114,12 +111,12 @@ C4Component
 ### [Component 1]
 - **Name**: [Component name]
 - **Description**: [Short description]
-- **Documentation**: [c4-component-name-1.md](./c4-component-name-1.md)
+- **Documentation**: c4-component-name-1.md
 
 ### [Component 2]
 - **Name**: [Component name]
 - **Description**: [Short description]
-- **Documentation**: [c4-component-name-2.md](./c4-component-name-2.md)
+- **Documentation**: c4-component-name-2.md
 
 ## Component Relationships
 [Mermaid diagram showing all components and their relationships]
@@ -152,43 +149,48 @@ When synthesizing components, provide:
 - Master component index with all components
 - Consistent documentation format across all components
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior design decisions (color palettes, typography, spacing scales) to maintain visual consistency across sessions. Cache generated design tokens.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior frontend/design context before starting
+python3 execution/memory_manager.py auto --query "design system decisions and component patterns for C4 Component"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store frontend/design decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags c4-component <relevant-tags>
+  --content "Design system: adopted 8px grid, Inter font family, HSL color tokens with dark mode support" \
+  --type decision --project <project> \
+  --tags c4-component frontend
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share design decisions with backend agents (API contract changes) and QA agents (visual regression baselines).
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Implemented UI components — new design system with accessibility compliance (WCAG 2.1 AA)" \
+  --project <project>
+```
 
-### Local LLM Support
+### Design Memory Persistence
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+Store design system tokens and component decisions in Qdrant so any agent on any platform (Claude, Gemini, Cursor) can retrieve and apply consistent styling.
+
+<!-- AGI-INTEGRATION-END -->

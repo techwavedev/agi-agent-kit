@@ -1,8 +1,9 @@
 ---
 name: azure-mgmt-apimanagement-dotnet
-description: |
-  Azure Resource Manager SDK for API Management in .NET. Use for MANAGEMENT PLANE operations: creating/managing APIM services, APIs, products, subscriptions, policies, users, groups, gateways, and backends via Azure Resource Manager. Triggers: "API Management", "APIM service", "create APIM", "manage APIs", "ApiManagementServiceResource", "API policies", "APIM products", "APIM subscriptions".
-package: Azure.ResourceManager.ApiManagement
+description: Azure Resource Manager SDK for API Management in .NET.
+risk: unknown
+source: community
+date_added: '2026-02-27'
 ---
 
 # Azure.ResourceManager.ApiManagement (.NET)
@@ -296,10 +297,10 @@ catch (RequestFailedException ex)
 
 | File | When to Read |
 |------|--------------|
-| [references/service-management.md](references/service-management.md) | Service CRUD, SKUs, networking, backup/restore |
-| [references/apis-operations.md](references/apis-operations.md) | APIs, operations, schemas, versioning |
-| [references/products-subscriptions.md](references/products-subscriptions.md) | Products, subscriptions, access control |
-| [references/policies.md](references/policies.md) | Policy XML patterns, scopes, common policies |
+| references/service-management.md | Service CRUD, SKUs, networking, backup/restore |
+| references/apis-operations.md | APIs, operations, schemas, versioning |
+| references/products-subscriptions.md | Products, subscriptions, access control |
+| references/policies.md | Policy XML patterns, scopes, common policies |
 
 ## Related Resources
 
@@ -309,43 +310,51 @@ catch (RequestFailedException ex)
 | [Policy Reference](https://learn.microsoft.com/en-us/azure/api-management/api-management-policies) | Complete policy reference |
 | [SDK Reference](https://learn.microsoft.com/en-us/dotnet/api/azure.resourcemanager.apimanagement) | .NET API reference |
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior API design decisions, database schema choices, and error handling patterns. Cache API response templates for consistent error formatting.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior backend/API context before starting
+python3 execution/memory_manager.py auto --query "API design patterns and architecture decisions for Azure Mgmt Apimanagement Dotnet"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store backend/API decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags azure-mgmt-apimanagement-dotnet <relevant-tags>
+  --content "API architecture: REST with HATEOAS, JWT auth, rate limiting at 100 req/min per tenant" \
+  --type decision --project <project> \
+  --tags azure-mgmt-apimanagement-dotnet backend
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share API contract changes with frontend agents so they update their client code, and with QA agents for test coverage.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Implemented API endpoints — 5 new routes with OpenAPI spec and integration tests" \
+  --project <project>
+```
 
-### Local LLM Support
+### Agent Team: Code Review
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+After implementation, dispatch `code_review_team` for two-stage review (spec compliance + code quality) before merging.
+
+<!-- AGI-INTEGRATION-END -->

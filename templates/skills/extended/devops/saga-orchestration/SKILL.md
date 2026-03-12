@@ -1,6 +1,9 @@
 ---
 name: saga-orchestration
-description: Implement saga patterns for distributed transactions and cross-aggregate workflows. Use when coordinating multi-step business processes, handling compensating transactions, or managing long-running workflows.
+description: "Implement saga patterns for distributed transactions and cross-aggregate workflows. Use when coordinating multi-step business processes, handling compensating transactions, or managing long-running..."
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 # Saga Orchestration
@@ -473,6 +476,10 @@ class TimeoutSagaOrchestrator(SagaOrchestrator):
             )
 ```
 
+## Durable Execution Alternative
+
+The templates above build saga infrastructure from scratch — saga stores, event publishers, compensation tracking. **Durable execution frameworks** (like DBOS) eliminate much of this boilerplate: the workflow runtime automatically persists state to a database, retries failed steps, and resumes from the last checkpoint after crashes. Instead of building a `SagaOrchestrator` base class, you write a workflow function with steps — the framework handles persistence, crash recovery, and exactly-once execution semantics. Consider durable execution when you want saga-like reliability without managing the coordination infrastructure yourself.
+
 ## Best Practices
 
 ### Do's
@@ -490,48 +497,57 @@ class TimeoutSagaOrchestrator(SagaOrchestrator):
 - **Don't couple services** - Use async messaging
 - **Don't ignore partial failures** - Handle gracefully
 
+## Related Skills
+
+Works well with: `event-sourcing-architect`, `workflow-automation`, `dbos-*`
+
 ## Resources
 
 - [Saga Pattern](https://microservices.io/patterns/data/saga.html)
 - [Designing Data-Intensive Applications](https://dataintensive.net/)
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior deployment configurations, rollback procedures, and incident post-mortems. Avoid re-discovering infrastructure patterns.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior infrastructure context before starting
+python3 execution/memory_manager.py auto --query "deployment configuration and patterns for Saga Orchestration"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store infrastructure decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags saga-orchestration <relevant-tags>
+  --content "Deployment pipeline: configured blue-green deployment with health checks on port 8080" \
+  --type technical --project <project> \
+  --tags saga-orchestration devops
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Broadcast deployment changes so frontend and backend agents update their configurations accordingly.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Deployed infrastructure changes — updated CI/CD pipeline with new health check endpoints" \
+  --project <project>
+```
 
-### Local LLM Support
+### Playbook Integration
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+Use the `ship-saas-mvp` or `full-stack-deploy` playbook to sequence this skill with testing, documentation, and deployment verification.
+
+<!-- AGI-INTEGRATION-END -->

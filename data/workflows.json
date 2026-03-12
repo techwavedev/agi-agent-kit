@@ -1,0 +1,162 @@
+{
+  "generatedAt": "2026-02-20T00:00:00.000Z",
+  "version": 1,
+  "source": "antigravity-awesome-skills v5.0.0",
+  "workflows": [
+    {
+      "id": "ship-saas-mvp",
+      "name": "Ship a SaaS MVP",
+      "description": "End-to-end workflow to scope, build, test, and ship a SaaS MVP quickly.",
+      "category": "web",
+      "steps": [
+        {
+          "title": "Plan the scope",
+          "goal": "Convert the idea into a clear implementation plan and milestones.",
+          "recommendedSkills": ["brainstorming", "plan-writing"],
+          "notes": "Define problem, user persona, MVP boundaries, and acceptance criteria before coding."
+        },
+        {
+          "title": "Build backend and API",
+          "goal": "Implement the core data model, API contracts, and auth baseline.",
+          "recommendedSkills": [
+            "api-patterns",
+            "database-design",
+            "auth-implementation-patterns"
+          ],
+          "notes": "Prefer small vertical slices; keep API contracts explicit and testable."
+        },
+        {
+          "title": "Build frontend",
+          "goal": "Deliver the primary user flows with production-grade UX patterns.",
+          "recommendedSkills": ["react-patterns", "frontend-design"],
+          "notes": "Prioritize onboarding, empty states, and one complete happy-path flow."
+        },
+        {
+          "title": "Test and validate",
+          "goal": "Catch regressions and ensure key flows work before release.",
+          "recommendedSkills": [
+            "test-driven-development",
+            "systematic-debugging",
+            "playwright-skill"
+          ],
+          "notes": "Use playwright-skill for browser automation testing."
+        },
+        {
+          "title": "Ship safely",
+          "goal": "Release with basic observability and rollback readiness.",
+          "recommendedSkills": [
+            "deployment-procedures",
+            "verification-before-completion"
+          ],
+          "notes": "Define release checklist, minimum telemetry, and rollback triggers."
+        }
+      ]
+    },
+    {
+      "id": "security-audit-web-app",
+      "name": "Security Audit for a Web App",
+      "description": "Structured workflow for baseline AppSec review and risk triage.",
+      "category": "security",
+      "steps": [
+        {
+          "title": "Define scope and threat model",
+          "goal": "Identify critical assets, trust boundaries, and threat scenarios.",
+          "recommendedSkills": ["red-team-tactics", "vulnerability-scanner"],
+          "notes": "Document in-scope targets, assumptions, and out-of-scope constraints."
+        },
+        {
+          "title": "Review authentication and authorization",
+          "goal": "Find broken auth patterns and access-control weaknesses.",
+          "recommendedSkills": [
+            "auth-implementation-patterns",
+            "api-security-best-practices"
+          ],
+          "notes": "Prioritize account takeover and privilege escalation paths."
+        },
+        {
+          "title": "Assess API and input security",
+          "goal": "Detect high-impact API and injection risks.",
+          "recommendedSkills": [
+            "api-security-best-practices",
+            "vulnerability-scanner"
+          ],
+          "notes": "Map findings to severity and exploitability, not only CVSS."
+        },
+        {
+          "title": "Harden and verify",
+          "goal": "Translate findings into concrete remediations and retest.",
+          "recommendedSkills": ["verification-before-completion"],
+          "notes": "Track remediation owners and target dates; verify each fix with evidence."
+        }
+      ]
+    },
+    {
+      "id": "build-ai-agent-system",
+      "name": "Build an AI Agent System",
+      "description": "Workflow to design, implement, and evaluate a production-ready AI agent.",
+      "category": "ai-agents",
+      "steps": [
+        {
+          "title": "Define use case and reliability targets",
+          "goal": "Choose a narrow use case and measurable quality goals.",
+          "recommendedSkills": ["ai-agents-architect", "brainstorming"],
+          "notes": "Set latency, quality, and failure-rate thresholds before implementation."
+        },
+        {
+          "title": "Design architecture and retrieval",
+          "goal": "Design tools, memory, and retrieval strategy for the agent.",
+          "recommendedSkills": [
+            "ai-agents-architect",
+            "qdrant-memory",
+            "prompt-engineering-patterns"
+          ],
+          "notes": "Keep retrieval quality measurable and version prompt/tool contracts."
+        },
+        {
+          "title": "Implement orchestration",
+          "goal": "Implement the orchestration loop and production safeguards.",
+          "recommendedSkills": ["mcp-builder", "parallel-agents"],
+          "notes": "Start with constrained tool permissions and explicit fallback behavior."
+        },
+        {
+          "title": "Evaluate and iterate",
+          "goal": "Run benchmark scenarios and improve weak areas systematically.",
+          "recommendedSkills": [
+            "verification-before-completion",
+            "systematic-debugging"
+          ],
+          "notes": "Use test datasets and failure buckets to guide each iteration cycle."
+        }
+      ]
+    },
+    {
+      "id": "qa-browser-automation",
+      "name": "QA and Browser Automation",
+      "description": "Workflow for robust E2E and browser-driven validation across stacks.",
+      "category": "testing",
+      "steps": [
+        {
+          "title": "Prepare test strategy",
+          "goal": "Define critical user journeys, environments, and test data.",
+          "recommendedSkills": ["tdd-workflow", "test-driven-development"],
+          "notes": "Focus on business-critical flows and keep setup deterministic."
+        },
+        {
+          "title": "Implement browser tests",
+          "goal": "Automate key flows with resilient locators and stable waits.",
+          "recommendedSkills": ["playwright-skill", "webapp-testing"],
+          "notes": "Use playwright-skill for cross-browser automation."
+        },
+        {
+          "title": "Triage failures and harden",
+          "goal": "Stabilize flaky tests and establish repeatable CI execution.",
+          "recommendedSkills": [
+            "systematic-debugging",
+            "verification-before-completion"
+          ],
+          "notes": "Classify failures by root cause: selector drift, timing, environment, data."
+        }
+      ]
+    }
+  ]
+}

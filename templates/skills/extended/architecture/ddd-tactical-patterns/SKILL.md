@@ -1,9 +1,10 @@
 ---
 name: ddd-tactical-patterns
-description: Apply DDD tactical patterns in code using entities, value objects, aggregates, repositories, and domain events with explicit invariants.
+description: "Apply DDD tactical patterns in code using entities, value objects, aggregates, repositories, and domain events with explicit invariants."
 risk: safe
 source: self
-tags: [ddd, tactical, aggregates, value-objects, domain-events]
+tags: "[ddd, tactical, aggregates, value-objects, domain-events]"
+date_added: "2026-02-27"
 ---
 
 # DDD Tactical Patterns
@@ -50,37 +51,49 @@ class Order {
 - This skill does not define deployment architecture.
 - It does not choose databases or transport protocols.
 - It should be paired with testing patterns for invariant coverage.
+
+---
+
+<!-- AGI-INTEGRATION-START -->
+
 ## AGI Framework Integration
 
-### Qdrant Memory Integration
+> **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
+> Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-Before executing complex tasks with this skill:
+### Memory-First Protocol
+
+Retrieve prior Architecture Decision Records (ADRs), trade-off analyses, and system design rationale. Critical for maintaining consistency across long-running projects.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior architecture/design context before starting
+python3 execution/memory_manager.py auto --query "architecture decisions and trade-off analysis for Ddd Tactical Patterns"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store architecture/design decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags ddd-tactical-patterns <relevant-tags>
+  --content "Architecture: event-driven microservices with CQRS, Pulsar for messaging, Qdrant for semantic search" \
+  --type decision --project <project> \
+  --tags ddd-tactical-patterns architecture
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Broadcast architecture decisions to ALL agents so implementation stays aligned with the chosen patterns.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Completed architecture review — ADR documented, trade-offs analyzed, team aligned" \
+  --project <project>
+```
 
-### Local LLM Support
+### Control Tower Coordination
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+Register architecture tasks in the Control Tower so all agents across machines know the current system design and constraints.
+
+<!-- AGI-INTEGRATION-END -->
