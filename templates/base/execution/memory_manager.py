@@ -80,10 +80,20 @@ except ImportError:
 # Configuration
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 
+# ═══════════════════════════════════════════════════════════════
+# Memory Mode — controls feature tiers
+# ═══════════════════════════════════════════════════════════════
+# solo  = Ollama + Qdrant only (single developer, no identity, no blockchain)
+# team  = + Multi-tenancy (developer/agent identity tagging, shared memory)
+# pro   = + Blockchain auth (signed writes, hash anchoring, access control)
+MEMORY_MODE = os.environ.get("MEMORY_MODE", "team").lower()
+_TEAM_FEATURES = MEMORY_MODE in ("team", "pro")
+_PRO_FEATURES = MEMORY_MODE == "pro" and _BLOCKCHAIN_AVAILABLE
+
 
 def health_check() -> dict:
     """Check Qdrant connectivity and embedding service status."""
-    result = {"qdrant": "unknown", "embeddings": "unknown", "collections": []}
+    result = {"qdrant": "unknown", "embeddings": "unknown", "collections": [], "memory_mode": MEMORY_MODE}
 
     # Check Qdrant
     try:
@@ -131,14 +141,14 @@ def health_check() -> dict:
         and len(result["missing_collections"]) == 0
     )
 
-    # Check blockchain (optional)
-    if _BLOCKCHAIN_AVAILABLE:
+    # Check blockchain (pro mode only)
+    if _PRO_FEATURES:
         try:
             bc = blockchain_health()
             result["blockchain"] = bc
         except Exception:
             result["blockchain"] = {"status": "not_available"}
-    else:
+    elif MEMORY_MODE == "pro":
         result["blockchain"] = {"status": "module_not_loaded"}
 
     return result
@@ -350,13 +360,13 @@ Examples:
                 metadata["tags"] = args.tags
             result = store_memory(
                 args.content, args.type, metadata,
-                shared=getattr(args, "shared", False),
-                developer_id=getattr(args, "developer", None),
-                agent_id=getattr(args, "agent", None)
+                shared=getattr(args, "shared", False) if _TEAM_FEATURES else False,
+                developer_id=getattr(args, "developer", None) if _TEAM_FEATURES else None,
+                agent_id=getattr(args, "agent", None) if _TEAM_FEATURES else None
             )
 
-            # Blockchain: sign + anchor if --auth
-            if getattr(args, "auth", False) and _BLOCKCHAIN_AVAILABLE:
+            # Blockchain: sign + anchor if --auth (pro mode only)
+            if getattr(args, "auth", False) and _PRO_FEATURES:
                 dev_id = getattr(args, "developer", None) or resolve_developer_id()
                 sig = sign_content(args.content)
                 result["signature"] = sig
@@ -365,15 +375,19 @@ Examples:
                     project=args.project
                 )
                 result["blockchain_anchor"] = anchor_result
-            elif getattr(args, "auth", False):
-                result["blockchain_anchor"] = {"status": "module_not_loaded", "graceful_degradation": True}
+            elif getattr(args, "auth", False) and not _PRO_FEATURES:
+                result["blockchain_anchor"] = {
+                    "status": "disabled",
+                    "message": f"Blockchain auth requires MEMORY_MODE=pro (current: {MEMORY_MODE})",
+                    "graceful_degradation": True
+                }
 
             print(json.dumps(result, indent=2))
             sys.exit(0)
 
         elif args.command == "retrieve":
-            # Blockchain: check access before retrieve if --auth
-            if getattr(args, "auth", False) and _BLOCKCHAIN_AVAILABLE:
+            # Blockchain: check access before retrieve if --auth (pro mode only)
+            if getattr(args, "auth", False) and _PRO_FEATURES:
                 dev_id = getattr(args, "developer", None) or resolve_developer_id()
                 access = check_access(dev_id, args.project or "default", "read")
                 if not access.get("allowed", True):

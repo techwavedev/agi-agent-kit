@@ -36,6 +36,8 @@ QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 EMBEDDING_MODEL = "nomic-embed-text"
 PROJECT_DIR = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+MEMORY_MODE = os.environ.get("MEMORY_MODE", "team").lower()
+MODE_LABELS = {"solo": "Solo (Ollama+Qdrant)", "team": "Team (multi-tenancy)", "pro": "Pro (blockchain auth)"}
 
 
 def check_qdrant() -> dict:
@@ -81,6 +83,33 @@ def check_ollama() -> dict:
     return result
 
 
+def check_blockchain() -> dict:
+    """Check MultiChain connectivity (optional — does not affect readiness)."""
+    result = {"status": "not_running", "optional": True}
+    try:
+        # Try to reach MultiChain RPC
+        mc_url = os.environ.get("MULTICHAIN_RPC_URL", "http://localhost:4730")
+        mc_user = os.environ.get("MULTICHAIN_RPC_USER", "agiadmin")
+        mc_pass = os.environ.get("MULTICHAIN_RPC_PASS", "agipass123")
+        import base64
+        auth = base64.b64encode(f"{mc_user}:{mc_pass}".encode()).decode()
+        payload = json.dumps({"jsonrpc": "1.0", "id": "boot", "method": "getinfo", "params": []}).encode()
+        req = Request(
+            mc_url, data=payload,
+            headers={"Content-Type": "application/json", "Authorization": f"Basic {auth}"},
+            method="POST"
+        )
+        with urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode())
+            info = data.get("result", {})
+            result["status"] = "ok"
+            result["chain"] = info.get("chainname")
+            result["blocks"] = info.get("blocks")
+    except Exception:
+        pass
+    return result
+
+
 def run_session_init() -> bool:
     """Run session_init.py to create collections."""
     init_script = PROJECT_DIR / "execution" / "session_init.py"
@@ -122,6 +151,7 @@ def main():
     report = {
         "qdrant": {},
         "ollama": {},
+        "blockchain": {},
         "memory_ready": False,
         "actions_taken": [],
         "issues": [],
@@ -171,6 +201,10 @@ def main():
             else:
                 report["issues"].append("Collections missing. Run: python3 execution/session_init.py")
 
+    # Step 4: Check blockchain (optional — does not affect readiness)
+    blockchain = check_blockchain()
+    report["blockchain"] = blockchain
+
     # Final readiness
     qdrant = report["qdrant"]
     ollama = report["ollama"]
@@ -191,6 +225,8 @@ def main():
     )
     report["summary"] = {
         "ready": report["memory_ready"],
+        "memory_mode": MEMORY_MODE,
+        "mode_label": MODE_LABELS.get(MEMORY_MODE, MEMORY_MODE),
         "total_memories": agent_mem.get("points", 0),
         "total_cached": sem_cache.get("points", 0),
     }
@@ -201,7 +237,14 @@ def main():
         if report["memory_ready"]:
             mem_pts = agent_mem.get("points", 0)
             cache_pts = sem_cache.get("points", 0)
+            mode_label = MODE_LABELS.get(MEMORY_MODE, MEMORY_MODE)
             print(f"✅ Memory system ready — {mem_pts} memories, {cache_pts} cached responses")
+            print(f"   Mode: {mode_label}")
+            bc = report.get("blockchain", {})
+            if bc.get("status") == "ok":
+                print(f"   🔗 Blockchain: connected ({bc.get('chain')}, {bc.get('blocks')} blocks)")
+            elif MEMORY_MODE == "pro":
+                print(f"   ⚠️  Blockchain: not running (start: docker compose -f docker-compose.multichain.yml up -d)")
         else:
             print("❌ Memory system not ready:")
             for issue in report["issues"]:
