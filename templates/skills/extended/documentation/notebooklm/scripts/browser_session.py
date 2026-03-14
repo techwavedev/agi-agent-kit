@@ -9,6 +9,7 @@ import time
 import sys
 from typing import Any, Dict, Optional
 from pathlib import Path
+from urllib.parse import urlparse
 
 from patchright.sync_api import BrowserContext, Page
 
@@ -61,7 +62,7 @@ class BrowserSession:
             self.page.goto(self.notebook_url, wait_until="domcontentloaded", timeout=30000)
 
             # Check if login is needed
-            if "accounts.google.com" in self.page.url:
+            if urlparse(self.page.url).hostname == "accounts.google.com":
                 raise RuntimeError("Authentication required. Please run auth_manager.py setup first.")
 
             # Wait for page to be ready
