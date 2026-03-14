@@ -60,6 +60,16 @@ from embedding_utils import check_embedding_service, get_embedding_dimension
 from semantic_cache import check_cache, store_response, clear_cache
 from memory_retrieval import retrieve_context, store_memory, list_memories, build_filter, resolve_developer_id, resolve_agent_id
 
+# Import blockchain auth (optional — graceful if unavailable)
+try:
+    from blockchain_auth import (
+        sign_content, anchor_hash, verify_hash, check_access,
+        health_check as blockchain_health, content_hash
+    )
+    _BLOCKCHAIN_AVAILABLE = True
+except ImportError:
+    _BLOCKCHAIN_AVAILABLE = False
+
 # Import BM25 index (optional — graceful if unavailable)
 try:
     from bm25_index import BM25Index
@@ -120,6 +130,16 @@ def health_check() -> dict:
         and embed_status.get("status") == "ok"
         and len(result["missing_collections"]) == 0
     )
+
+    # Check blockchain (optional)
+    if _BLOCKCHAIN_AVAILABLE:
+        try:
+            bc = blockchain_health()
+            result["blockchain"] = bc
+        except Exception:
+            result["blockchain"] = {"status": "not_available"}
+    else:
+        result["blockchain"] = {"status": "module_not_loaded"}
 
     return result
 
@@ -251,6 +271,8 @@ Examples:
     store_parser.add_argument("--developer", help="Override developer ID")
     store_parser.add_argument("--agent", help="Override agent ID")
     store_parser.add_argument("--shared", action="store_true", help="Mark as team-visible (shared) memory")
+    store_parser.add_argument("--auth", action="store_true", help="Sign content and anchor hash on blockchain")
+    store_parser.add_argument("--verify", action="store_true", help="Verify content hash after store")
 
     # Retrieve command
     retrieve_parser = subparsers.add_parser(
@@ -270,6 +292,8 @@ Examples:
     retrieve_parser.add_argument("--developer", help="Filter by developer ID")
     retrieve_parser.add_argument("--agent", help="Filter by agent ID")
     retrieve_parser.add_argument("--shared-only", action="store_true", help="Only retrieve shared memories")
+    retrieve_parser.add_argument("--auth", action="store_true", help="Enforce blockchain access check before retrieve")
+    retrieve_parser.add_argument("--verify", action="store_true", help="Verify content hashes after retrieve")
 
     # Cache store command
     cache_parser = subparsers.add_parser(
@@ -330,10 +354,32 @@ Examples:
                 developer_id=getattr(args, "developer", None),
                 agent_id=getattr(args, "agent", None)
             )
+
+            # Blockchain: sign + anchor if --auth
+            if getattr(args, "auth", False) and _BLOCKCHAIN_AVAILABLE:
+                dev_id = getattr(args, "developer", None) or resolve_developer_id()
+                sig = sign_content(args.content)
+                result["signature"] = sig
+                anchor_result = anchor_hash(
+                    sig["content_hash"], dev_id,
+                    project=args.project
+                )
+                result["blockchain_anchor"] = anchor_result
+            elif getattr(args, "auth", False):
+                result["blockchain_anchor"] = {"status": "module_not_loaded", "graceful_degradation": True}
+
             print(json.dumps(result, indent=2))
             sys.exit(0)
 
         elif args.command == "retrieve":
+            # Blockchain: check access before retrieve if --auth
+            if getattr(args, "auth", False) and _BLOCKCHAIN_AVAILABLE:
+                dev_id = getattr(args, "developer", None) or resolve_developer_id()
+                access = check_access(dev_id, args.project or "default", "read")
+                if not access.get("allowed", True):
+                    print(json.dumps(access, indent=2))
+                    sys.exit(3)
+
             filters = build_filter(
                 type_filter=getattr(args, "type", None),
                 project=args.project,
