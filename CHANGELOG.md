@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2026-03-14
+
+### Added
+
+- **Distributed Agent Authentication** — Replaced local SQLite auth storage with shared Qdrant `agent_auth` collection. Identities, access grants, content hashes, and audit trails are now distributed across all agents sharing a Qdrant instance. 8 payload indexes for efficient filtering. Deterministic UUIDs for idempotent operations. (36/36 tests)
+- **Hyperledger Aries Integration** — Replaced deprecated MultiChain with Hyperledger Aries ACA-Py 1.5.0 (OpenWallet Foundation). W3C DID identity, Ed25519 signing, official Docker image (`ghcr.io/openwallet-foundation/acapy-agent:1.5.0`). Optional add-on — HMAC-SHA256 works without Aries.
+- **Memory Mode Tiers** — Three operational modes (`MEMORY_MODE`): Solo (single user), Team (multi-tenancy with developer isolation), Pro (blockchain auth + access control). All backward-compatible, no data migration needed.
+- **Real-Time Agent Events** — Apache Pulsar event bus for push notifications between agents. Auto-publishes on `memory_manager.py store` (team/pro modes). 9 event types. Project-scoped topics (`persistent://agi/memory/<project>`). Graceful degradation when Pulsar unavailable. (19/19 tests)
+- **BM25 Auto-Sync on Boot** — `session_boot.py` now automatically syncs the local BM25 keyword index from shared Qdrant data, ensuring every machine has consistent hybrid search results.
+- **Docker Compose for Pulsar** — `docker-compose.pulsar.yml` with `apachepulsar/pulsar:4.1.3`, lightweight standalone mode (256-512MB heap), health checks.
+- **Docker Compose for Aries** — `docker-compose.aries.yml` with official ACA-Py 1.5.0 image, wallet configuration.
+
+### Changed
+
+- **`blockchain_auth.py`** — Complete rewrite: `QdrantAuthStore` replaces SQLite, `AriesClient` replaces MultiChain. All auth data stored in shared Qdrant collection.
+- **`session_boot.py`** — Now reports Pulsar status, Aries status, and BM25 sync results. Auto-syncs BM25 from Qdrant on every boot.
+- **`memory_manager.py`** — Auto-publishes Pulsar events on store (team/pro). Health check includes events status.
+- **`session_init.py`** — Creates `agent_auth` Qdrant collection with 4-dimensional vectors and 8 payload indexes.
+
+### Documentation
+
+- **`docs/memory-modes.md`** — Complete rewrite. Why each mode, when to use, scenario comparisons, data storage table. Every feature verified with test evidence.
+- **`docs/blockchain-auth.md`** — Complete rewrite. Technology comparison (MultiChain vs Ethereum vs Aries), Qdrant vs SQLite rationale, trust model diagram, all CLI commands verified.
+- **`docs/agent-events.md`** — Complete rewrite. Pulsar vs Redis/RabbitMQ/Kafka comparison, verified capabilities table, corrected dependency requirements.
+
+### Removed
+
+- **MultiChain** — Deprecated (last commit 2023, no maintained Docker image). Replaced by Hyperledger Aries.
+- **SQLite auth storage** — Replaced by shared Qdrant `agent_auth` collection for distributed consistency.
+
 ## [1.5.3] - 2026-02-22
 
 ### Fixed
