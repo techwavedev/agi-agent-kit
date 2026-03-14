@@ -1,6 +1,9 @@
 ---
 name: postmortem-writing
-description: Write effective blameless postmortems with root cause analysis, timelines, and action items. Use when conducting incident reviews, writing postmortem documents, or improving incident response processes.
+description: "Write effective blameless postmortems with root cause analysis, timelines, and action items. Use when conducting incident reviews, writing postmortem documents, or improving incident response proce..."
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 # Postmortem Writing
@@ -221,8 +224,8 @@ The deployment completed at 14:23, but the first alert didn't fire until 14:31 (
 - 2023-11-02: Similar connection issue in User Service (POSTMORTEM-42)
 
 ### References
-- [Connection Pool Best Practices](internal-wiki/connection-pools)
-- [Deployment Runbook](internal-wiki/deployment-runbook)
+- Connection Pool Best Practices
+- Deployment Runbook
 ```
 
 ### Template 2: 5 Whys Analysis
@@ -385,43 +388,44 @@ Don't full-flush cache in production; use targeted invalidation.
 - [Etsy's Blameless Postmortems](https://codeascraft.com/2012/05/22/blameless-postmortems/)
 - [PagerDuty Postmortem Guide](https://postmortems.pagerduty.com/)
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve brand voice guidelines, content templates, and prior successful content patterns. Cache editorial decisions for consistency across sessions.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior content creation context before starting
+python3 execution/memory_manager.py auto --query "content patterns and brand voice guidelines for Postmortem Writing"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store content creation decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags postmortem-writing <relevant-tags>
+  --content "Content: brand voice established — professional but approachable, 8th-grade reading level, active voice" \
+  --type decision --project <project> \
+  --tags postmortem-writing content
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share content guidelines with design agents (visual alignment) and development agents (copy integration).
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Content created and reviewed — matches brand guidelines, SEO-optimized, A/B test variant prepared" \
+  --project <project>
+```
 
-### Local LLM Support
-
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+<!-- AGI-INTEGRATION-END -->

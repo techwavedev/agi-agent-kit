@@ -1,8 +1,9 @@
 ---
 name: threejs-skills
-description: Create 3D scenes, interactive experiences, and visual effects using Three.js. Use when user requests 3D graphics, WebGL experiences, 3D visualizations, animations, or interactive 3D elements.
-source: https://github.com/CloudAI-X/threejs-skills
+description: "Create 3D scenes, interactive experiences, and visual effects using Three.js. Use when user requests 3D graphics, WebGL experiences, 3D visualizations, animations, or interactive 3D elements."
 risk: safe
+source: "https://github.com/CloudAI-X/threejs-skills"
+date_added: "2026-02-27"
 ---
 
 # Three.js Skills
@@ -653,43 +654,44 @@ Three.js (latest) + Vite/Webpack
 
 This skill provides CDN-compatible foundations. In production, you'd layer on these modern tools for professional results.
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve game design decisions, performance benchmarks, and engine configuration. Cache asset pipeline settings and build configurations.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior game development context before starting
+python3 execution/memory_manager.py auto --query "game architecture and engine patterns for Threejs Skills"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store game development decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags threejs-skills <relevant-tags>
+  --content "Game: ECS architecture with 60fps target, spatial partitioning for collision, asset pipeline with LOD" \
+  --type technical --project <project> \
+  --tags threejs-skills gaming
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share engine decisions and performance budgets with art/design agents and QA agents.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Game feature implemented — performance profiled, asset pipeline updated, QA test plan created" \
+  --project <project>
+```
 
-### Local LLM Support
-
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+<!-- AGI-INTEGRATION-END -->

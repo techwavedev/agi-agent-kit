@@ -1,22 +1,11 @@
 ---
 name: n8n-node-configuration
-description: "Operation-aware node configuration guidance. Use when configuring nodes, understanding property dependencies, determining required fields, choosing between get_node detail levels, or learning common configuration patterns by node type."
-source: "https://github.com/czlonkowski/n8n-skills/tree/main/skills/n8n-node-configuration"
-risk: safe
+description: Operation-aware node configuration guidance. Use when configuring nodes, understanding property dependencies, determining required fields, choosing between get_node detail levels, or learning common configuration patterns by node type.
 ---
 
 # n8n Node Configuration
 
 Expert guidance for operation-aware node configuration with property dependencies.
-
-## When to Use This Skill
-
-Use this skill when:
-- Configuring n8n nodes
-- Understanding property dependencies
-- Determining required fields
-- Choosing between get_node detail levels
-- Learning common configuration patterns by node type
 
 ---
 
@@ -768,8 +757,8 @@ get_node({
 
 For comprehensive guides on specific topics:
 
-- **[DEPENDENCIES.md](DEPENDENCIES.md)** - Deep dive into property dependencies and displayOptions
-- **[OPERATION_PATTERNS.md](OPERATION_PATTERNS.md)** - Common configuration patterns by node type
+- **DEPENDENCIES.md** - Deep dive into property dependencies and displayOptions
+- **OPERATION_PATTERNS.md** - Common configuration patterns by node type
 
 ---
 
@@ -795,43 +784,48 @@ For comprehensive guides on specific topics:
 - **n8n Expression Syntax** - Configure expression fields
 - **n8n Workflow Patterns** - Apply patterns with proper configuration
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Cache workflow configurations and automation patterns. Retrieve prior pipeline designs to avoid re-building similar flows from scratch.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior workflow/automation context before starting
+python3 execution/memory_manager.py auto --query "automation patterns and workflow configurations for N8N Node Configuration"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store workflow/automation decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags n8n-node-configuration <relevant-tags>
+  --content "Workflow: automated data pipeline with retry logic, dead-letter queue, and Slack alerts on failure" \
+  --type technical --project <project> \
+  --tags n8n-node-configuration workflow
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share workflow state with other agents so they can trigger, monitor, or extend the automation.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Workflow automation deployed — pipeline processing 1000+ events/day with 99.9% success rate" \
+  --project <project>
+```
 
-### Local LLM Support
+### Playbook Engine
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+Combine this skill with others using the Playbook Engine (`execution/workflow_engine.py`) for guided multi-step automation with progress tracking.
+
+<!-- AGI-INTEGRATION-END -->

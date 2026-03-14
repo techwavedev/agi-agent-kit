@@ -1,11 +1,9 @@
 ---
 name: c-pro
-description: Write efficient C code with proper memory management, pointer
-  arithmetic, and system calls. Handles embedded systems, kernel modules, and
-  performance-critical code. Use PROACTIVELY for C optimization, memory issues,
-  or system programming.
-metadata:
-  model: opus
+description: "Write efficient C code with proper memory management, pointer"
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 ## Use this skill when
@@ -55,43 +53,48 @@ You are a C programming expert specializing in systems programming and performan
 
 Follow C99/C11 standards. Include error handling for all system calls.
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Cache workflow configurations and automation patterns. Retrieve prior pipeline designs to avoid re-building similar flows from scratch.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior workflow/automation context before starting
+python3 execution/memory_manager.py auto --query "automation patterns and workflow configurations for C Pro"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store workflow/automation decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags c-pro <relevant-tags>
+  --content "Workflow: automated data pipeline with retry logic, dead-letter queue, and Slack alerts on failure" \
+  --type technical --project <project> \
+  --tags c-pro workflow
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share workflow state with other agents so they can trigger, monitor, or extend the automation.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Workflow automation deployed — pipeline processing 1000+ events/day with 99.9% success rate" \
+  --project <project>
+```
 
-### Local LLM Support
+### Playbook Engine
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+Combine this skill with others using the Playbook Engine (`execution/workflow_engine.py`) for guided multi-step automation with progress tracking.
+
+<!-- AGI-INTEGRATION-END -->

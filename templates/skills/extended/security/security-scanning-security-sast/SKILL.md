@@ -1,12 +1,13 @@
 ---
 name: security-scanning-security-sast
-description: Static Application Security Testing (SAST) for code vulnerability
+description: 'Static Application Security Testing (SAST) for code vulnerability
+
   analysis across multiple languages and frameworks
-metadata:
-  globs: "**/*.py, **/*.js, **/*.ts, **/*.java, **/*.rb, **/*.go, **/*.rs, **/*.php"
-  keywords: sast, static analysis, code security, vulnerability scanning, bandit,
-    semgrep, eslint, sonarqube, codeql, security patterns, code review, ast
-    analysis
+
+  '
+risk: unknown
+source: community
+date_added: '2026-02-27'
 ---
 # SAST Security Plugin
 
@@ -494,43 +495,52 @@ sast:
 - **security-api.md** - API security testing
 - **security-scan.md** - Comprehensive security scanning
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Cache compliance check results to avoid re-running expensive AWS API calls. Retrieve prior audit findings to track remediation progress across sessions.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior security context before starting
+python3 execution/memory_manager.py auto --query "prior security audit results for Security Scanning Security Sast"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store security decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags security-scanning-security-sast <relevant-tags>
+  --content "Audit findings: 3 critical IAM misconfigurations found and remediated" \
+  --type technical --project <project> \
+  --tags security-scanning-security-sast security
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share security findings with other agents so they avoid introducing vulnerabilities in their code changes.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Completed security audit — 3 critical findings fixed, compliance score 94%" \
+  --project <project>
+```
 
-### Local LLM Support
+### Signed Audit Trail
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+All security findings are cryptographically signed with the agent's Ed25519 identity, providing tamper-proof audit logs for compliance reporting.
+
+### Semantic Cache for Compliance
+
+Cache compliance check results (`semantic_cache.py`) to avoid redundant AWS API calls. Cache hit at similarity >0.92 returns prior results instantly.
+
+<!-- AGI-INTEGRATION-END -->

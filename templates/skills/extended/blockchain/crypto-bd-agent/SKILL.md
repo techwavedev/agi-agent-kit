@@ -1,23 +1,10 @@
 ---
 name: crypto-bd-agent
-description: >
-  Autonomous crypto business development patterns — multi-chain token discovery,
-  100-point scoring with wallet forensics, x402 micropayments, ERC-8004 on-chain
-  identity, LLM cascade routing, and pipeline automation for CEX/DEX listing
-  acquisition. Use when building AI agents for crypto BD, token evaluation,
-  exchange listing outreach, or autonomous commerce with payment protocols.
+description: Autonomous crypto business development patterns — multi-chain token discovery, 100-point scoring with wallet forensics, x402 micropayments, ERC-8004 on-chain identity, LLM cascade routing, and...
 risk: safe
 source: community
-tags:
-  - crypto
-  - business-development
-  - token-scanning
-  - x402
-  - erc-8004
-  - autonomous-agent
-  - solana
-  - ethereum
-  - wallet-forensics
+tags: null
+date_added: '2026-02-27'
 ---
 
 # Crypto BD Agent — Autonomous Business Development for Exchanges
@@ -246,37 +233,49 @@ Buzz BD Agent (SolCex Exchange):
 - 24/7 live stream: retake.tv/BuzzBD
 - Verify: 8004scan.io
 - GitHub: https://github.com/buzzbysolcex/buzz-bd-agent
+
+---
+
+<!-- AGI-INTEGRATION-START -->
+
 ## AGI Framework Integration
 
-### Qdrant Memory Integration
+> **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
+> Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-Before executing complex tasks with this skill:
+### Memory-First Protocol
+
+Retrieve prior smart contract patterns, gas optimization techniques, and audit findings. Cache ABI definitions and deployment addresses.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior blockchain/Web3 context before starting
+python3 execution/memory_manager.py auto --query "smart contract patterns and blockchain architecture for Crypto Bd Agent"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store blockchain/Web3 decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags crypto-bd-agent <relevant-tags>
+  --content "Smart contract: ERC-721 with royalty enforcement, gas-optimized batch minting, OpenZeppelin base" \
+  --type technical --project <project> \
+  --tags crypto-bd-agent blockchain
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share contract ABIs and deployment addresses with frontend agents for DApp integration.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Smart contract deployed — audit findings addressed, gas benchmarks documented" \
+  --project <project>
+```
 
-### Local LLM Support
+### Blockchain Trust Layer
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+The framework's own blockchain identity system (Ed25519 + MultiChain anchoring) uses similar cryptographic patterns — apply learnings bidirectionally.
+
+<!-- AGI-INTEGRATION-END -->
