@@ -38,10 +38,9 @@ Exit Codes:
 import argparse
 import json
 import os
-import subprocess
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional, Dict, Any, List
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
@@ -82,53 +81,6 @@ HYBRID_SEARCH = os.environ.get("HYBRID_SEARCH", "true").lower() in ("true", "1",
 # Configuration
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 COLLECTION = os.environ.get("MEMORY_COLLECTION", "agent_memory")
-
-# ═══════════════════════════════════════════════════════════════
-# Identity Resolution (Multi-Tenancy)
-# ═══════════════════════════════════════════════════════════════
-
-_cached_developer_id = None
-
-
-def resolve_developer_id() -> str:
-    """
-    Auto-detect developer identity. Priority:
-    1. AGI_DEVELOPER_ID env var (explicit override)
-    2. git config user.email (most common)
-    3. $USER@$HOSTNAME (fallback)
-    """
-    global _cached_developer_id
-    if _cached_developer_id is not None:
-        return _cached_developer_id
-
-    # 1. Explicit env var
-    dev_id = os.environ.get("AGI_DEVELOPER_ID")
-    if dev_id:
-        _cached_developer_id = dev_id
-        return dev_id
-
-    # 2. Git email
-    try:
-        result = subprocess.run(
-            ["git", "config", "user.email"],
-            capture_output=True, text=True, timeout=5
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            _cached_developer_id = result.stdout.strip()
-            return _cached_developer_id
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
-
-    # 3. Fallback
-    user = os.environ.get("USER", "unknown")
-    hostname = os.environ.get("HOSTNAME", "local")
-    _cached_developer_id = f"{user}@{hostname}"
-    return _cached_developer_id
-
-
-def resolve_agent_id() -> str:
-    """Get current agent identity from env or default."""
-    return os.environ.get("AGI_AGENT_ID", "primary")
 
 
 def retrieve_context(
@@ -230,44 +182,29 @@ def retrieve_context(
 def store_memory(
     content: str,
     memory_type: str,
-    metadata: Optional[Dict[str, Any]] = None,
-    shared: bool = False,
-    developer_id: Optional[str] = None,
-    agent_id: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
-    Store a new memory in long-term storage with identity tagging.
+    Store a new memory in long-term storage.
     
     Args:
         content: The memory content (text)
         memory_type: Category (decision, code, error, conversation, technical)
         metadata: Additional metadata (project, tags, etc.)
-        shared: If True, marks memory as team-visible (no developer filter on retrieve)
-        developer_id: Override auto-detected developer identity
-        agent_id: Override auto-detected agent identity
     
     Returns:
-        Storage confirmation with identity info
+        Storage confirmation
     """
     embedding = get_embedding(content)
     
     # Generate UUID for memory
     point_id = str(uuid.uuid4())
     
-    # Resolve identity
-    dev_id = developer_id or resolve_developer_id()
-    agt_id = agent_id or resolve_agent_id()
-    
     payload = {
         "content": content,
         "type": memory_type,
         "timestamp": datetime.utcnow().isoformat(),
-        "stored_at": datetime.now(timezone.utc).isoformat(),
         "token_count": len(content.split()),
-        # Identity fields (multi-tenancy)
-        "developer_id": dev_id,
-        "agent_id": agt_id,
-        "shared": shared,
         **(metadata or {})
     }
 
@@ -320,10 +257,7 @@ def store_memory(
                     metadata={
                         "type": memory_type,
                         "project": (metadata or {}).get("project", ""),
-                        "tags": (metadata or {}).get("tags", []),
-                        "developer_id": dev_id,
-                        "agent_id": agt_id,
-                        "shared": shared
+                        "tags": (metadata or {}).get("tags", [])
                     }
                 )
                 bm25_status = bm25_result.get("status", "error")
@@ -335,9 +269,6 @@ def store_memory(
         "point_id": point_id,
         "type": memory_type,
         "token_count": payload["token_count"],
-        "developer_id": dev_id,
-        "agent_id": agt_id,
-        "shared": shared,
         "bm25_indexed": bm25_status,
         "signed": "_signature" in payload,
         "agent_id": payload.get("_agent_id"),
@@ -396,15 +327,8 @@ def list_memories(
     }
 
 
-def build_filter(
-    type_filter: str = None,
-    project: str = None,
-    tags: List[str] = None,
-    developer: str = None,
-    agent: str = None,
-    shared_only: bool = False
-) -> Dict:
-    """Build Qdrant filter from arguments, including identity fields."""
+def build_filter(type_filter: str = None, project: str = None, tags: List[str] = None) -> Dict:
+    """Build Qdrant filter from arguments."""
     must = []
     
     if type_filter:
@@ -413,12 +337,6 @@ def build_filter(
         must.append({"key": "project", "match": {"value": project}})
     if tags:
         must.append({"key": "tags", "match": {"any": tags}})
-    if developer:
-        must.append({"key": "developer_id", "match": {"value": developer}})
-    if agent:
-        must.append({"key": "agent_id", "match": {"value": agent}})
-    if shared_only:
-        must.append({"key": "shared", "match": {"value": True}})
     
     return {"must": must} if must else None
 
@@ -433,9 +351,6 @@ def main():
     retrieve_parser.add_argument("--type", help="Filter by memory type")
     retrieve_parser.add_argument("--project", help="Filter by project")
     retrieve_parser.add_argument("--tags", nargs="+", help="Filter by tags")
-    retrieve_parser.add_argument("--developer", help="Filter by developer ID")
-    retrieve_parser.add_argument("--agent", help="Filter by agent ID")
-    retrieve_parser.add_argument("--shared-only", action="store_true", help="Only retrieve shared (team-visible) memories")
     retrieve_parser.add_argument("--top-k", type=int, default=5, help="Number of results")
     retrieve_parser.add_argument("--threshold", type=float, default=0.7, help="Score threshold")
     
@@ -447,16 +362,11 @@ def main():
                               help="Memory type")
     store_parser.add_argument("--project", help="Project name")
     store_parser.add_argument("--tags", nargs="+", help="Tags for the memory")
-    store_parser.add_argument("--developer", help="Override developer ID")
-    store_parser.add_argument("--agent", help="Override agent ID")
-    store_parser.add_argument("--shared", action="store_true", help="Mark as team-visible (shared) memory")
     
     # List command
     list_parser = subparsers.add_parser("list", help="List memories")
     list_parser.add_argument("--type", help="Filter by memory type")
     list_parser.add_argument("--project", help="Filter by project")
-    list_parser.add_argument("--developer", help="Filter by developer ID")
-    list_parser.add_argument("--shared-only", action="store_true", help="Only list shared memories")
     list_parser.add_argument("--limit", type=int, default=20, help="Max results")
     
     args = parser.parse_args()
@@ -466,10 +376,7 @@ def main():
             filters = build_filter(
                 type_filter=getattr(args, "type", None),
                 project=args.project,
-                tags=args.tags,
-                developer=getattr(args, "developer", None),
-                agent=getattr(args, "agent", None),
-                shared_only=getattr(args, "shared_only", False)
+                tags=args.tags
             )
             result = retrieve_context(
                 args.query,
@@ -487,21 +394,14 @@ def main():
             if args.tags:
                 metadata["tags"] = args.tags
                 
-            result = store_memory(
-                args.content, args.type, metadata,
-                shared=getattr(args, "shared", False),
-                developer_id=getattr(args, "developer", None),
-                agent_id=getattr(args, "agent", None)
-            )
+            result = store_memory(args.content, args.type, metadata)
             print(json.dumps(result, indent=2))
             sys.exit(0)
             
         elif args.command == "list":
             filters = build_filter(
                 type_filter=getattr(args, "type", None),
-                project=args.project,
-                developer=getattr(args, "developer", None),
-                shared_only=getattr(args, "shared_only", False)
+                project=args.project
             )
             result = list_memories(
                 filters={"must": filters["must"]} if filters else None,

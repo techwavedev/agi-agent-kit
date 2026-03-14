@@ -5,16 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.4] - 2026-02-22
+## [1.6.3] - 2026-03-14
 
 ### Added
 
-- **Agent Teams & Dynamic State Handoff** — Implemented an advanced, purely deterministic sub-agent orchestration framework (closes #20):
-  - **`dispatch_agent_team.py`** — New orchestrator dynamically chains multiple targeted sub-agents, handling state transfer without agent loops or hallucinations.
-  - **Dynamic State Handoff (Pattern 6)** — Agents can pass complex intermediate data schemas directly through Qdrant semantic memory, which is pulled into the context of the next agent automatically.
-  - **Orchestrator Enforcement** — Orchestrator reads `handoff_state` explicitly requiring `next_steps` and `validation_requirements`, validating that sub-agents correctly divide tasks and dictate downstream validation.
-  - **Comprehensive Test Harness** — `execution/run_test_scenario.py` runs 6 sequential and parallel test scenarios, evaluating orchestrator logic, cross-domain parallel runs, and failure-recovery paths.
-  - **Full Team Patterns** — Built `documentation_team` (Writer, Reviewer, Changelog. Updater), `code_review_team` (Spec, Quality), `qa_team`, and `build_deploy_team`.
+- **MCP Compatibility Layer** — The framework is now consumable as MCP servers by Claude Desktop, Antigravity, Cursor, Copilot, OpenCode, OpenClaw, and any MCP-compatible client. Two servers provided:
+  - `execution/mcp_server.py` (`agi-framework`) — 13 tools covering the full execution layer: memory auto-query, store, retrieve, cache, list, cross-agent coordination (store/sync/status/handoff/broadcast/pending), and session health check.
+  - `skills/qdrant-memory/mcp_server.py` (`qdrant-memory`) — 6 tools wrapping the skill's Python modules directly (no subprocess, no external package).
+- **MCP Skill Scaffolding** — `init_skill.py` now auto-generates `mcp_server.py` + `mcp_tools.json` for every new skill. Template lives at `skill-creator/templates/mcp_server_template.py`.
+
+- **Kiro (AWS) compatibility** — Added `.kiro/steering/agents.md` symlink → `AGENTS.md`. Kiro now loads the same agent instructions as Claude Code, Antigravity, and all other coding agents.
+
+### Design Decision
+
+MCP support is **purely additive** — no existing files modified, no validator changes. Rationale: `quick_validate.py` enforces an allowlist `{name, description, license, allowed-tools, metadata}`; adding new top-level SKILL.md keys would break all existing skills. MCP lives in separate files (`mcp_server.py`, `mcp_tools.json`) alongside the skill structure. The `metadata:` field (already allowed) is available for lightweight MCP hints.
+
+**MCP scope clarification:** All coding agents with bash access (Antigravity, Claude Code, Kiro, Cursor, OpenCode, Copilot) were already fully compatible via the symlinked `AGENTS.md`. Agent teams, sub-agents, skills, and memory all work natively for these agents. MCP is only needed for pure chat interfaces (Claude Desktop, etc.) with no bash execution capability.
+
+### Documentation
+
+- **`docs/mcp-compatibility.md`** — New. Full MCP reference: tool catalog, client compatibility matrix, architecture decision rationale, setup for all agents.
+- **`skills/qdrant-memory/SKILL.md`** — Updated MCP Quick Start section to reference `mcp_server.py` instead of the external `@qdrant/mcp-server-qdrant` package.
+- **`AGENTS.md`** — Added MCP Servers table under Framework Self-Development → Key Scripts.
+- **`docs/execution/mcp_server.md`** — New. Documents all 13 tools, transport protocol, environment variables.
+- **`skills/SKILLS_CATALOG.md`** — Regenerated; `qdrant-memory` now shows `MCP Server: mcp_server.py` row.
+
+## [1.6.2] - 2026-03-14
+
+### Added
+
+- **Contextual AGI Integration Blocks (1,200 Extended Skills)** — All 1,200 extended skills in `templates/skills/extended/` now include contextually adapted AGI Framework Integration blocks. Each block is domain-specific and provides: Memory-First Protocol (skill-specific Qdrant queries), Storing Results (concrete real-world examples), Multi-Agent Collaboration (skill-specific cross-agent sharing), and a 4th domain-specific section (e.g., Token Versioning for design-system, Brand Source of Truth for brand, Signed Audit Trail for security, Playbook Integration for devops, Asset Registry for banner design).
+
+### Fixed
+
+- **Python 3.11 f-string compatibility** — Resolved `SyntaxError` in `templates/skills/extended/frontend/ui-ux-pro-max/scripts/design_system.py`: backslash inside f-string expression extracted to intermediate variable.
+
+## [1.6.1] - 2026-03-14
+
+### Added
+
+- **Distributed Agent Authentication** — Replaced local SQLite auth storage with shared Qdrant `agent_auth` collection. Identities, access grants, content hashes, and audit trails are now distributed across all agents sharing a Qdrant instance. 8 payload indexes for efficient filtering. Deterministic UUIDs for idempotent operations. (36/36 tests)
+- **Hyperledger Aries Integration** — Replaced deprecated MultiChain with Hyperledger Aries ACA-Py 1.5.0 (OpenWallet Foundation). W3C DID identity, Ed25519 signing, official Docker image (`ghcr.io/openwallet-foundation/acapy-agent:1.5.0`). Optional add-on — HMAC-SHA256 works without Aries.
+- **Memory Mode Tiers** — Three operational modes (`MEMORY_MODE`): Solo (single user), Team (multi-tenancy with developer isolation), Pro (blockchain auth + access control). All backward-compatible, no data migration needed.
+- **Real-Time Agent Events** — Apache Pulsar event bus for push notifications between agents. Auto-publishes on `memory_manager.py store` (team/pro modes). 9 event types. Project-scoped topics (`persistent://agi/memory/<project>`). Graceful degradation when Pulsar unavailable. (19/19 tests)
+- **BM25 Auto-Sync on Boot** — `session_boot.py` now automatically syncs the local BM25 keyword index from shared Qdrant data, ensuring every machine has consistent hybrid search results.
+- **Docker Compose for Pulsar** — `docker-compose.pulsar.yml` with `apachepulsar/pulsar:4.1.3`, lightweight standalone mode (256-512MB heap), health checks.
+- **Docker Compose for Aries** — `docker-compose.aries.yml` with official ACA-Py 1.5.0 image, wallet configuration.
+
+### Changed
+
+- **`blockchain_auth.py`** — Complete rewrite: `QdrantAuthStore` replaces SQLite, `AriesClient` replaces MultiChain. All auth data stored in shared Qdrant collection.
+- **`session_boot.py`** — Now reports Pulsar status, Aries status, and BM25 sync results. Auto-syncs BM25 from Qdrant on every boot.
+- **`memory_manager.py`** — Auto-publishes Pulsar events on store (team/pro). Health check includes events status.
+- **`session_init.py`** — Creates `agent_auth` Qdrant collection with 4-dimensional vectors and 8 payload indexes.
+
+### Documentation
+
+- **`docs/memory-modes.md`** — Complete rewrite. Why each mode, when to use, scenario comparisons, data storage table. Every feature verified with test evidence.
+- **`docs/blockchain-auth.md`** — Complete rewrite. Technology comparison (MultiChain vs Ethereum vs Aries), Qdrant vs SQLite rationale, trust model diagram, all CLI commands verified.
+- **`docs/agent-events.md`** — Complete rewrite. Pulsar vs Redis/RabbitMQ/Kafka comparison, verified capabilities table, corrected dependency requirements.
+
+### Removed
+
+- **MultiChain** — Deprecated (last commit 2023, no maintained Docker image). Replaced by Hyperledger Aries.
+- **SQLite auth storage** — Replaced by shared Qdrant `agent_auth` collection for distributed consistency.
+
 ## [1.6.0] - 2026-03-12
 
 ### Added

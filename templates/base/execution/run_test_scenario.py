@@ -15,8 +15,8 @@ Usage:
     python3 execution/run_test_scenario.py --all --verbose
 
 Arguments:
-    --scenario  Scenario number to run (1-10)
-    --all       Run all 10 scenarios
+    --scenario  Scenario number to run (1-6)
+    --all       Run all 6 scenarios
     --verbose   Show detailed output for each step
     --dry-run   Validate setup without dispatching agents
 
@@ -75,7 +75,7 @@ def validate_setup(root: Path) -> dict:
     checks = {}
 
     # Execution scripts
-    for script in ["dispatch_agent_team.py", "agent_team_result.py", "test_qdrant_handoff.py"]:
+    for script in ["dispatch_agent_team.py", "agent_team_result.py"]:
         path = root / "execution" / script
         checks[f"script:{script}"] = path.exists()
 
@@ -412,102 +412,6 @@ def scenario_6_dynamic_handoff(root: Path, verbose: bool, dry_run: bool) -> dict
 
 # ─── RUNNER ───────────────────────────────────────────────────────────────────
 
-def scenario_7_qdrant_store_retrieve(root: Path, verbose: bool, dry_run: bool) -> dict:
-    """
-    Scenario 7: Qdrant Store/Retrieve Round-Trip
-    Pattern: qdrant-memory-fidelity
-    Validates: content stored by an agent can be retrieved verbatim (baseline memory test).
-    Delegates to test_qdrant_handoff.py --suite 1
-    """
-    return _run_qdrant_handoff_suite(root, suite=1, verbose=verbose, dry_run=dry_run,
-                                     scenario_id="scenario_07_qdrant_store_retrieve",
-                                     pattern="qdrant-memory-fidelity")
-
-
-def scenario_8_handoff_persistence(root: Path, verbose: bool, dry_run: bool) -> dict:
-    """
-    Scenario 8: Cross-Subagent Handoff Persistence
-    Pattern: cross-agent-handoff
-    Validates: Agent A stores handoff_state; Agent B retrieves it with all required
-               fields (state, next_steps, validation_requirements) intact.
-    Delegates to test_qdrant_handoff.py --suite 2
-    """
-    return _run_qdrant_handoff_suite(root, suite=2, verbose=verbose, dry_run=dry_run,
-                                     scenario_id="scenario_08_handoff_persistence",
-                                     pattern="cross-agent-handoff")
-
-
-def scenario_9_parallel_memory_isolation(root: Path, verbose: bool, dry_run: bool) -> dict:
-    """
-    Scenario 9: Parallel Subagent Memory Isolation
-    Pattern: parallel-memory-isolation
-    Validates: two parallel subagents store to Qdrant without point-ID collision and
-               each agent's query returns its own data.
-    Delegates to test_qdrant_handoff.py --suite 3
-    """
-    return _run_qdrant_handoff_suite(root, suite=3, verbose=verbose, dry_run=dry_run,
-                                     scenario_id="scenario_09_parallel_memory_isolation",
-                                     pattern="parallel-memory-isolation")
-
-
-def scenario_10_memory_guided_routing(root: Path, verbose: bool, dry_run: bool) -> dict:
-    """
-    Scenario 10: Memory-Guided Orchestrator Routing
-    Pattern: memory-guided-routing
-    Validates: orchestrator stores a routing decision in Qdrant, later retrieves it,
-               and dispatches the correct next team based on the retrieved context.
-    Delegates to test_qdrant_handoff.py --suite 4
-    """
-    return _run_qdrant_handoff_suite(root, suite=4, verbose=verbose, dry_run=dry_run,
-                                     scenario_id="scenario_10_memory_guided_routing",
-                                     pattern="memory-guided-routing")
-
-
-def _run_qdrant_handoff_suite(root: Path, suite: int, verbose: bool, dry_run: bool,
-                               scenario_id: str, pattern: str) -> dict:
-    """
-    Delegate helper: invokes test_qdrant_handoff.py --suite N and wraps the result
-    in the standard scenario format expected by the main runner.
-    """
-    handoff_script = root / "execution" / "test_qdrant_handoff.py"
-    if not handoff_script.exists():
-        return {
-            "scenario": scenario_id,
-            "pattern": pattern,
-            "status": "fail",
-            "steps": [{
-                "step": "locate test_qdrant_handoff.py",
-                "pass": False,
-                "error": f"Script not found: {handoff_script}",
-            }],
-        }
-
-    args = ["--suite", str(suite)]
-    if verbose:
-        args.append("--verbose")
-    if dry_run:
-        args.append("--dry-run")
-
-    result = run_script(root, "test_qdrant_handoff.py", args, verbose)
-    suite_data = result["output"]
-
-    # Flatten suite steps into the scenario's steps list
-    steps = suite_data.get("suites", [{}])[0].get("steps", []) if suite_data.get("suites") else []
-    steps.insert(0, {
-        "step": f"invoke test_qdrant_handoff.py --suite {suite}",
-        "exit_code": result["exit_code"],
-        "elapsed_s": result["elapsed_s"],
-    })
-
-    overall_status = suite_data.get("overall_status", "fail") if result["exit_code"] == 0 else "fail"
-    return {
-        "scenario": scenario_id,
-        "pattern": pattern,
-        "status": overall_status,
-        "steps": steps,
-    }
-
-
 SCENARIOS = {
     1: scenario_1_single_subagent,
     2: scenario_2_parallel_subagents,
@@ -515,17 +419,13 @@ SCENARIOS = {
     4: scenario_4_full_pipeline,
     5: scenario_5_failure_recovery,
     6: scenario_6_dynamic_handoff,
-    7: scenario_7_qdrant_store_retrieve,
-    8: scenario_8_handoff_persistence,
-    9: scenario_9_parallel_memory_isolation,
-    10: scenario_10_memory_guided_routing,
 }
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--scenario", type=int, choices=range(1, 11), help="Scenario number (1-10)")
-    parser.add_argument("--all", action="store_true", help="Run all 10 scenarios")
+    parser.add_argument("--scenario", type=int, choices=range(1, 7), help="Scenario number (1-6)")
+    parser.add_argument("--all", action="store_true", help="Run all 6 scenarios")
     parser.add_argument("--verbose", action="store_true", help="Show detailed step output")
     parser.add_argument("--dry-run", action="store_true", help="Validate setup without dispatching")
     args = parser.parse_args()
@@ -538,10 +438,7 @@ def main():
 
     # Validate setup first
     setup = validate_setup(root)
-    qdrant_scenarios = {7, 8, 9, 10}
-    selected = set(list(SCENARIOS.keys()) if args.all else [args.scenario])
-    needs_qdrant = bool(selected & qdrant_scenarios)
-    if not setup["pass"] and not (needs_qdrant and selected == selected & qdrant_scenarios):
+    if not setup["pass"]:
         missing = [k for k, v in setup["checks"].items() if not v]
         print(json.dumps({
             "status": "setup_failed",

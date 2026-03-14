@@ -58,20 +58,6 @@ from init_collection import create_collection, create_payload_index
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 COLLECTIONS = ["agent_memory", "semantic_cache"]
 
-# Auth collection uses minimal 4-dimensional vectors (auth records don't need embeddings)
-AUTH_COLLECTION = "agent_auth"
-AUTH_VECTOR_DIM = 4
-AUTH_INDEXES = [
-    ("record_type", "keyword"),
-    ("entity_id", "keyword"),
-    ("entity_type", "keyword"),
-    ("project", "keyword"),
-    ("permissions", "keyword"),
-    ("action", "keyword"),
-    ("content_hash", "keyword"),
-    ("timestamp", "datetime"),
-]
-
 
 def check_qdrant() -> dict:
     """Check if Qdrant is running and accessible."""
@@ -213,31 +199,6 @@ def init_collections(force: bool = False) -> list:
     return results
 
 
-def init_auth_collection(force: bool = False) -> dict:
-    """Initialize the agent_auth collection for distributed auth."""
-    try:
-        req = Request(f"{QDRANT_URL}/collections/{AUTH_COLLECTION}", method="GET")
-        with urlopen(req, timeout=10) as response:
-            if not force:
-                return {"collection": AUTH_COLLECTION, "status": "exists"}
-            # Force recreate
-            del_req = Request(f"{QDRANT_URL}/collections/{AUTH_COLLECTION}", method="DELETE")
-            urlopen(del_req, timeout=10)
-    except HTTPError as e:
-        if e.code != 404:
-            return {"collection": AUTH_COLLECTION, "status": "error", "message": str(e)}
-    except URLError:
-        return {"collection": AUTH_COLLECTION, "status": "error", "message": "Cannot connect to Qdrant"}
-
-    try:
-        create_collection(QDRANT_URL, AUTH_COLLECTION, AUTH_VECTOR_DIM, "cosine")
-        for field, field_type in AUTH_INDEXES:
-            create_payload_index(QDRANT_URL, AUTH_COLLECTION, field, field_type)
-        return {"collection": AUTH_COLLECTION, "status": "created", "indexes": len(AUTH_INDEXES)}
-    except Exception as e:
-        return {"collection": AUTH_COLLECTION, "status": "error", "message": str(e)}
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Initialize AI agent session (Qdrant + Ollama check + collection setup)"
@@ -311,11 +272,6 @@ def main():
                 f"Initializing collections (dimension={get_embedding_dimension()})..."
             )
         collection_results = init_collections(force=args.force)
-
-        # Init auth collection (team/pro modes)
-        auth_result = init_auth_collection(force=args.force)
-        collection_results.append(auth_result)
-
         report["collections"] = collection_results
 
         for cr in collection_results:
@@ -323,11 +279,11 @@ def main():
                 status = cr["status"]
                 name = cr["collection"]
                 if status == "created":
-                    dim_info = f" ({cr['dimension']}d," if 'dimension' in cr else " ("
-                    print(f"  CREATED: {name}{dim_info} {cr.get('indexes', 0)} indexes)")
+                    print(
+                        f"  CREATED: {name} ({cr['dimension']}d, {cr['indexes']} indexes)"
+                    )
                 elif status == "exists":
-                    dim_info = f" ({cr['dimension']}d)" if 'dimension' in cr else ""
-                    print(f"  EXISTS: {name}{dim_info}")
+                    print(f"  EXISTS: {name} ({cr['dimension']}d)")
                 elif status == "dimension_mismatch":
                     print(
                         f"  MISMATCH: {name} (current={cr['current']}d, expected={cr['expected']}d)"
