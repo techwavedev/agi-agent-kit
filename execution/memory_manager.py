@@ -60,6 +60,15 @@ from embedding_utils import check_embedding_service, get_embedding_dimension
 from semantic_cache import check_cache, store_response, clear_cache
 from memory_retrieval import retrieve_context, store_memory, list_memories, build_filter
 
+# Optional Langfuse Observability for token tracking
+try:
+    from langfuse.decorators import observe
+except ImportError:
+    def observe(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+
 # Import BM25 index (optional — graceful if unavailable)
 try:
     from bm25_index import BM25Index
@@ -124,6 +133,7 @@ def health_check() -> dict:
     return result
 
 
+@observe(name="auto_query_memory", as_type="retrieval")
 def auto_query(
     query: str, 
     project: str = None, 
