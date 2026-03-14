@@ -207,3 +207,53 @@ When building a feature that touches user data:
 ## When to Use
 
 This skill is applicable when building software that collects, stores, or processes personal data. Apply it proactively during design and implementation.
+
+---
+
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
+
+> **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
+> Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
+
+### Memory-First Protocol
+
+Cache compliance check results to avoid re-running expensive AWS API calls. Retrieve prior audit findings to track remediation progress across sessions.
+
+```bash
+# Check for prior security context before starting
+python3 execution/memory_manager.py auto --query "prior security audit results for Privacy By Design"
+```
+
+### Storing Results
+
+After completing work, store security decisions for future sessions:
+
+```bash
+python3 execution/memory_manager.py store \
+  --content "Audit findings: 3 critical IAM misconfigurations found and remediated" \
+  --type technical --project <project> \
+  --tags privacy-by-design security
+```
+
+### Multi-Agent Collaboration
+
+Share security findings with other agents so they avoid introducing vulnerabilities in their code changes.
+
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Completed security audit — 3 critical findings fixed, compliance score 94%" \
+  --project <project>
+```
+
+### Signed Audit Trail
+
+All security findings are cryptographically signed with the agent's Ed25519 identity, providing tamper-proof audit logs for compliance reporting.
+
+### Semantic Cache for Compliance
+
+Cache compliance check results (`semantic_cache.py`) to avoid redundant AWS API calls. Cache hit at similarity >0.92 returns prior results instantly.
+
+<!-- AGI-INTEGRATION-END -->
