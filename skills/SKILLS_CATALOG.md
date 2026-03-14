@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-03-14 15:47
+> **Auto-generated Documentation** — Last updated: 2026-03-14 16:05
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -96,6 +96,7 @@ skill-name/
 | -------- | ----- |
 | **Name** | `qdrant-memory` |
 | **Location** | `skills/qdrant-memory/` |
+| **MCP Server** | `mcp_server.py` |
 | **Type** | Standalone |
 
 **Description:** "Intelligent token optimization through Qdrant-powered semantic caching and long-term memory. Use for (1) Semantic Cache - avoid LLM calls entirely for semantically similar queries with 100% token savings, (2) Long-Term Memory - retrieve only relevant context chunks instead of full conversation history with 80-95% context reduction, (3) Hybrid Search - combine vector similarity with keyword filtering for technical queries, (4) Memory Management - store and retrieve conversation memories, decisions, and code patterns with metadata filtering. Triggers when needing to cache responses, remember past interactions, optimize context windows, or implement RAG patterns."
