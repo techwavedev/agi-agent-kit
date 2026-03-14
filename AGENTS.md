@@ -1,6 +1,8 @@
 # Agent Instructions
 
-> `CLAUDE.md`, `GEMINI.md`, `OPENCODE.md`, `COPILOT.md`, and `OPENCLAW.md` are symlinks to this file, so the same instructions load in any AI environment.
+> `CLAUDE.md`, `GEMINI.md`, `OPENCODE.md`, `COPILOT.md`, and `OPENCLAW.md` are symlinks to this file.
+> Kiro reads `.kiro/steering/agents.md` (also a symlink here).
+> The same instructions load in any AI coding agent environment.
 
 ---
 
@@ -752,6 +754,17 @@ python3 execution/cross_agent_context.py broadcast --agent "<name>" --message "<
 # Cross-agent: check pending handoffs
 python3 execution/cross_agent_context.py pending --agent "<name>" --project agi-agent-kit
 ```
+
+### MCP Servers
+
+Two MCP servers expose the framework to Claude Desktop, Antigravity, Cursor, Copilot, and any MCP client:
+
+| Server | File | Scope |
+|---|---|---|
+| `agi-framework` | `execution/mcp_server.py` | Memory + cross-agent + health (13 tools) |
+| `qdrant-memory` | `skills/qdrant-memory/mcp_server.py` | Direct Qdrant skill ops (6 tools) |
+
+> See `docs/mcp-compatibility.md` for full setup, config examples, and compatibility matrix.
 
 ### Rules
 

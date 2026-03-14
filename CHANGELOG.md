@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.3] - 2026-03-14
+
+### Added
+
+- **MCP Compatibility Layer** — The framework is now consumable as MCP servers by Claude Desktop, Antigravity, Cursor, Copilot, OpenCode, OpenClaw, and any MCP-compatible client. Two servers provided:
+  - `execution/mcp_server.py` (`agi-framework`) — 13 tools covering the full execution layer: memory auto-query, store, retrieve, cache, list, cross-agent coordination (store/sync/status/handoff/broadcast/pending), and session health check.
+  - `skills/qdrant-memory/mcp_server.py` (`qdrant-memory`) — 6 tools wrapping the skill's Python modules directly (no subprocess, no external package).
+- **MCP Skill Scaffolding** — `init_skill.py` now auto-generates `mcp_server.py` + `mcp_tools.json` for every new skill. Template lives at `skill-creator/templates/mcp_server_template.py`.
+
+- **Kiro (AWS) compatibility** — Added `.kiro/steering/agents.md` symlink → `AGENTS.md`. Kiro now loads the same agent instructions as Claude Code, Antigravity, and all other coding agents.
+
+### Design Decision
+
+MCP support is **purely additive** — no existing files modified, no validator changes. Rationale: `quick_validate.py` enforces an allowlist `{name, description, license, allowed-tools, metadata}`; adding new top-level SKILL.md keys would break all existing skills. MCP lives in separate files (`mcp_server.py`, `mcp_tools.json`) alongside the skill structure. The `metadata:` field (already allowed) is available for lightweight MCP hints.
+
+**MCP scope clarification:** All coding agents with bash access (Antigravity, Claude Code, Kiro, Cursor, OpenCode, Copilot) were already fully compatible via the symlinked `AGENTS.md`. Agent teams, sub-agents, skills, and memory all work natively for these agents. MCP is only needed for pure chat interfaces (Claude Desktop, etc.) with no bash execution capability.
+
+### Documentation
+
+- **`docs/mcp-compatibility.md`** — New. Full MCP reference: tool catalog, client compatibility matrix, architecture decision rationale, setup for all agents.
+- **`skills/qdrant-memory/SKILL.md`** — Updated MCP Quick Start section to reference `mcp_server.py` instead of the external `@qdrant/mcp-server-qdrant` package.
+- **`AGENTS.md`** — Added MCP Servers table under Framework Self-Development → Key Scripts.
+- **`docs/execution/mcp_server.md`** — New. Documents all 13 tools, transport protocol, environment variables.
+- **`skills/SKILLS_CATALOG.md`** — Regenerated; `qdrant-memory` now shows `MCP Server: mcp_server.py` row.
+
 ## [1.6.2] - 2026-03-14
 
 ### Added
