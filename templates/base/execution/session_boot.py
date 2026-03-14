@@ -84,27 +84,21 @@ def check_ollama() -> dict:
 
 
 def check_blockchain() -> dict:
-    """Check MultiChain connectivity (optional — does not affect readiness)."""
-    result = {"status": "not_running", "optional": True}
+    """Check Aries (ACA-Py) connectivity (optional — does not affect readiness)."""
+    result = {"status": "not_running", "optional": True, "agent": "ACA-Py (Hyperledger Aries)"}
     try:
-        # Try to reach MultiChain RPC
-        mc_url = os.environ.get("MULTICHAIN_RPC_URL", "http://localhost:4730")
-        mc_user = os.environ.get("MULTICHAIN_RPC_USER", "agiadmin")
-        mc_pass = os.environ.get("MULTICHAIN_RPC_PASS", "agipass123")
-        import base64
-        auth = base64.b64encode(f"{mc_user}:{mc_pass}".encode()).decode()
-        payload = json.dumps({"jsonrpc": "1.0", "id": "boot", "method": "getinfo", "params": []}).encode()
+        aries_url = os.environ.get("ARIES_ADMIN_URL", "http://localhost:8031")
+        aries_key = os.environ.get("ARIES_ADMIN_KEY", "changeme_set_in_dotenv")
         req = Request(
-            mc_url, data=payload,
-            headers={"Content-Type": "application/json", "Authorization": f"Basic {auth}"},
-            method="POST"
+            f"{aries_url}/status",
+            headers={"X-API-Key": aries_key},
+            method="GET"
         )
         with urlopen(req, timeout=5) as response:
             data = json.loads(response.read().decode())
-            info = data.get("result", {})
             result["status"] = "ok"
-            result["chain"] = info.get("chainname")
-            result["blocks"] = info.get("blocks")
+            result["version"] = data.get("version", "unknown")
+            result["label"] = data.get("label", "unknown")
     except Exception:
         pass
     return result
@@ -242,9 +236,9 @@ def main():
             print(f"   Mode: {mode_label}")
             bc = report.get("blockchain", {})
             if bc.get("status") == "ok":
-                print(f"   🔗 Blockchain: connected ({bc.get('chain')}, {bc.get('blocks')} blocks)")
+                print(f"   🔗 Aries: connected (v{bc.get('version')}, {bc.get('label')})")
             elif MEMORY_MODE == "pro":
-                print(f"   ⚠️  Blockchain: not running (start: docker compose -f docker-compose.multichain.yml up -d)")
+                print(f"   ⚠️  Aries: not running (start: docker compose -f docker-compose.aries.yml up -d)")
         else:
             print("❌ Memory system not ready:")
             for issue in report["issues"]:

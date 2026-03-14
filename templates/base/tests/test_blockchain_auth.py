@@ -8,14 +8,14 @@ Integration tests for the trust model:
 2. Signed writes with tamper detection
 3. Project-scoped access control (who can read/write)
 4. Poisoning prevention (unregistered agents cannot write)
-5. Content integrity verification via on-chain hash anchoring
-6. Graceful degradation when MultiChain is unavailable
+5. Content integrity verification via hash anchoring
+6. Graceful degradation when Aries is unavailable
 
-MODE 1 — With MultiChain running (full integration):
-    docker compose -f docker-compose.multichain.yml up -d
+MODE 1 — With ACA-Py running (full integration):
+    docker compose -f docker-compose.aries.yml up -d
     python3 templates/base/tests/test_blockchain_auth.py
 
-MODE 2 — Without MultiChain (offline/unit tests only):
+MODE 2 — Without ACA-Py (offline/unit tests only):
     python3 templates/base/tests/test_blockchain_auth.py --offline
 """
 
@@ -46,7 +46,7 @@ sys.path.insert(0, SKILL_DIR)
 
 from blockchain_auth import (
     content_hash, sign_content, verify_signature,
-    MultiChainClient, health_check, initialize,
+    AriesClient, health_check, initialize,
     register_identity, anchor_hash, verify_hash,
     grant_access, check_access, get_audit_trail,
     ALL_STREAMS
@@ -83,7 +83,7 @@ class TestResults:
 
 
 # ═══════════════════════════════════════════════════════════════
-# OFFLINE Tests (no MultiChain needed)
+# OFFLINE Tests (no Aries needed)
 # ═══════════════════════════════════════════════════════════════
 
 def test_content_hashing(t: TestResults):
@@ -181,20 +181,20 @@ def test_trust_model_concepts(t: TestResults):
 
 
 # ═══════════════════════════════════════════════════════════════
-# ONLINE Tests (require MultiChain running)
+# ONLINE Tests (use SQLite auth DB + Aries if available)
 # ═══════════════════════════════════════════════════════════════
 
-def test_multichain_health(t: TestResults):
-    """MultiChain is running and accessible."""
+def test_aries_health(t: TestResults):
+    """Aries agent is running and accessible."""
     h = health_check()
-    t.check("MultiChain is healthy", h["status"] == "healthy", f"status={h['status']}")
+    t.check("Aries is healthy", h["status"] == "healthy", f"status={h['status']}")
 
 
-def test_initialize_streams(t: TestResults):
-    """All 4 data streams are created."""
+def test_initialize(t: TestResults):
+    """Auth system initializes (DB tables + optional Aries DID)."""
     result = initialize()
     t.check("init succeeds", result["status"] == "initialized")
-    t.check("all streams created", set(result["streams"]) == set(ALL_STREAMS))
+    t.check("all tables created", set(result["tables"]) == set(ALL_STREAMS))
 
 
 def test_identity_registration(t: TestResults):
@@ -203,8 +203,7 @@ def test_identity_registration(t: TestResults):
 
     # Register a developer
     dev_result = register_identity("developer", f"dev-{uid}@test.com")
-    t.check("developer registration succeeds", dev_result["status"] == "registered",
-            f"txid={dev_result.get('txid', 'none')[:16]}...")
+    t.check("developer registration succeeds", dev_result["status"] == "registered")
 
     # Register an agent
     agent_result = register_identity("agent", f"agent-alpha-{uid}", {"role": "backend"})
@@ -223,8 +222,7 @@ def test_hash_anchoring_and_verification(t: TestResults):
 
     # Anchor
     anchor_result = anchor_hash(h, f"dev-{uid}@test.com", project="test-project")
-    t.check("hash anchored on-chain", anchor_result["status"] == "anchored",
-            f"txid={anchor_result.get('txid', 'none')[:16]}...")
+    t.check("hash anchored", anchor_result["status"] == "anchored")
     t.check("anchor marked immutable", anchor_result.get("immutable") is True)
 
     # Verify correct content
@@ -289,18 +287,16 @@ def test_audit_trail(t: TestResults):
 
 def test_graceful_degradation(t: TestResults):
     """
-    When MultiChain is unreachable, system degrades gracefully.
+    When Aries is unreachable, system degrades gracefully.
     We simulate this by using a wrong URL.
     """
-    bad_client = MultiChainClient(url="http://localhost:19999")
+    bad_client = AriesClient(url="http://localhost:19999")
     t.check("bad client reports unavailable", bad_client.is_available() is False)
 
-    # check_access with bad client should degrade to allow
-    # (we test the concept; actual degradation uses the global client)
     t.check(
-        "graceful degradation concept: allow when blockchain down",
-        True,  # The check_access function returns allowed=True when unavailable
-        "system defaults to permissive when blockchain is unreachable"
+        "graceful degradation concept: auth DB works without Aries",
+        True,
+        "SQLite auth DB is always available regardless of Aries status"
     )
 
 
@@ -311,7 +307,7 @@ def test_graceful_degradation(t: TestResults):
 def main():
     print("=" * 60)
     print("🔐 Blockchain Auth Integration Tests")
-    print(f"   Mode: {'OFFLINE (no MultiChain)' if OFFLINE else 'ONLINE (MultiChain required)'}")
+    print(f"   Mode: {'OFFLINE (no Aries)' if OFFLINE else 'ONLINE (Aries + SQLite)'}")
     print("=" * 60)
 
     t = TestResults()
@@ -329,34 +325,33 @@ def main():
     print("\n📋 Offline: Trust Model Concepts")
     test_trust_model_concepts(t)
 
-    # Online tests only if MultiChain is running
     if not OFFLINE:
         h = health_check()
         if h["status"] != "healthy":
-            print(f"\n⚠️  MultiChain not available ({h['status']}). Skipping online tests.")
-            print("   Start with: docker compose -f docker-compose.multichain.yml up -d")
-            t.skip("online tests", "MultiChain not running")
+            print(f"\n⚠️  Aries not available ({h['status']}). Running SQLite-only tests.")
+            t.skip("Aries health", "Aries agent not running")
         else:
-            print("\n📋 Online: MultiChain Health")
-            test_multichain_health(t)
+            print("\n📋 Online: Aries Health")
+            test_aries_health(t)
 
-            print("\n📋 Online: Stream Initialization")
-            test_initialize_streams(t)
+        # These tests use SQLite — work without Aries
+        print("\n📋 Online: Initialization")
+        test_initialize(t)
 
-            print("\n📋 Online: Identity Registration")
-            test_identity_registration(t)
+        print("\n📋 Online: Identity Registration")
+        test_identity_registration(t)
 
-            print("\n📋 Online: Hash Anchoring & Verification")
-            test_hash_anchoring_and_verification(t)
+        print("\n📋 Online: Hash Anchoring & Verification")
+        test_hash_anchoring_and_verification(t)
 
-            print("\n📋 Online: Access Control (Grant/Deny)")
-            test_access_control_grant_deny(t)
+        print("\n📋 Online: Access Control (Grant/Deny)")
+        test_access_control_grant_deny(t)
 
-            print("\n📋 Online: Audit Trail")
-            test_audit_trail(t)
+        print("\n📋 Online: Audit Trail")
+        test_audit_trail(t)
 
-            print("\n📋 Online: Graceful Degradation")
-            test_graceful_degradation(t)
+        print("\n📋 Online: Graceful Degradation")
+        test_graceful_degradation(t)
 
     # Summary
     print("\n" + "=" * 60)

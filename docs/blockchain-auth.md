@@ -1,103 +1,60 @@
 # Blockchain-Authenticated Agent Memory
 
-## Overview
+## Architecture
 
-Agents, developers, and teams are authenticated via an on-chain identity registry.
-Every memory write is signed, content hashes are anchored immutably, and project
-access is token-gated. **Qdrant remains the data layer; the blockchain adds trust.**
-
-## Trust Model
+**Hyperledger Aries (ACA-Py)** provides W3C DID-based identity for agents.
+This is an **optional add-on** (Pro mode only). Solo and Team modes work without it.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  HOW AGENTS TRUST EACH OTHER                                │
-│                                                             │
-│  1. Register identity on blockchain (one-time)              │
-│     → Creates immutable on-chain record                     │
-│                                                             │
-│  2. Admin grants project access (per-project)               │
-│     → Permissions: read, write, admin                       │
-│                                                             │
-│  3. Every write: sign content → store Qdrant → anchor hash  │
-│     → Content hash is immutable on-chain                    │
-│                                                             │
-│  4. Every read: check access → retrieve → verify hash       │
-│     → Tampered content detected via hash mismatch           │
-│                                                             │
-│  RESULT: Unregistered agents rejected. Poisoned content     │
-│  detected. Project context protected per-team.              │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│  TRUST MODEL                                     │
+│                                                  │
+│  1. Register identity → DID created in wallet    │
+│  2. Grant project access → stored in auth DB     │
+│  3. Write: sign → store Qdrant → anchor hash     │
+│  4. Read: check access → retrieve → verify hash  │
+│                                                  │
+│  Unregistered agent → rejected                   │
+│  Tampered content → hash mismatch detected       │
+│  No project grant → access denied                │
+└──────────────────────────────────────────────────┘
 ```
 
-## Quick Start
+## Quick Start (Pro Mode)
 
 ```bash
-# 1. Start MultiChain (first time builds the image)
-cd templates/base
-docker compose -f docker-compose.multichain.yml up -d
+# 1. Set mode and credentials in .env
+echo "MEMORY_MODE=pro" >> .env
+echo "ARIES_ADMIN_KEY=your_secure_key" >> .env
 
-# 2. Initialize blockchain streams
+# 2. Start Aries agent
+docker compose -f docker-compose.aries.yml up -d
+
+# 3. Initialize
 python3 execution/blockchain_auth.py init
 
-# 3. Register your identity
-python3 execution/blockchain_auth.py register \
-  --entity-type developer --entity-id "your@email.com"
+# 4. Register + grant
+python3 execution/blockchain_auth.py register --entity-type developer --entity-id you@co.com
+python3 execution/blockchain_auth.py grant --entity-id you@co.com --project myapp --permissions read,write
 
-# 4. Grant project access
-python3 execution/blockchain_auth.py grant \
-  --entity-id "your@email.com" --project myapp --permissions read,write
-
-# 5. Store with blockchain auth
-python3 execution/memory_manager.py store \
-  --content "My decision" --type decision --project myapp --auth
-
-# 6. Check audit trail
-python3 execution/blockchain_auth.py audit --project myapp
+# 5. Store with auth
+python3 execution/memory_manager.py store --content "Decision" --type decision --project myapp --auth
 ```
 
 ## Graceful Degradation
 
-If MultiChain is not running, the system **continues to work** using Qdrant only.
-The `--auth` flag will report `blockchain_anchor: unavailable` but the memory
-is still stored. No crash, no data loss.
+If Aries is not running, memory stores to Qdrant normally.
+`--auth` flag reports `status: unavailable` but no crash, no data loss.
 
-## Data Streams
+## Technology
 
-| Stream | Purpose | Key Format |
+| Component | Technology | Standard |
 |---|---|---|
-| `identities` | Agent/dev/team registration | `entity_id` |
-| `access-control` | Project-scoped permissions | `entity_id:project` |
-| `content-hashes` | Anchored SHA-256 hashes | `content_hash` |
-| `audit-log` | Timestamped operation log | `project` |
-
-## Poisoning Prevention
-
-**Scenario:** A malicious agent tries to inject false context.
-
-1. **Unregistered agent** → Not in `identities` stream → Rejected
-2. **No project access** → `check_access()` returns denied → Blocked
-3. **Forged signature** → HMAC doesn't match → Detected
-4. **Tampered content** → Hash mismatch vs on-chain anchor → Detected
-
-## CLI Reference
-
-| Command | Description |
-|---|---|
-| `blockchain_auth.py health` | Check MultiChain connectivity |
-| `blockchain_auth.py init` | Create data streams |
-| `blockchain_auth.py register` | Register entity on-chain |
-| `blockchain_auth.py sign --content "..."` | Sign content |
-| `blockchain_auth.py verify --content "..."` | Verify against on-chain hash |
-| `blockchain_auth.py anchor` | Anchor hash on-chain |
-| `blockchain_auth.py grant` | Grant project permissions |
-| `blockchain_auth.py check-access` | Check entity permission |
-| `blockchain_auth.py audit --project X` | Full audit trail |
-
-## Environment Variables
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `MULTICHAIN_RPC_URL` | `http://localhost:4730` | MultiChain RPC endpoint |
-| `MULTICHAIN_RPC_USER` | `agiadmin` | RPC username |
-| `MULTICHAIN_RPC_PASS` | `agipass123` | RPC password |
-| `MULTICHAIN_CHAIN_NAME` | `agi-memory-chain` | Blockchain name |
+| Identity | Hyperledger Aries ACA-Py 1.5.0 | W3C DIDs |
+| DID Method | `did:key` (ed25519) | W3C DID Core |
+| Signing | HMAC-SHA256 (offline) / Ed25519 (via Aries) | — |
+| Access Control | SQLite + Aries wallet | — |
+| Audit Trail | SQLite append-only log | — |
+| Docker Image | `ghcr.io/openwallet-foundation/acapy-agent:1.5.0` | OCI |
+| License | Apache 2.0 | OSI |
+| Governance | OpenWallet Foundation / Linux Foundation | — |
