@@ -1,7 +1,9 @@
 ---
 name: azure-ai-projects-py
-description: Build AI applications using the Azure AI Projects Python SDK (azure-ai-projects). Use when working with Foundry project clients, creating versioned agents with PromptAgentDefinition, running evaluations, managing connections/deployments/datasets/indexes, or using OpenAI-compatible clients. This is the high-level Foundry SDK - for low-level agent operations, use azure-ai-agents-python skill.
-package: azure-ai-projects
+description: "Build AI applications using the Azure AI Projects Python SDK (azure-ai-projects). Use when working with Foundry project clients, creating versioned agents with PromptAgentDefinition, running evalua..."
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 # Azure AI Projects Python SDK (Foundry SDK)
@@ -122,7 +124,7 @@ agent_version = client.agents.create_version(
 )
 ```
 
-See [references/agents.md](references/agents.md) for detailed agent patterns.
+See references/agents.md for detailed agent patterns.
 
 ## Tools Overview
 
@@ -138,7 +140,7 @@ See [references/agents.md](references/agents.md) for detailed agent patterns.
 | Memory Search | `MemorySearchTool` | Search agent memory stores |
 | SharePoint | `SharepointGroundingTool` | Search SharePoint content |
 
-See [references/tools.md](references/tools.md) for all tool patterns.
+See references/tools.md for all tool patterns.
 
 ## Thread and Message Flow
 
@@ -179,7 +181,7 @@ for conn in connections:
 connection = client.connections.get(connection_name="my-search-connection")
 ```
 
-See [references/connections.md](references/connections.md) for connection patterns.
+See references/connections.md for connection patterns.
 
 ## Deployments
 
@@ -190,7 +192,7 @@ for deployment in deployments:
     print(f"{deployment.name}: {deployment.model}")
 ```
 
-See [references/deployments.md](references/deployments.md) for deployment patterns.
+See references/deployments.md for deployment patterns.
 
 ## Datasets and Indexes
 
@@ -202,7 +204,7 @@ datasets = client.datasets.list()
 indexes = client.indexes.list()
 ```
 
-See [references/datasets-indexes.md](references/datasets-indexes.md) for data operations.
+See references/datasets-indexes.md for data operations.
 
 ## Evaluation
 
@@ -225,7 +227,7 @@ eval_run = openai_client.evals.runs.create(
 )
 ```
 
-See [references/evaluation.md](references/evaluation.md) for evaluation patterns.
+See references/evaluation.md for evaluation patterns.
 
 ## Async Client
 
@@ -240,7 +242,7 @@ async with AIProjectClient(
     # ... async operations
 ```
 
-See [references/async-patterns.md](references/async-patterns.md) for async patterns.
+See references/async-patterns.md for async patterns.
 
 ## Memory Stores
 
@@ -282,55 +284,67 @@ agent = client.agents.create_agent(
 
 ## Reference Files
 
-- [references/agents.md](references/agents.md): Agent operations with PromptAgentDefinition
-- [references/tools.md](references/tools.md): All agent tools with examples
-- [references/evaluation.md](references/evaluation.md): Evaluation operations overview
-- [references/built-in-evaluators.md](references/built-in-evaluators.md): Complete built-in evaluator reference
-- [references/custom-evaluators.md](references/custom-evaluators.md): Code and prompt-based evaluator patterns
-- [references/connections.md](references/connections.md): Connection operations
-- [references/deployments.md](references/deployments.md): Deployment enumeration
-- [references/datasets-indexes.md](references/datasets-indexes.md): Dataset and index operations
-- [references/async-patterns.md](references/async-patterns.md): Async client usage
-- [references/api-reference.md](references/api-reference.md): Complete API reference for all 373 SDK exports (v2.0.0b4)
-- [scripts/run_batch_evaluation.py](scripts/run_batch_evaluation.py): CLI tool for batch evaluations
+- references/agents.md: Agent operations with PromptAgentDefinition
+- references/tools.md: All agent tools with examples
+- references/evaluation.md: Evaluation operations overview
+- references/built-in-evaluators.md: Complete built-in evaluator reference
+- references/custom-evaluators.md: Code and prompt-based evaluator patterns
+- references/connections.md: Connection operations
+- references/deployments.md: Deployment enumeration
+- references/datasets-indexes.md: Dataset and index operations
+- references/async-patterns.md: Async client usage
+- references/api-reference.md: Complete API reference for all 373 SDK exports (v2.0.0b4)
+- scripts/run_batch_evaluation.py: CLI tool for batch evaluations
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior agent configurations, team compositions, and orchestration patterns. Critical for multi-agent system consistency.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior AI agent orchestration context before starting
+python3 execution/memory_manager.py auto --query "agent patterns and orchestration strategies for Azure Ai Projects Py"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store AI agent orchestration decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags azure-ai-projects-py <relevant-tags>
+  --content "Agent pattern: hierarchical orchestration with Control Tower dispatcher, 3 specialist sub-agents" \
+  --type decision --project <project> \
+  --tags azure-ai-projects-py ai-agents
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+This skill is inherently multi-agent. Use cross-agent context to coordinate task distribution and avoid duplicate work.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Agent architecture designed — Control Tower + specialist agents with shared Qdrant memory" \
+  --project <project>
+```
 
-### Local LLM Support
+### Control Tower Integration
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+Register agents and tasks with the Control Tower (`execution/control_tower.py`) for centralized orchestration across machines and LLM providers.
+
+### Blockchain Identity
+
+Each agent has a cryptographic Ed25519 identity. All memory writes are signed — enabling trust verification in multi-agent systems.
+
+<!-- AGI-INTEGRATION-END -->

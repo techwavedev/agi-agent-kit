@@ -1,40 +1,29 @@
 ---
 name: commit
-description: "Create commit messages following Sentry conventions. Use when committing code changes, writing commit messages, or formatting git history. Follows conventional commits with Sentry-specific issue references."
-source: "https://github.com/getsentry/skills/tree/main/plugins/sentry-skills/skills/commit"
-risk: safe
+description: ALWAYS use this skill when committing code changes — never commit directly without it. Creates commits following Sentry conventions with proper conventional commit format and issue references. Trigger on any commit, git commit, save changes, or commit message task.
 ---
 
 # Sentry Commit Messages
 
 Follow these conventions when creating commits for Sentry projects.
 
-## When to Use This Skill
-
-Use this skill when:
-- Committing code changes
-- Writing commit messages
-- Formatting git history
-- Following Sentry commit conventions
-- Referencing Sentry issues in commits
-
 ## Prerequisites
 
-Before committing, ensure you're working on a feature branch, not the main branch.
+Before committing, always check the current branch:
 
 ```bash
-# Check current branch
 git branch --show-current
 ```
 
-If you're on `main` or `master`, create a new branch first:
+**If you're on `main` or `master`, you MUST create a feature branch first** — unless the user explicitly asked to commit to main. Do not ask the user whether to create a branch; just proceed with branch creation. The `create-branch` skill will still propose a branch name for the user to confirm.
+
+Use the `create-branch` skill to create the branch. After `create-branch` completes, verify the current branch has changed before proceeding:
 
 ```bash
-# Create and switch to a new branch
-git checkout -b <type>/<short-description>
+git branch --show-current
 ```
 
-Branch naming should follow the pattern: `<type>/<short-description>` where type matches the commit type (e.g., `feat/add-user-auth`, `fix/null-pointer-error`, `ref/extract-validation`).
+If still on `main` or `master` (e.g., the user aborted branch creation), stop — do not commit.
 
 ## Format
 
@@ -170,43 +159,48 @@ Reason: Caused performance regression in production.
 
 - [Sentry Commit Messages](https://develop.sentry.dev/engineering-practices/commit-messages/)
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Cache workflow configurations and automation patterns. Retrieve prior pipeline designs to avoid re-building similar flows from scratch.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior workflow/automation context before starting
+python3 execution/memory_manager.py auto --query "automation patterns and workflow configurations for Commit"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store workflow/automation decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags commit <relevant-tags>
+  --content "Workflow: automated data pipeline with retry logic, dead-letter queue, and Slack alerts on failure" \
+  --type technical --project <project> \
+  --tags commit workflow
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share workflow state with other agents so they can trigger, monitor, or extend the automation.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Workflow automation deployed — pipeline processing 1000+ events/day with 99.9% success rate" \
+  --project <project>
+```
 
-### Local LLM Support
+### Playbook Engine
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+Combine this skill with others using the Playbook Engine (`execution/workflow_engine.py`) for guided multi-step automation with progress tracking.
+
+<!-- AGI-INTEGRATION-END -->

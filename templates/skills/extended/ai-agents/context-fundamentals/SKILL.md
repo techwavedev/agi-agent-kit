@@ -1,15 +1,8 @@
 ---
 name: context-fundamentals
-description: "Understand what context is, why it matters, and the anatomy of context in agent systems"
-source: "https://github.com/muratcankoylan/Agent-Skills-for-Context-Engineering/tree/main/skills/context-fundamentals"
-risk: safe
+description: This skill should be used when the user asks to "understand context", "explain context windows", "design agent architecture", "debug context issues", "optimize context usage", or discusses context components, attention mechanics, progressive disclosure, or context budgeting....
 ---
 
-## When to Use This Skill
-
-Understand what context is, why it matters, and the anatomy of context in agent systems
-
-Use this skill when working with understand what context is, why it matters, and the anatomy of context in agent systems.
 # Context Engineering Fundamentals
 
 Context is the complete state available to a language model at inference time. It includes everything the model can attend to when generating responses: system instructions, tool definitions, retrieved documents, message history, and tool outputs. Understanding context fundamentals is prerequisite to effective context engineering.
@@ -171,7 +164,7 @@ This skill provides foundational context that all other skills build upon. It sh
 ## References
 
 Internal reference:
-- [Context Components Reference](./references/context-components.md) - Detailed technical reference
+- Context Components Reference - Detailed technical reference
 
 Related skills in this collection:
 - context-degradation - Understanding context failure patterns
@@ -191,43 +184,52 @@ External resources:
 **Author**: Agent Skills for Context Engineering Contributors
 **Version**: 1.0.0
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior agent configurations, team compositions, and orchestration patterns. Critical for multi-agent system consistency.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior AI agent orchestration context before starting
+python3 execution/memory_manager.py auto --query "agent patterns and orchestration strategies for Context Fundamentals"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store AI agent orchestration decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags context-fundamentals <relevant-tags>
+  --content "Agent pattern: hierarchical orchestration with Control Tower dispatcher, 3 specialist sub-agents" \
+  --type decision --project <project> \
+  --tags context-fundamentals ai-agents
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+This skill is inherently multi-agent. Use cross-agent context to coordinate task distribution and avoid duplicate work.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Agent architecture designed — Control Tower + specialist agents with shared Qdrant memory" \
+  --project <project>
+```
 
-### Local LLM Support
+### Control Tower Integration
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+Register agents and tasks with the Control Tower (`execution/control_tower.py`) for centralized orchestration across machines and LLM providers.
+
+### Blockchain Identity
+
+Each agent has a cryptographic Ed25519 identity. All memory writes are signed — enabling trust verification in multi-agent systems.
+
+<!-- AGI-INTEGRATION-END -->

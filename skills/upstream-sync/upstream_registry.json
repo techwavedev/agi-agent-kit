@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "description": "Upstream fork registry — maps each forked repo to its original source, local paths, and sync strategy.",
+  "upstreams": [
+    {
+      "id": "awesome-skills",
+      "fork": "techwavedev/antigravity-awesome-skills",
+      "upstream": "sickn33/antigravity-awesome-skills",
+      "description": "1246+ agentic skills for Claude Code, Gemini CLI, Cursor",
+      "local_paths": ["templates/skills/extended/"],
+      "sync_strategy": "skill-adapt",
+      "adapt_script": "scripts/adapt_extended_skills.py",
+      "clone_subdir": "skills",
+      "priority": 1,
+      "notes": "Already has adapt-skills.yml CI workflow. Main skill feeder."
+    },
+    {
+      "id": "superpowers",
+      "fork": "techwavedev/superpowers",
+      "upstream": "obra/superpowers",
+      "description": "Agentic skills framework & dev methodology (brainstorming, TDD, plans, git worktrees)",
+      "local_paths": [
+        "templates/skills/extended/other/superpowers-lab/",
+        "templates/skills/extended/workflow/finishing-a-development-branch/",
+        "templates/skills/extended/workflow/executing-plans/",
+        "templates/skills/extended/architecture/brainstorming/",
+        "templates/skills/extended/architecture/plan-writing/",
+        "templates/skills/extended/testing/test-driven-development/",
+        "templates/skills/extended/testing/requesting-code-review/",
+        "templates/skills/extended/testing/receiving-code-review/",
+        "templates/skills/extended/ai-agents/subagent-driven-development/",
+        "templates/skills/extended/ai-agents/dispatching-parallel-agents/",
+        "templates/skills/extended/debugging/systematic-debugging/"
+      ],
+      "sync_strategy": "skill-diff",
+      "clone_subdir": "skills",
+      "priority": 2,
+      "notes": "Core dev methodology. Skills are individual markdown files in skills/ dir."
+    },
+    {
+      "id": "ui-ux-pro-max",
+      "fork": "techwavedev/ui-ux-pro-max-skill",
+      "upstream": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "description": "AI design intelligence — 50 styles, 97 palettes, 57 font pairings, design system generator",
+      "local_paths": ["templates/skills/extended/frontend/ui-ux-pro-max/"],
+      "sync_strategy": "full-replace",
+      "clone_subdir": ".",
+      "priority": 1,
+      "notes": "Single skill with scripts/ and data/ dirs. Keep AGI integration block."
+    },
+    {
+      "id": "stitch-skills",
+      "fork": "techwavedev/stitch-skills",
+      "upstream": "google-labs-code/stitch-skills",
+      "description": "Google's official Gemini CLI skills",
+      "local_paths": [
+        "templates/skills/extended/frontend/stitch-ui-design/",
+        "templates/skills/knowledge/frontend/stitch-loop/"
+      ],
+      "sync_strategy": "skill-diff",
+      "clone_subdir": "skills",
+      "priority": 2,
+      "notes": "Google Labs skills. May have new skills we haven't imported yet."
+    },
+    {
+      "id": "yuan3",
+      "fork": "techwavedev/Yuan3.0",
+      "upstream": "Yuan-lab-LLM/Yuan3.0",
+      "description": "Yuan3.0 MoE model — 40B params, RAPO reinforcement learning",
+      "local_paths": [],
+      "sync_strategy": "reference-only",
+      "clone_subdir": ".",
+      "priority": 3,
+      "notes": "Research reference for MoE/RAPO patterns. No direct skill mapping yet."
+    },
+    {
+      "id": "auto-claude",
+      "fork": "techwavedev/Auto-Claude",
+      "upstream": "AndyMik90/Aperant",
+      "description": "Autonomous multi-session AI coding patterns",
+      "local_paths": [],
+      "sync_strategy": "inspect-merge",
+      "clone_subdir": ".",
+      "priority": 2,
+      "notes": "Fork has diverged from upstream (Aperant). Sync fork first, then check if our changes can be preserved and merged with new upstream features."
+    },
+    {
+      "id": "agno",
+      "fork": "techwavedev/agno",
+      "upstream": "agno-agi/agno",
+      "description": "Full-stack multi-agent system framework with memory, knowledge, reasoning",
+      "local_paths": [],
+      "sync_strategy": "reference-only",
+      "clone_subdir": ".",
+      "priority": 3,
+      "notes": "Reference for multi-agent patterns. Could inform agent teams architecture."
+    },
+    {
+      "id": "sim",
+      "fork": "techwavedev/sim",
+      "upstream": "simstudioai/sim",
+      "description": "Open-source platform to build and deploy AI agent workflows",
+      "local_paths": [],
+      "sync_strategy": "reference-only",
+      "clone_subdir": ".",
+      "priority": 3,
+      "notes": "Agent workflow platform reference. Could inspire playbook engine improvements."
+    },
+    {
+      "id": "prompts",
+      "fork": "techwavedev/prompts",
+      "upstream": "elder-plinius/CL4R1T4S",
+      "description": "System prompts collection for major AI platforms",
+      "local_paths": [],
+      "sync_strategy": "reference-only",
+      "clone_subdir": ".",
+      "priority": 3,
+      "notes": "Prompt engineering reference. Useful for platform-adaptive prompt patterns."
+    }
+  ],
+  "sync_strategies": {
+    "skill-adapt": "Clone upstream, run adapt script to merge into extended skills with AGI integration blocks",
+    "skill-diff": "Clone upstream, diff individual skills against local copies, update changed ones preserving AGI blocks",
+    "full-replace": "Clone upstream, replace local content but preserve AGI integration markers",
+    "inspect-merge": "Clone both fork and upstream, compare divergence, produce merge report for manual review",
+    "reference-only": "Clone for inspection, produce summary of new features/patterns. No auto-merge."
+  }
+}

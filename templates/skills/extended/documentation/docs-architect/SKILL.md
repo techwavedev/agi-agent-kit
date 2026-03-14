@@ -1,11 +1,9 @@
 ---
 name: docs-architect
-description: Creates comprehensive technical documentation from existing
-  codebases. Analyzes architecture, design patterns, and implementation details
-  to produce long-form technical manuals and ebooks. Use PROACTIVELY for system
-  documentation, architecture guides, or technical deep-dives.
-metadata:
-  model: sonnet
+description: Creates comprehensive technical documentation from existing codebases. Analyzes architecture, design patterns, and implementation details to produce long-form technical manuals and ebooks.
+risk: unknown
+source: community
+date_added: '2026-02-27'
 ---
 
 ## Use this skill when
@@ -97,43 +95,48 @@ Generate documentation in Markdown format with:
 
 Remember: Your goal is to create documentation that serves as the definitive technical reference for the system, suitable for onboarding new team members, architectural reviews, and long-term maintenance.
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior documentation structure and content to maintain consistency. Cache generated docs to avoid regenerating unchanged sections.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior documentation context before starting
+python3 execution/memory_manager.py auto --query "documentation patterns and prior content for Docs Architect"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store documentation decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags docs-architect <relevant-tags>
+  --content "Documentation: API reference generated from OpenAPI spec, deployment guide updated with new env vars" \
+  --type technical --project <project> \
+  --tags docs-architect documentation
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share documentation changes with all agents so they reference the latest guides and APIs.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Documentation updated — API reference, deployment guide, and CHANGELOG all current" \
+  --project <project>
+```
 
-### Local LLM Support
+### Agent Team: Documentation
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+This skill pairs with `documentation_team` — dispatched automatically after any code change to keep docs in sync.
+
+<!-- AGI-INTEGRATION-END -->

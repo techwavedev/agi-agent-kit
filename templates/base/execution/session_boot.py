@@ -134,6 +134,33 @@ def run_session_init() -> bool:
         return False
 
 
+def check_identity(auto_fix: bool = False) -> dict:
+    """Check/create agent identity keypair."""
+    result = {"status": "not_found", "agent_id": None}
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from agent_identity import load_identity, get_or_create_identity
+
+        identity = load_identity()
+        if identity:
+            result["status"] = "ok"
+            result["agent_id"] = identity["agent_id"]
+            result["public_key_hex"] = identity["public_key_hex"]
+        elif auto_fix:
+            identity = get_or_create_identity()
+            result["status"] = "created"
+            result["agent_id"] = identity["agent_id"]
+            result["public_key_hex"] = identity["public_key_hex"]
+        else:
+            result["status"] = "not_found"
+    except ImportError:
+        result["status"] = "missing_cryptography"
+        result["hint"] = "pip install cryptography"
+    except Exception as e:
+        result["status"] = f"error: {e}"
+    return result
+
+
 def pull_model() -> bool:
     """Pull the embedding model via Ollama."""
     try:
@@ -190,6 +217,15 @@ def main():
         else:
             report["issues"].append(f"Embedding model missing. Run: ollama pull {EMBEDDING_MODEL}")
 
+    # Step 2.5: Check agent identity
+    identity = check_identity(args.auto_fix)
+    report["identity"] = identity
+    if identity["status"] == "created":
+        report["actions_taken"].append(f"Generated agent identity: {identity['agent_id'][:16]}...")
+    elif identity["status"] not in ("ok", "created"):
+        report["issues"].append(f"Agent identity: {identity['status']}" +
+                                (f" — {identity.get('hint', '')}" if identity.get("hint") else ""))
+
     # Step 3: Initialize collections if needed
     if qdrant["status"] == "ok" and ollama["status"] == "ok" and ollama["has_model"]:
         agent_mem = qdrant["collections"].get("agent_memory", {})
@@ -236,6 +272,16 @@ def main():
         except Exception as e:
             bm25_result = {"status": "error", "message": str(e)}
     report["bm25_sync"] = bm25_result
+    # Step 4: Register with Control Tower (best-effort)
+    try:
+        from control_tower import register_agent
+        agent_name = os.environ.get("AGENT_NAME", "claude")
+        ct_project = os.environ.get("AGENT_PROJECT", None)
+        ct_result = register_agent(agent_name, project=ct_project)
+        report["control_tower"] = {"status": "registered", "agent_id": ct_result.get("agent_id")}
+        report["actions_taken"].append(f"Registered with Control Tower as {agent_name}")
+    except Exception:
+        report["control_tower"] = {"status": "skipped"}
 
     # Final readiness
     qdrant = report["qdrant"]
@@ -261,6 +307,7 @@ def main():
         "mode_label": MODE_LABELS.get(MEMORY_MODE, MEMORY_MODE),
         "total_memories": agent_mem.get("points", 0),
         "total_cached": sem_cache.get("points", 0),
+        "agent_id": identity.get("agent_id"),
     }
 
     if args.json_output:
@@ -285,6 +332,8 @@ def main():
             bm25 = report.get("bm25_sync", {})
             if bm25.get("status") == "synced":
                 print(f"   🔍 BM25: synced from Qdrant ({bm25.get('indexed', 0)} indexed, {bm25.get('total', 0)} total)")
+            if identity.get("agent_id"):
+                print(f"   Agent ID: {identity['agent_id'][:16]}...")
         else:
             print("❌ Memory system not ready:")
             for issue in report["issues"]:

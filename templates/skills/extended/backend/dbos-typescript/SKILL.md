@@ -1,15 +1,9 @@
 ---
 name: dbos-typescript
-description: DBOS TypeScript SDK for building reliable, fault-tolerant applications with durable workflows. Use this skill when writing TypeScript code with DBOS, creating workflows and steps, using queues, using DBOSClient from external applications, or building applications that need to be resilient to failures.
+description: "DBOS TypeScript SDK for building reliable, fault-tolerant applications with durable workflows. Use this skill when writing TypeScript code with DBOS, creating workflows and steps, using queues, usi..."
 risk: safe
-source: https://docs.dbos.dev/
-license: MIT
-metadata:
-  author: dbos
-  version: "1.0.0"
-  organization: DBOS
-  date: January 2026
-  abstract: Comprehensive guide for building fault-tolerant TypeScript applications with DBOS. Covers workflows, steps, queues, communication patterns, and best practices for durable execution.
+source: "https://docs.dbos.dev/"
+date_added: "2026-02-27"
 ---
 
 # DBOS TypeScript Best Practices
@@ -109,37 +103,49 @@ references/queue-concurrency.md
 
 - https://docs.dbos.dev/
 - https://github.com/dbos-inc/dbos-transact-ts
+
+---
+
+<!-- AGI-INTEGRATION-START -->
+
 ## AGI Framework Integration
 
-### Qdrant Memory Integration
+> **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
+> Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-Before executing complex tasks with this skill:
+### Memory-First Protocol
+
+Retrieve prior API design decisions, database schema choices, and error handling patterns. Cache API response templates for consistent error formatting.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior backend/API context before starting
+python3 execution/memory_manager.py auto --query "API design patterns and architecture decisions for Dbos Typescript"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store backend/API decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags dbos-typescript <relevant-tags>
+  --content "API architecture: REST with HATEOAS, JWT auth, rate limiting at 100 req/min per tenant" \
+  --type decision --project <project> \
+  --tags dbos-typescript backend
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share API contract changes with frontend agents so they update their client code, and with QA agents for test coverage.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Implemented API endpoints — 5 new routes with OpenAPI spec and integration tests" \
+  --project <project>
+```
 
-### Local LLM Support
+### Agent Team: Code Review
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+After implementation, dispatch `code_review_team` for two-stage review (spec compliance + code quality) before merging.
+
+<!-- AGI-INTEGRATION-END -->

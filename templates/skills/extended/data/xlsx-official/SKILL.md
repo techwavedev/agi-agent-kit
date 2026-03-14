@@ -1,7 +1,9 @@
 ---
-name: xlsx
-description: "Comprehensive spreadsheet creation, editing, and analysis with support for formulas, formatting, data analysis, and visualization. When Claude needs to work with spreadsheets (.xlsx, .xlsm, .csv, .tsv, etc) for: (1) Creating new spreadsheets with formulas and formatting, (2) Reading or analyzing data, (3) Modify existing spreadsheets while preserving formulas, (4) Data analysis and visualization in spreadsheets, or (5) Recalculating formulas"
-license: Proprietary. LICENSE.txt has complete terms
+name: xlsx-official
+description: "Comprehensive spreadsheet creation, editing, and analysis with support for formulas, formatting, data analysis, and visualization. When Claude needs to work with spreadsheets (.xlsx, .xlsm, .csv, ...."
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 # Requirements for Outputs
@@ -288,43 +290,47 @@ The script returns JSON with error details:
 - Document data sources for hardcoded values
 - Include notes for key calculations and model sections
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Cache data schemas, transformation rules, and query patterns. BM25 excels at finding specific column names, table references, and SQL patterns.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior data engineering context before starting
+python3 execution/memory_manager.py auto --query "data processing patterns and pipeline configurations for Xlsx Official"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store data engineering decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags xlsx <relevant-tags>
+  --content "Data pipeline: ETL from PostgreSQL to Qdrant, 50K records/batch, incremental sync via updated_at" \
+  --type technical --project <project> \
+  --tags xlsx-official data
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share data schema changes with backend and frontend agents so they update their models accordingly.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Data pipeline implemented — ETL processing with validation, deduplication, and error recovery" \
+  --project <project>
+```
 
-### Local LLM Support
-
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+<!-- AGI-INTEGRATION-END -->

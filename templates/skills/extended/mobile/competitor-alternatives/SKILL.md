@@ -1,6 +1,9 @@
 ---
 name: competitor-alternatives
-description: "When the user wants to create competitor comparison or alternative pages for SEO and sales enablement. Also use when the user mentions 'alternative page,' 'vs page,' 'competitor comparison,' 'comparison page,' '[Product] vs [Product],' '[Product] alternative,' or 'competitive landing pages.' Covers four formats: singular alternative, plural alternatives, you vs competitor, and competitor vs competitor. Emphasizes deep research, modular content architecture, and varied section types beyond feature tables."
+description: "When the user wants to create competitor comparison or alternative pages for SEO and sales enablement. Also use when the user mentions 'alternative page,' 'vs page,' 'competitor comparison,' 'compa..."
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 # Competitor & Alternative Pages
@@ -196,9 +199,9 @@ Each format needs an index page that lists all pages of that type. These hub pag
 
 Looking to switch? See how [Your Product] compares to the tools you're evaluating:
 
-- **[Notion Alternative](/alternatives/notion)** — Better for teams who need [X]
-- **[Airtable Alternative](/alternatives/airtable)** — Better for teams who need [Y]
-- **[Monday Alternative](/alternatives/monday)** — Better for teams who need [Z]
+- **[Notion Alternative](#)** — Better for teams who need [X]
+- **[Airtable Alternative](#)** — Better for teams who need [Y]
+- **[Monday Alternative](#)** — Better for teams who need [Z]
 ```
 
 ---
@@ -224,9 +227,9 @@ Looking to switch? See how [Your Product] compares to the tools you're evaluatin
 
 Comparing your options? Our guides cover the top alternatives:
 
-- **[Best Notion Alternatives](/alternatives/notion-alternatives)** — 7 tools compared
-- **[Best Airtable Alternatives](/alternatives/airtable-alternatives)** — 6 tools compared
-- **[Best Monday Alternatives](/alternatives/monday-alternatives)** — 5 tools compared
+- **[Best Notion Alternatives](#)** — 7 tools compared
+- **[Best Airtable Alternatives](#)** — 6 tools compared
+- **[Best Monday Alternatives](#)** — 5 tools compared
 ```
 
 ---
@@ -250,17 +253,17 @@ Comparing your options? Our guides cover the top alternatives:
 
 ### [Your Product] vs. the Competition
 
-- **[[Your Product] vs Notion](/vs/notion)** — Best for [differentiator]
-- **[[Your Product] vs Airtable](/vs/airtable)** — Best for [differentiator]
-- **[[Your Product] vs Monday](/vs/monday)** — Best for [differentiator]
+- **[[Your Product] vs Notion](#)** — Best for [differentiator]
+- **[[Your Product] vs Airtable](#)** — Best for [differentiator]
+- **[[Your Product] vs Monday](#)** — Best for [differentiator]
 
 ### Other Comparisons
 
 Evaluating tools we compete with? We've done the research:
 
-- **[Notion vs Airtable](/compare/notion-vs-airtable)**
-- **[Notion vs Monday](/compare/notion-vs-monday)**
-- **[Airtable vs Monday](/compare/airtable-vs-monday)**
+- **[Notion vs Airtable](#)**
+- **[Notion vs Monday](#)**
+- **[Airtable vs Monday](#)**
 ```
 
 ---
@@ -749,43 +752,47 @@ If you need more context:
 - **seo-audit**: For optimizing competitor pages
 - **schema-markup**: For FAQ and comparison schema
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve platform-specific patterns (iOS/Android), build configurations, and device compatibility notes from prior sessions.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior mobile development context before starting
+python3 execution/memory_manager.py auto --query "mobile architecture and platform-specific patterns for Competitor Alternatives"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store mobile development decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags competitor-alternatives <relevant-tags>
+  --content "Mobile: React Native with Expo, offline-first with SQLite sync, push notifications via FCM" \
+  --type decision --project <project> \
+  --tags competitor-alternatives mobile
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share API contract changes with backend agents and coordinate release timing with QA agents.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Mobile feature implemented — cross-platform component with native performance optimizations" \
+  --project <project>
+```
 
-### Local LLM Support
-
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+<!-- AGI-INTEGRATION-END -->

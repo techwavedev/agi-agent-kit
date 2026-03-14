@@ -63,6 +63,19 @@ try:
 except ImportError:
     _BM25_AVAILABLE = False
 
+# Agent identity for write signing (optional — graceful if unavailable)
+try:
+    _IDENTITY_SCRIPTS = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__))))),
+        "execution"
+    )
+    sys.path.insert(0, _IDENTITY_SCRIPTS)
+    from agent_identity import load_identity, sign_memory_payload
+    _SIGNING_AVAILABLE = True
+except ImportError:
+    _SIGNING_AVAILABLE = False
+
 # Hybrid search toggle
 HYBRID_SEARCH = os.environ.get("HYBRID_SEARCH", "true").lower() in ("true", "1", "yes")
 
@@ -257,7 +270,25 @@ def store_memory(
         "shared": shared,
         **(metadata or {})
     }
-    
+
+    # Sign the write if identity is available
+    if _SIGNING_AVAILABLE:
+        try:
+            identity = load_identity()
+            if identity:
+                sig_data = sign_memory_payload(
+                    content=content,
+                    memory_type=memory_type,
+                    timestamp=payload["timestamp"],
+                    agent_id=identity["agent_id"],
+                )
+                payload["_signature"] = sig_data["signature"]
+                payload["_agent_id"] = sig_data["agent_id"]
+                payload["_content_hash"] = sig_data["content_hash"]
+                payload["_signed_fields"] = sig_data["signed_fields"]
+        except Exception:
+            pass  # Signing failure must never block writes
+
     upsert_payload = {
         "points": [
             {
@@ -308,6 +339,8 @@ def store_memory(
         "agent_id": agt_id,
         "shared": shared,
         "bm25_indexed": bm25_status,
+        "signed": "_signature" in payload,
+        "agent_id": payload.get("_agent_id"),
         "result": result
     }
 

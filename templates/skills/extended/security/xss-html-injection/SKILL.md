@@ -1,9 +1,10 @@
 ---
-name: Cross-Site Scripting and HTML Injection Testing
-description: This skill should be used when the user asks to "test for XSS vulnerabilities", "perform cross-site scripting attacks", "identify HTML injection flaws", "exploit client-side injection vulnerabilities", "steal cookies via XSS", or "bypass content security policies". It provides comprehensive techniques for detecting, exploiting, and understanding XSS and HTML injection attack vectors in web applications.
-metadata:
-  author: zebbern
-  version: "1.1"
+name: xss-html-injection
+description: "This skill should be used when the user asks to \"test for XSS vulnerabilities\", \"perform cross-site scripting attacks\", \"identify HTML injection flaws\", \"exploit client-side injection..."
+risk: unknown
+source: community
+author: zebbern
+date_added: "2026-02-27"
 ---
 
 # Cross-Site Scripting and HTML Injection Testing
@@ -498,43 +499,55 @@ Content-Security-Policy: script-src 'self' https://cdn.trusted.com
 | CSP blocking payloads | Find JSONP on whitelisted domains; check for unsafe-inline; test base-uri bypass |
 | WAF blocking requests | Use encoding variations; fragment payload; null bytes; case variations |
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Cache compliance check results to avoid re-running expensive AWS API calls. Retrieve prior audit findings to track remediation progress across sessions.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior security context before starting
+python3 execution/memory_manager.py auto --query "prior security audit results for Xss Html Injection"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store security decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags Cross-Site Scripting and HTML Injection Testing <relevant-tags>
+  --content "Audit findings: 3 critical IAM misconfigurations found and remediated" \
+  --type technical --project <project> \
+  --tags xss-html-injection security
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share security findings with other agents so they avoid introducing vulnerabilities in their code changes.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Completed security audit — 3 critical findings fixed, compliance score 94%" \
+  --project <project>
+```
 
-### Local LLM Support
+### Signed Audit Trail
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+All security findings are cryptographically signed with the agent's Ed25519 identity, providing tamper-proof audit logs for compliance reporting.
+
+### Semantic Cache for Compliance
+
+Cache compliance check results (`semantic_cache.py`) to avoid redundant AWS API calls. Cache hit at similarity >0.92 returns prior results instantly.
+
+<!-- AGI-INTEGRATION-END -->

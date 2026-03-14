@@ -1,6 +1,9 @@
 ---
 name: app-store-optimization
-description: Complete App Store Optimization (ASO) toolkit for researching, optimizing, and tracking mobile app performance on Apple App Store and Google Play Store
+description: "Complete App Store Optimization (ASO) toolkit for researching, optimizing, and tracking mobile app performance on Apple App Store and Google Play Store"
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 # App Store Optimization (ASO) Skill
@@ -402,43 +405,47 @@ This skill is based on current Apple App Store and Google Play Store requirement
 - iOS/Android version adoption rates (affects device testing)
 - Store algorithm changes (follow ASO blogs and communities)
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve platform-specific patterns (iOS/Android), build configurations, and device compatibility notes from prior sessions.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior mobile development context before starting
+python3 execution/memory_manager.py auto --query "mobile architecture and platform-specific patterns for App Store Optimization"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store mobile development decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags app-store-optimization <relevant-tags>
+  --content "Mobile: React Native with Expo, offline-first with SQLite sync, push notifications via FCM" \
+  --type decision --project <project> \
+  --tags app-store-optimization mobile
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share API contract changes with backend agents and coordinate release timing with QA agents.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Mobile feature implemented — cross-platform component with native performance optimizations" \
+  --project <project>
+```
 
-### Local LLM Support
-
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+<!-- AGI-INTEGRATION-END -->
