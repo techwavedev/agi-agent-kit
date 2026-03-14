@@ -70,6 +70,15 @@ try:
 except ImportError:
     _BLOCKCHAIN_AVAILABLE = False
 
+# Import agent events (optional — graceful if unavailable)
+try:
+    from agent_events import (
+        publish_event, health_check as pulsar_health
+    )
+    _EVENTS_AVAILABLE = True
+except ImportError:
+    _EVENTS_AVAILABLE = False
+
 # Import BM25 index (optional — graceful if unavailable)
 try:
     from bm25_index import BM25Index
@@ -150,6 +159,13 @@ def health_check() -> dict:
             result["blockchain"] = {"status": "not_available"}
     elif MEMORY_MODE == "pro":
         result["blockchain"] = {"status": "module_not_loaded"}
+
+    # Check Pulsar events (team/pro — optional)
+    if _EVENTS_AVAILABLE and _TEAM_FEATURES:
+        try:
+            result["events"] = pulsar_health()
+        except Exception:
+            result["events"] = {"status": "not_available", "optional": True}
 
     return result
 
@@ -381,6 +397,22 @@ Examples:
                     "message": f"Blockchain auth requires MEMORY_MODE=pro (current: {MEMORY_MODE})",
                     "graceful_degradation": True
                 }
+
+            # Publish event to Pulsar (team/pro — fire-and-forget)
+            if _EVENTS_AVAILABLE and _TEAM_FEATURES and args.project:
+                try:
+                    event_type = "decision_made" if args.type == "decision" else \
+                                 "code_written" if args.type == "code" else \
+                                 "error_resolved" if args.type == "error" else "memory_stored"
+                    evt = publish_event(
+                        project=args.project, event_type=event_type,
+                        content=args.content[:200],  # Truncate for event
+                        developer_id=getattr(args, "developer", None),
+                        agent_id=getattr(args, "agent", None)
+                    )
+                    result["event"] = evt
+                except Exception:
+                    result["event"] = {"status": "skipped", "reason": "Pulsar unavailable"}
 
             print(json.dumps(result, indent=2))
             sys.exit(0)

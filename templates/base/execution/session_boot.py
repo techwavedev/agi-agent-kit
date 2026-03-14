@@ -104,6 +104,20 @@ def check_blockchain() -> dict:
     return result
 
 
+def check_pulsar() -> dict:
+    """Check Apache Pulsar connectivity (optional)."""
+    result = {"status": "not_running", "optional": True}
+    try:
+        pulsar_url = os.environ.get("PULSAR_HTTP_URL", "http://localhost:8080")
+        req = Request(f"{pulsar_url}/admin/v2/brokers/healthcheck", method="GET")
+        with urlopen(req, timeout=5) as resp:
+            if resp.status == 200:
+                result["status"] = "ok"
+    except Exception:
+        pass
+    return result
+
+
 def run_session_init() -> bool:
     """Run session_init.py to create collections."""
     init_script = PROJECT_DIR / "execution" / "session_init.py"
@@ -199,6 +213,10 @@ def main():
     blockchain = check_blockchain()
     report["blockchain"] = blockchain
 
+    # Step 5: Check Pulsar (optional — does not affect readiness)
+    pulsar = check_pulsar()
+    report["pulsar"] = pulsar
+
     # Final readiness
     qdrant = report["qdrant"]
     ollama = report["ollama"]
@@ -239,6 +257,11 @@ def main():
                 print(f"   🔗 Aries: connected (v{bc.get('version')}, {bc.get('label')})")
             elif MEMORY_MODE == "pro":
                 print(f"   ⚠️  Aries: not running (start: docker compose -f docker-compose.aries.yml up -d)")
+            ps = report.get("pulsar", {})
+            if ps.get("status") == "ok":
+                print(f"   📡 Pulsar: connected (real-time events)")
+            elif MEMORY_MODE in ("team", "pro"):
+                print(f"   ℹ️  Pulsar: not running (optional: docker compose -f docker-compose.pulsar.yml up -d)")
         else:
             print("❌ Memory system not ready:")
             for issue in report["issues"]:
