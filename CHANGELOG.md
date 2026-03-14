@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.4] - 2026-03-14
+
+### Fixed
+
+- **CI publish pipeline** — `release_gate.py` no longer hangs on interactive prompts when running in GitHub Actions. All `input()` calls are now CI-aware: auto-fail with a clear error message in non-interactive environments.
+- **CHANGELOG version check** — release gate now exits non-zero with an actionable message instead of prompting when the version is missing from CHANGELOG.
+
 ## [1.6.3] - 2026-03-14
 
 ### Added
