@@ -46,7 +46,7 @@ sys.path.insert(0, SKILL_DIR)
 
 from blockchain_auth import (
     content_hash, sign_content, verify_signature,
-    AriesClient, health_check, initialize,
+    AriesClient, QdrantAuthStore, health_check, initialize,
     register_identity, anchor_hash, verify_hash,
     grant_access, check_access, get_audit_trail,
     ALL_STREAMS
@@ -287,17 +287,15 @@ def test_audit_trail(t: TestResults):
 
 def test_graceful_degradation(t: TestResults):
     """
-    When Aries is unreachable, system degrades gracefully.
-    We simulate this by using a wrong URL.
+    When Qdrant/Aries is unreachable, system degrades gracefully.
+    We simulate this by using wrong URLs.
     """
-    bad_client = AriesClient(url="http://localhost:19999")
-    t.check("bad client reports unavailable", bad_client.is_available() is False)
+    bad_aries = AriesClient(url="http://localhost:19999")
+    t.check("bad Aries client reports unavailable", bad_aries.is_available() is False)
 
-    t.check(
-        "graceful degradation concept: auth DB works without Aries",
-        True,
-        "SQLite auth DB is always available regardless of Aries status"
-    )
+    bad_store = QdrantAuthStore(url="http://localhost:19999")
+    t.check("bad Qdrant auth store reports unavailable", bad_store.is_available() is False,
+            "distributed auth degrades gracefully when Qdrant is unreachable")
 
 
 # ═══════════════════════════════════════════════════════════════
