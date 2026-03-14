@@ -669,7 +669,7 @@ Retrieve prior error resolutions and debugging strategies. The hybrid search exc
 
 ```bash
 # Check for prior debugging/diagnostics context before starting
-python3 execution/memory_manager.py auto --query "error patterns and debugging solutions for Systematic Debugging"
+python3 execution/memory_manager.py auto --query "error patterns and debugging solutions for Writing Skills"
 ```
 
 ### Storing Results
@@ -680,7 +680,7 @@ After completing work, store debugging/diagnostics decisions for future sessions
 python3 execution/memory_manager.py store \
   --content "Root cause: memory leak from unclosed DB connections in pool — fixed with context manager" \
   --type error --project <project> \
-  --tags systematic-debugging debugging
+  --tags writing-skills debugging
 ```
 
 ### Multi-Agent Collaboration
