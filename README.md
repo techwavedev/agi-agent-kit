@@ -80,13 +80,16 @@ python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
 | Feature                       | Description                                                                                   |
 | ----------------------------- | --------------------------------------------------------------------------------------------- |
 | **Deterministic Execution**   | Separates business logic (Python scripts) from AI reasoning (Directives)                      |
-| **Modular Skill System**      | 1,191 plug-and-play skills across 3 tiers, organized in 16 domain categories                  |
+| **Modular Skill System**      | 1,191+ plug-and-play skills across 3 tiers, organized in 16 domain categories                 |
+| **Memory Mode Tiers**         | Solo → Team → Pro: start simple, add multi-tenancy and auth as needed — no data migration     |
+| **Distributed Agent Auth**    | HMAC-SHA256 signing, hash anchoring, project access control via shared Qdrant (Hyperledger Aries optional) |
+| **Real-Time Agent Events**    | Apache Pulsar event bus for push notifications between agents — graceful degradation if unavailable |
+| **Hybrid Memory**             | Qdrant vectors + BM25 keywords with weighted score merge (95% token savings)                  |
+| **Platform-Adaptive**         | Auto-detects Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL, Antigravity |
+| **Multi-Agent Orchestration** | Agent Teams, subagents, Powers, or sequential personas — adapts to platform                   |
 | **Structured Plan Execution** | Batch or subagent-driven execution with two-stage review (spec + quality)                     |
 | **TDD Enforcement**           | Iron-law RED-GREEN-REFACTOR cycle — no production code without failing test                   |
 | **Verification Gates**        | Evidence before claims — no completion without fresh verification output                      |
-| **Platform-Adaptive**         | Auto-detects Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL, Antigravity |
-| **Multi-Agent Orchestration** | Agent Teams, subagents, Powers, or sequential personas — adapts to platform                   |
-| **Hybrid Memory**             | Qdrant vectors + BM25 keywords with weighted score merge (95% token savings)                  |
 | **Self-Healing Workflows**    | Agents read error logs, patch scripts, and update directives automatically                    |
 | **One-Shot Setup**            | Platform detection + project stack scan + auto-configuration in one command                   |
 
@@ -266,6 +269,87 @@ The system operates on three layers:
 ```
 
 **Why?** LLMs are probabilistic. 90% accuracy per step = 59% success over 5 steps. By pushing complexity into deterministic scripts, we achieve reliable execution.
+
+---
+
+## 🔐 Distributed Agent System
+
+The framework supports fully distributed agent deployments where multiple agents across different machines share context, authenticate writes, and receive real-time notifications — all through the shared Qdrant instance.
+
+### Memory Mode Tiers
+
+Set `MEMORY_MODE` in `.env` to choose your tier. All modes are backward-compatible — upgrade anytime without data migration.
+
+| Mode | Use Case | Infrastructure | Key Feature |
+|---|---|---|---|
+| **Solo** | Single developer, one agent | Ollama + Qdrant | Full hybrid search, semantic cache |
+| **Team** | Multiple agents sharing context | Same as Solo | Developer isolation + shared memories (`--shared`) |
+| **Pro** | Enterprise / high-trust | Same + optional Aries | Signed writes, hash anchoring, access control, audit trail |
+
+```bash
+# Solo: just works
+MEMORY_MODE=solo python3 execution/session_boot.py --auto-fix
+
+# Team: agents share context, each has private + shared memories
+MEMORY_MODE=team python3 execution/memory_manager.py store \
+  --content "Use Redis for session cache" --type decision --project myapp --shared
+
+# Pro: signed writes with tamper detection and access control
+MEMORY_MODE=pro python3 execution/blockchain_auth.py init
+python3 execution/blockchain_auth.py register --entity-type developer --entity-id you@co.com
+python3 execution/blockchain_auth.py grant --entity-id you@co.com --project myapp --permissions read,write
+python3 execution/memory_manager.py store --content "Decision" --type decision --project myapp --auth
+# → {"status": "stored", "signature": "...", "blockchain_anchor": {"status": "anchored"}, "event": {"status": "published"}}
+```
+
+### Blockchain Authentication (Pro Mode)
+
+Pro mode adds cryptographic verification to every write:
+
+- **HMAC-SHA256 signing** — every memory gets a signature at write-time
+- **Hash anchoring** — content hash stored in Qdrant `agent_auth` collection for tamper detection
+- **Project access control** — grant read/write per entity per project
+- **Audit trail** — who wrote what, when, with verification status
+- **W3C DID identity** (optional) — via Hyperledger Aries ACA-Py 1.5.0 (Apache 2.0)
+
+All auth data is stored in the shared Qdrant instance — no separate database needed. See [docs/blockchain-auth.md](./docs/blockchain-auth.md).
+
+### Real-Time Agent Events (Apache Pulsar)
+
+Optional add-on for team/pro modes. Without Pulsar, agents poll Qdrant on each query (~10ms). With Pulsar, events are pushed instantly.
+
+```bash
+# Start Pulsar (single container, ~256MB heap)
+docker compose -f docker-compose.pulsar.yml up -d
+pip install pulsar-client
+
+# Events auto-publish on memory store
+python3 execution/memory_manager.py store \
+  --content "Switched to PostgreSQL" --type decision --project myapp
+# → "event": {"status": "published", "topic": "persistent://agi/memory/myapp"}
+```
+
+If Pulsar is down, events are silently dropped — Qdrant stores always succeed. See [docs/agent-events.md](./docs/agent-events.md).
+
+### Architecture (Distributed)
+
+```text
+┌─ Machine 1 ──────────────────┐    ┌─ Machine 2 ──────────────────┐
+│  Agent A (Claude)            │    │  Agent B (Gemini)            │
+│  └─ memory_manager.py        │    │  └─ memory_manager.py        │
+│     ├─ Qdrant (shared) ──────┼────┼─── Qdrant (shared)          │
+│     ├─ BM25 (auto-synced) ◄──┼────┼─── BM25 (auto-synced)       │
+│     └─ Pulsar events ────────┼────┼──► Pulsar events             │
+└──────────────────────────────┘    └──────────────────────────────┘
+```
+
+Every component is sourced from the shared Qdrant:
+- **Memories & cache** — Qdrant `agent_memory` + `semantic_cache`
+- **Auth data** — Qdrant `agent_auth` (pro mode)
+- **BM25 keyword index** — local SQLite, auto-rebuilt from Qdrant on each `session_boot`
+- **Events** — Apache Pulsar (optional, graceful degradation)
+
+For full details: [docs/memory-modes.md](./docs/memory-modes.md) · [docs/blockchain-auth.md](./docs/blockchain-auth.md) · [docs/agent-events.md](./docs/agent-events.md)
 
 ---
 
@@ -482,7 +566,10 @@ Use these keywords, commands, and phrases to trigger specific capabilities:
 ## 📚 Documentation
 
 - **[AGENTS.md](./AGENTS.md)** — Complete architecture and operating principles
-- **[skills/SKILLS_CATALOG.md](./templates/skills/SKILLS_CATALOG.md)** — Skill catalog
+- **[docs/memory-modes.md](./docs/memory-modes.md)** — Memory mode tiers (Solo / Team / Pro)
+- **[docs/blockchain-auth.md](./docs/blockchain-auth.md)** — Distributed auth with Hyperledger Aries
+- **[docs/agent-events.md](./docs/agent-events.md)** — Real-time events with Apache Pulsar
+- **[skills/SKILLS_CATALOG.md](./skills/SKILLS_CATALOG.md)** — Skill catalog
 - **[CHANGELOG.md](./CHANGELOG.md)** — Version history
 - **[THIRD-PARTY-LICENSES.md](./THIRD-PARTY-LICENSES.md)** — Third-party attributions
 
@@ -504,20 +591,22 @@ If these community skills help you, consider [starring the original repo](https:
 
 ---
 
-## �️ Roadmap
+## 🗺️ Roadmap
 
-| Feature                             | Status     | Description                                                                                                                                                                                                                                                           |
-| ----------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Federated Agent Memory**          | 🔬 Design  | Cross-agent knowledge sharing via project-scoped Qdrant collections. Agents working on the same project read each other's decisions, errors, and patterns — building collective intelligence across sessions and platforms.                                           |
-| **Blockchain Agent Trust & Tenancy** | 🔬 Design  | Local, free blockchain layer (Hyperledger Fabric / MultiChain) for agent identity, trust, and tenant isolation. Agents sign writes, verify authorship before consuming shared context, and access is scoped to three tiers: Global (shared patterns, token savings), Tenant (project/team-locked), and Private (single-agent). Zero performance tax — validation is async at write-time, never blocking reads. |
-| **Event-Driven Agent Streaming**    | 🔬 Design  | Real-time cross-machine agent communication via Apache Pulsar. Agents publish decisions and observations to tenant-scoped topics with built-in multi-tenancy, enabling reactive workflows — e.g., a security agent triggers remediation when a vulnerability scan agent publishes findings. Pulsar's unified pub/sub + queuing and native geo-replication make it ideal for distributed agent meshes. |
-| **Control Tower Orchestrator**      | 🚧 Active  | Central dispatcher that tracks all active agents, sub-agents, teams, and LLMs across machines. Provides `register`, `heartbeat`, `assign`, `reassign`, and `dashboard` commands for global visibility and task distribution via Qdrant. |
-| **Secrets Management (Vault)**      | 🔬 Design  | HashiCorp Vault integration for secure secret sharing between agents. Agents authenticate via their blockchain identity (Ed25519 keypair), access tenant-scoped secrets (API keys, tokens, credentials), and never store secrets in Qdrant or on disk. Vault's dynamic secrets and lease-based access ensure zero long-lived credentials. |
-| **Workflow Engine**                 | 📋 Planned | Execute `data/workflows.json` playbooks as guided multi-skill sequences with progress tracking and branching logic.                                                                                                                                                   |
+| Feature                             | Status       | Description                                                                                                                                                                                                               |
+| ----------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Federated Agent Memory**          | ✅ Shipped    | Cross-agent knowledge sharing via shared Qdrant. Multi-tenancy with developer isolation, `--shared` flag for team visibility. 15/15 tests. ([docs](./docs/memory-modes.md))                                               |
+| **Blockchain Agent Trust & Tenancy** | ✅ Shipped   | HMAC-SHA256 signed writes, hash anchoring, project access control, audit trail — all via shared Qdrant `agent_auth` collection. Optional W3C DID via Hyperledger Aries ACA-Py 1.5.0. 36/36 tests. ([docs](./docs/blockchain-auth.md)) |
+| **Event-Driven Agent Streaming**    | ✅ Shipped    | Apache Pulsar event bus with auto-publish on `memory_manager.py store`. Project-scoped topics, graceful degradation. 19/19 tests. ([docs](./docs/agent-events.md))                                                        |
+| **Memory Mode Tiers**               | ✅ Shipped    | Solo → Team → Pro progression. Backward-compatible upgrades, no data migration. BM25 auto-synced from shared Qdrant on boot. ([docs](./docs/memory-modes.md))                                                            |
+| **Control Tower Orchestrator**      | 🚧 Active    | Basic dispatcher for agent registration and heartbeat via Qdrant (`control_tower.py`). Needs dedicated docs, test coverage, and integration with `session_boot`.                                                          |
+| **Workflow Engine**                 | 📋 Planned   | Execute `data/workflows.json` playbooks as guided multi-skill sequences with progress tracking. Data schema exists, execution script not yet implemented.                                                                 |
+| **Platform-Adaptive Orchestration** | 🔬 Design    | Use platform-native orchestration when available (Anthropic Agent Teams, Gemini sub-agents) and fall back to Qdrant-based Control Tower dispatch otherwise. Unified interface across providers.                            |
+| **Secrets Management (Vault)**      | 🔬 Design    | HashiCorp Vault integration for secure secret sharing. Agents authenticate via Ed25519 keypair, access tenant-scoped secrets. Zero long-lived credentials.                                                                |
 
 ---
 
-## �🛡️ Security
+## 🛡️ Security
 
 This package includes a pre-flight security scanner that checks for private terms before publishing. All templates are sanitized for public use.
 
