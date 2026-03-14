@@ -1,15 +1,8 @@
 ---
 name: context-optimization
-description: "Apply compaction, masking, and caching strategies"
-source: "https://github.com/muratcankoylan/Agent-Skills-for-Context-Engineering/tree/main/skills/context-optimization"
-risk: safe
+description: This skill should be used when the user asks to "optimize context", "reduce token costs", "improve context efficiency", "implement KV-cache optimization", "partition context", or mentions context limits, observation masking, context budgeting, or extending effective context...
 ---
 
-## When to Use This Skill
-
-Apply compaction, masking, and caching strategies
-
-Use this skill when working with apply compaction, masking, and caching strategies.
 # Context Optimization Techniques
 
 Context optimization extends the effective capacity of limited context windows through strategic compression, masking, caching, and partitioning. The goal is not to magically increase context windows but to make better use of available capacity. Effective optimization can double or triple effective context capacity without requiring larger models or longer contexts.
@@ -164,7 +157,7 @@ This skill builds on context-fundamentals and context-degradation. It connects t
 ## References
 
 Internal reference:
-- [Optimization Techniques Reference](./references/optimization_techniques.md) - Detailed technical reference
+- Optimization Techniques Reference - Detailed technical reference
 
 Related skills in this collection:
 - context-fundamentals - Context basics
@@ -185,43 +178,52 @@ External resources:
 **Author**: Agent Skills for Context Engineering Contributors
 **Version**: 1.0.0
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior error resolutions and debugging strategies. The hybrid search excels here — BM25 finds exact error codes/stack traces while vectors find semantically similar past issues.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior debugging/diagnostics context before starting
+python3 execution/memory_manager.py auto --query "error patterns and debugging solutions for Context Optimization"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store debugging/diagnostics decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags context-optimization <relevant-tags>
+  --content "Root cause: memory leak from unclosed DB connections in pool — fixed with context manager" \
+  --type error --project <project> \
+  --tags context-optimization debugging
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Store error resolutions so any agent encountering the same issue retrieves the fix instantly instead of re-debugging.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Debugged and resolved critical issue — root cause documented for future reference" \
+  --project <project>
+```
 
-### Local LLM Support
+### Self-Annealing Loop
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+When this skill resolves an error, store the fix in memory AND update the relevant directive. The system gets stronger with each resolved issue.
+
+### BM25 Exact Match
+
+Error codes, stack traces, and log messages are best found via BM25 keyword search. The hybrid system automatically uses exact matching for these patterns.
+
+<!-- AGI-INTEGRATION-END -->

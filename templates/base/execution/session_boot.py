@@ -36,6 +36,8 @@ QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 EMBEDDING_MODEL = "nomic-embed-text"
 PROJECT_DIR = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+MEMORY_MODE = os.environ.get("MEMORY_MODE", "team").lower()
+MODE_LABELS = {"solo": "Solo (Ollama+Qdrant)", "team": "Team (multi-tenancy)", "pro": "Pro (blockchain auth)"}
 
 
 def check_qdrant() -> dict:
@@ -81,6 +83,41 @@ def check_ollama() -> dict:
     return result
 
 
+def check_blockchain() -> dict:
+    """Check Aries (ACA-Py) connectivity (optional — does not affect readiness)."""
+    result = {"status": "not_running", "optional": True, "agent": "ACA-Py (Hyperledger Aries)"}
+    try:
+        aries_url = os.environ.get("ARIES_ADMIN_URL", "http://localhost:8031")
+        aries_key = os.environ.get("ARIES_ADMIN_KEY", "changeme_set_in_dotenv")
+        req = Request(
+            f"{aries_url}/status",
+            headers={"X-API-Key": aries_key},
+            method="GET"
+        )
+        with urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode())
+            result["status"] = "ok"
+            result["version"] = data.get("version", "unknown")
+            result["label"] = data.get("label", "unknown")
+    except Exception:
+        pass
+    return result
+
+
+def check_pulsar() -> dict:
+    """Check Apache Pulsar connectivity (optional)."""
+    result = {"status": "not_running", "optional": True}
+    try:
+        pulsar_url = os.environ.get("PULSAR_HTTP_URL", "http://localhost:8080")
+        req = Request(f"{pulsar_url}/admin/v2/brokers/healthcheck", method="GET")
+        with urlopen(req, timeout=5) as resp:
+            if resp.status == 200:
+                result["status"] = "ok"
+    except Exception:
+        pass
+    return result
+
+
 def run_session_init() -> bool:
     """Run session_init.py to create collections."""
     init_script = PROJECT_DIR / "execution" / "session_init.py"
@@ -95,6 +132,33 @@ def run_session_init() -> bool:
         return proc.returncode == 0
     except Exception:
         return False
+
+
+def check_identity(auto_fix: bool = False) -> dict:
+    """Check/create agent identity keypair."""
+    result = {"status": "not_found", "agent_id": None}
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from agent_identity import load_identity, get_or_create_identity
+
+        identity = load_identity()
+        if identity:
+            result["status"] = "ok"
+            result["agent_id"] = identity["agent_id"]
+            result["public_key_hex"] = identity["public_key_hex"]
+        elif auto_fix:
+            identity = get_or_create_identity()
+            result["status"] = "created"
+            result["agent_id"] = identity["agent_id"]
+            result["public_key_hex"] = identity["public_key_hex"]
+        else:
+            result["status"] = "not_found"
+    except ImportError:
+        result["status"] = "missing_cryptography"
+        result["hint"] = "pip install cryptography"
+    except Exception as e:
+        result["status"] = f"error: {e}"
+    return result
 
 
 def pull_model() -> bool:
@@ -122,6 +186,7 @@ def main():
     report = {
         "qdrant": {},
         "ollama": {},
+        "blockchain": {},
         "memory_ready": False,
         "actions_taken": [],
         "issues": [],
@@ -152,6 +217,15 @@ def main():
         else:
             report["issues"].append(f"Embedding model missing. Run: ollama pull {EMBEDDING_MODEL}")
 
+    # Step 2.5: Check agent identity
+    identity = check_identity(args.auto_fix)
+    report["identity"] = identity
+    if identity["status"] == "created":
+        report["actions_taken"].append(f"Generated agent identity: {identity['agent_id'][:16]}...")
+    elif identity["status"] not in ("ok", "created"):
+        report["issues"].append(f"Agent identity: {identity['status']}" +
+                                (f" — {identity.get('hint', '')}" if identity.get("hint") else ""))
+
     # Step 3: Initialize collections if needed
     if qdrant["status"] == "ok" and ollama["status"] == "ok" and ollama["has_model"]:
         agent_mem = qdrant["collections"].get("agent_memory", {})
@@ -170,6 +244,44 @@ def main():
                     report["issues"].append("Failed to initialize collections")
             else:
                 report["issues"].append("Collections missing. Run: python3 execution/session_init.py")
+
+    # Step 4: Check blockchain (optional — does not affect readiness)
+    blockchain = check_blockchain()
+    report["blockchain"] = blockchain
+
+    # Step 5: Check Pulsar (optional — does not affect readiness)
+    pulsar = check_pulsar()
+    report["pulsar"] = pulsar
+
+    # Step 6: Auto-sync BM25 index from shared Qdrant (ensures keyword search works on every machine)
+    bm25_result = {"status": "skipped"}
+    if report.get("qdrant", {}).get("status") == "ok":
+        try:
+            import subprocess
+            bm25_script = PROJECT_DIR / "execution" / "memory_manager.py"
+            proc = subprocess.run(
+                ["python3", str(bm25_script), "bm25-sync"],
+                capture_output=True, text=True, timeout=60,
+                cwd=str(PROJECT_DIR)
+            )
+            if proc.returncode == 0:
+                import json as _json
+                bm25_result = _json.loads(proc.stdout)
+            else:
+                bm25_result = {"status": "error", "message": proc.stderr[:200]}
+        except Exception as e:
+            bm25_result = {"status": "error", "message": str(e)}
+    report["bm25_sync"] = bm25_result
+    # Step 4: Register with Control Tower (best-effort)
+    try:
+        from control_tower import register_agent
+        agent_name = os.environ.get("AGENT_NAME", "claude")
+        ct_project = os.environ.get("AGENT_PROJECT", None)
+        ct_result = register_agent(agent_name, project=ct_project)
+        report["control_tower"] = {"status": "registered", "agent_id": ct_result.get("agent_id")}
+        report["actions_taken"].append(f"Registered with Control Tower as {agent_name}")
+    except Exception:
+        report["control_tower"] = {"status": "skipped"}
 
     # Final readiness
     qdrant = report["qdrant"]
@@ -191,8 +303,11 @@ def main():
     )
     report["summary"] = {
         "ready": report["memory_ready"],
+        "memory_mode": MEMORY_MODE,
+        "mode_label": MODE_LABELS.get(MEMORY_MODE, MEMORY_MODE),
         "total_memories": agent_mem.get("points", 0),
         "total_cached": sem_cache.get("points", 0),
+        "agent_id": identity.get("agent_id"),
     }
 
     if args.json_output:
@@ -201,7 +316,24 @@ def main():
         if report["memory_ready"]:
             mem_pts = agent_mem.get("points", 0)
             cache_pts = sem_cache.get("points", 0)
+            mode_label = MODE_LABELS.get(MEMORY_MODE, MEMORY_MODE)
             print(f"✅ Memory system ready — {mem_pts} memories, {cache_pts} cached responses")
+            print(f"   Mode: {mode_label}")
+            bc = report.get("blockchain", {})
+            if bc.get("status") == "ok":
+                print(f"   🔗 Aries: connected (v{bc.get('version')}, {bc.get('label')})")
+            elif MEMORY_MODE == "pro":
+                print(f"   ⚠️  Aries: not running (start: docker compose -f docker-compose.aries.yml up -d)")
+            ps = report.get("pulsar", {})
+            if ps.get("status") == "ok":
+                print(f"   📡 Pulsar: connected (real-time events)")
+            elif MEMORY_MODE in ("team", "pro"):
+                print(f"   ℹ️  Pulsar: not running (optional: docker compose -f docker-compose.pulsar.yml up -d)")
+            bm25 = report.get("bm25_sync", {})
+            if bm25.get("status") == "synced":
+                print(f"   🔍 BM25: synced from Qdrant ({bm25.get('indexed', 0)} indexed, {bm25.get('total', 0)} total)")
+            if identity.get("agent_id"):
+                print(f"   Agent ID: {identity['agent_id'][:16]}...")
         else:
             print("❌ Memory system not ready:")
             for issue in report["issues"]:

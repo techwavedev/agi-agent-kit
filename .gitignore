@@ -13,25 +13,13 @@ token.json
 __pycache__/
 *.py[cod]
 venv/
+.venv/
 
 # Private / Internal
 .agent/
 .claude/
 .gemini/
-AGENTS.md
-CLAUDE.md
-GEMINI.md
-OPENCODE.md
-COPILOT.md
-OPENCLAW.md
-skills/
-execution/
-directives/
-scripts/
-skill-creator/
 *.skill
-requirements.txt
-verify_public_release.py
 
 
 # IDE/OS
@@ -42,9 +30,7 @@ verify_public_release.py
 
 #documentation and reports
 reports
-
 techwavedev-agi-agent-kit-*.tgz*.code-workspace
-directives
 update_skills_memory.py
 test_output/
 __pycache__/

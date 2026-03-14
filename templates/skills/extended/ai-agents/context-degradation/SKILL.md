@@ -1,15 +1,8 @@
 ---
 name: context-degradation
-description: "Recognize patterns of context failure: lost-in-middle, poisoning, distraction, and clash"
-source: "https://github.com/muratcankoylan/Agent-Skills-for-Context-Engineering/tree/main/skills/context-degradation"
-risk: safe
+description: This skill should be used when the user asks to "diagnose context problems", "fix lost-in-middle issues", "debug agent failures", "understand context poisoning", or mentions context degradation, attention patterns, context clash, context confusion, or agent performance...
 ---
 
-## When to Use This Skill
-
-Recognize patterns of context failure: lost-in-middle, poisoning, distraction, and clash
-
-Use this skill when working with recognize patterns of context failure: lost-in-middle, poisoning, distraction, and clash.
 # Context Degradation Patterns
 
 Language models exhibit predictable degradation patterns as context length increases. Understanding these patterns is essential for diagnosing failures and designing resilient systems. Context degradation is not a binary state but a continuum of performance degradation that manifests in several distinct ways.
@@ -216,7 +209,7 @@ This skill builds on context-fundamentals and should be studied after understand
 ## References
 
 Internal reference:
-- [Degradation Patterns Reference](./references/patterns.md) - Detailed technical reference
+- Degradation Patterns Reference - Detailed technical reference
 
 Related skills in this collection:
 - context-fundamentals - Context basics
@@ -237,43 +230,52 @@ External resources:
 **Author**: Agent Skills for Context Engineering Contributors
 **Version**: 1.0.0
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior agent configurations, team compositions, and orchestration patterns. Critical for multi-agent system consistency.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior AI agent orchestration context before starting
+python3 execution/memory_manager.py auto --query "agent patterns and orchestration strategies for Context Degradation"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store AI agent orchestration decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags context-degradation <relevant-tags>
+  --content "Agent pattern: hierarchical orchestration with Control Tower dispatcher, 3 specialist sub-agents" \
+  --type decision --project <project> \
+  --tags context-degradation ai-agents
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+This skill is inherently multi-agent. Use cross-agent context to coordinate task distribution and avoid duplicate work.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Agent architecture designed — Control Tower + specialist agents with shared Qdrant memory" \
+  --project <project>
+```
 
-### Local LLM Support
+### Control Tower Integration
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+Register agents and tasks with the Control Tower (`execution/control_tower.py`) for centralized orchestration across machines and LLM providers.
+
+### Blockchain Identity
+
+Each agent has a cryptographic Ed25519 identity. All memory writes are signed — enabling trust verification in multi-agent systems.
+
+<!-- AGI-INTEGRATION-END -->

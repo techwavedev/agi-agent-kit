@@ -1,7 +1,9 @@
 ---
 name: agent-framework-azure-ai-py
-description: Build Azure AI Foundry agents using the Microsoft Agent Framework Python SDK (agent-framework-azure-ai). Use when creating persistent agents with AzureAIAgentsProvider, using hosted tools (code interpreter, file search, web search), integrating MCP servers, managing conversation threads, or implementing streaming responses. Covers function tools, structured outputs, and multi-tool agents.
-package: agent-framework-azure-ai
+description: "Build Azure AI Foundry agents using the Microsoft Agent Framework Python SDK (agent-framework-azure-ai). Use when creating persistent agents with AzureAIAgentsProvider, using hosted tools (code int..."
+risk: unknown
+source: community
+date_added: "2026-02-27"
 ---
 
 # Agent Framework Azure Hosted Agents
@@ -327,48 +329,60 @@ if __name__ == "__main__":
 
 ## Reference Files
 
-- [references/tools.md](references/tools.md): Detailed hosted tool patterns
-- [references/mcp.md](references/mcp.md): MCP integration (hosted + local)
-- [references/threads.md](references/threads.md): Thread and conversation management
-- [references/advanced.md](references/advanced.md): OpenAPI, citations, structured outputs
+- references/tools.md: Detailed hosted tool patterns
+- references/mcp.md: MCP integration (hosted + local)
+- references/threads.md: Thread and conversation management
+- references/advanced.md: OpenAPI, citations, structured outputs
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior agent configurations, team compositions, and orchestration patterns. Critical for multi-agent system consistency.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior AI agent orchestration context before starting
+python3 execution/memory_manager.py auto --query "agent patterns and orchestration strategies for Agent Framework Azure Ai Py"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store AI agent orchestration decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags agent-framework-azure-ai-py <relevant-tags>
+  --content "Agent pattern: hierarchical orchestration with Control Tower dispatcher, 3 specialist sub-agents" \
+  --type decision --project <project> \
+  --tags agent-framework-azure-ai-py ai-agents
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+This skill is inherently multi-agent. Use cross-agent context to coordinate task distribution and avoid duplicate work.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Agent architecture designed — Control Tower + specialist agents with shared Qdrant memory" \
+  --project <project>
+```
 
-### Local LLM Support
+### Control Tower Integration
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+Register agents and tasks with the Control Tower (`execution/control_tower.py`) for centralized orchestration across machines and LLM providers.
+
+### Blockchain Identity
+
+Each agent has a cryptographic Ed25519 identity. All memory writes are signed — enabling trust verification in multi-agent systems.
+
+<!-- AGI-INTEGRATION-END -->

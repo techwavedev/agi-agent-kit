@@ -15,6 +15,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Orchestrator Enforcement** — Orchestrator reads `handoff_state` explicitly requiring `next_steps` and `validation_requirements`, validating that sub-agents correctly divide tasks and dictate downstream validation.
   - **Comprehensive Test Harness** — `execution/run_test_scenario.py` runs 6 sequential and parallel test scenarios, evaluating orchestrator logic, cross-domain parallel runs, and failure-recovery paths.
   - **Full Team Patterns** — Built `documentation_team` (Writer, Reviewer, Changelog. Updater), `code_review_team` (Spec, Quality), `qa_team`, and `build_deploy_team`.
+## [1.6.0] - 2026-03-12
+
+### Added
+
+- **Blockchain Agent Identity & Write Signing (Phase 1)** — Each agent gets an Ed25519 keypair on first boot (`~/.agi-agent-kit/identity/`). All Qdrant writes (memory + cache) are automatically signed with `_signature`, `_agent_id`, `_content_hash` fields. Zero performance impact on reads; signing adds <1ms to writes. Graceful degradation if `cryptography` package is not installed.
+  - `execution/agent_identity.py` — keypair generation, signing, verification CLI
+  - `execution/chain_anchor.py` — async MultiChain hash anchoring with local JSONL queue fallback
+  - New dependency: `cryptography`
+
+- **Control Tower Orchestrator** — Central dispatcher tracking all active agents, sub-agents, teams, and LLMs across machines. Commands: `register`, `heartbeat`, `status`, `assign`, `reassign`, `dashboard`. Auto-registers on `session_boot.py` startup.
+  - `execution/control_tower.py`
+  - `directives/control_tower.md`
+
+- **Cross-Agent Collaboration** — Multi-LLM context sharing via Qdrant. Agents (Claude, Antigravity/Gemini, Cursor, Copilot, OpenCode, OpenClaw) share decisions, handoffs, and broadcasts through `execution/cross_agent_context.py`. Added `sync`, `pending`, `store`, `handoff`, `broadcast`, and `status` commands.
+
+- **Framework Self-Development Infrastructure** — Full dogfooding layer for developing the public framework using its own 3-layer architecture:
+  - Directives: `framework_development.md`, `template_sync.md`, `skill_development.md`, `multi_llm_collaboration.md`, `memory_integration.md`, `release_process.md`
+  - Execution scripts: `sync_to_template.py` (drift detection + sync), `validate_template.py` (template integrity)
+  - Agent Teams: `documentation_team`, `code_review_team`, `qa_team`, `build_deploy_team` with 8 sub-agent directives
+  - Skill Creator toolkit: `init_skill.py`, `package_skill.py`, `quick_validate.py`, `update_catalog.py`
+
+- **Upstream Sync Skill** — `skills/upstream-sync/` with `sync_upstream.py` and `upstream_registry.json` for pulling updates from forked skill sources
+
+- **Upstream Sync: antigravity-awesome-skills** — Synced latest from `sickn33/antigravity-awesome-skills` via `skill-adapt` strategy. 406 new skills added, 756 updated with preserved AGI integration blocks. New skills include: `explain-like-socrates`, `ai-md`, `yes-md`, `local-llm-expert`, `keyword-extractor`, and 400+ more across all categories. Total extended skills: 1,181.
+
+- **Upstream Sync: superpowers v5.0.1** — Synced 14 skills from `obra/superpowers` via `skill-diff` strategy: `brainstorming`, `dispatching-parallel-agents`, `executing-plans`, `finishing-a-development-branch`, `receiving-code-review`, `requesting-code-review`, `subagent-driven-development`, `systematic-debugging`, `test-driven-development`, `using-git-worktrees`, `using-superpowers`, `verification-before-completion`, `writing-plans`, `writing-skills`. All adapted with Qdrant hybrid memory integration.
+
+- **Upstream Sync: ui-ux-pro-max** — Full-replace sync from `nextlevelbuilder/ui-ux-pro-max-skill`. 319 files synced including new `slides` skill (HTML presentations with Chart.js), `banner-design` skill (22 styles, multi-platform), `logo` generation (55 styles, Gemini AI), `icon` design (15 styles, SVG), `social-photos` (HTML-to-screenshot), corporate identity program (CIP), and expanded Google Fonts collection with Chinese-to-English translations.
+
+- **Upstream Sync: Yuan3.0** — Reference-only inspection of `Yuan-lab-LLM/Yuan3.0` (8,804 files). Yuan3.0 MoE 40B model with RAPO reinforcement learning. No direct skill mapping — used as research reference for MoE/RAPO patterns.
+
+- **Skills Catalog** — `skills/SKILLS_CATALOG.md` — complete auto-generated catalog of all installed skills
+
+- **Workflow Playbooks Data** — `data/workflows.json` with guided multi-skill sequences
+
+- **Contextual AGI Integration Blocks** — Replaced generic copy-paste AGI blocks across all 1,184 extended skills with domain-specific content. 16 category templates (security, architecture, testing, debugging, AI agents, DevOps, frontend, backend, workflow, documentation, data, content, mobile, blockchain, gaming, default) each showing real framework features relevant to that skill's domain — signed audit trails for security, TDD enforcement for testing, BM25 exact match for debugging, Control Tower for architecture, etc. Added `scripts/contextualize_agi_blocks.py` for future upstream sync re-runs.
+
+### Changed
+
+- **Session Boot** — Now checks/generates agent identity (Step 2.5) and auto-registers with Control Tower (Step 4). Reports `agent_id` in summary output.
+- **Memory Writes** — `store_memory()` and `store_response()` return `signed` and `agent_id` fields indicating cryptographic signing status.
+- **AGENTS.md** — Added cross-agent collaboration section and framework self-development documentation. Symlinked as `CLAUDE.md` and `GEMINI.md` for cross-agent instruction sharing.
+- **Roadmap** — Added: Blockchain Agent Trust & Tenancy (design), Apache Pulsar streaming (design), Control Tower Orchestrator (active), Secrets Management via Vault (design).
+- **Upstream Sync Script** — Fixed `PROJECT_ROOT` resolution in `sync_upstream.py` (was resolving to `skills/` instead of repo root, causing `adapt_script_missing` errors).
+
+### Security
+
+- **CodeQL CWE-20 Fix** — Replaced URL substring checks with `urlparse` hostname comparison to prevent incomplete URL sanitization (`46739fc`)
+- **Workflow Permissions** — Added explicit least-privilege permissions to `publish.yml` and `virustotal.yml` workflows (`70715d4`)
+- **CVE-2026-27606** — Updated rollup in todo app example to resolve dependency vulnerability (`34b28d1`)
+- **VirusTotal Action** — Bumped `crazy-max/ghaction-virustotal` from v4 to v5
 
 ## [1.5.3] - 2026-02-22
 

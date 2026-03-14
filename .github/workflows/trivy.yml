@@ -2,9 +2,9 @@ name: Security Audit (Trivy)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "public" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "public" ]
   schedule:
     - cron: '0 0 * * 0' # Weekly run
 

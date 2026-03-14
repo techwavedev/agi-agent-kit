@@ -1,8 +1,9 @@
 ---
 name: readme
-description: "When the user wants to create or update a README.md file for a project. Also use when the user says 'write readme,' 'create readme,' 'document this project,' 'project documentation,' or asks for help with README.md. This skill creates absurdly thorough documentation covering local setup, architecture, and deployment."
-source: "https://github.com/Shpigford/skills/tree/main/readme"
+description: "When the user wants to create or update a README.md file for a project. Also use when the user says 'write readme,' 'create readme,' 'document this project,' 'project documentation,' or asks for he..."
 risk: safe
+source: "https://github.com/Shpigford/skills/tree/main/readme"
+date_added: "2026-02-27"
 ---
 
 # README Generator
@@ -841,43 +842,48 @@ Generate a complete README.md file with:
 
 Write the README directly to `README.md` in the project root.
 
-
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior documentation structure and content to maintain consistency. Cache generated docs to avoid regenerating unchanged sections.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior documentation context before starting
+python3 execution/memory_manager.py auto --query "documentation patterns and prior content for Readme"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store documentation decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags readme <relevant-tags>
+  --content "Documentation: API reference generated from OpenAPI spec, deployment guide updated with new env vars" \
+  --type technical --project <project> \
+  --tags readme documentation
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+Share documentation changes with all agents so they reference the latest guides and APIs.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Documentation updated — API reference, deployment guide, and CHANGELOG all current" \
+  --project <project>
+```
 
-### Local LLM Support
+### Agent Team: Documentation
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+This skill pairs with `documentation_team` — dispatched automatically after any code change to keep docs in sync.
+
+<!-- AGI-INTEGRATION-END -->

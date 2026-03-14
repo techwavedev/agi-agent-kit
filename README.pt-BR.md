@@ -26,7 +26,7 @@ A maioria das configurações de IA para código te dá um prompt e torce pelo m
 
 - 🧠 **Memória Híbrida** — Vetores Qdrant + palavras-chave BM25: similaridade semântica para conceitos, correspondência exata para códigos de erro e IDs (90-100% de economia de tokens)
 - 🎯 **19 Agentes Especialistas** — Experts delimitados por domínio (Frontend, Backend, Segurança, Mobile, Game Dev...) com propriedade de arquivos forçada
-- ⚡ **878 Skills Curadas** — 4 essenciais + 89 profissionais + 785 comunitárias em 16 categorias de domínio
+- ⚡ **1.191 Skills Curadas** — 4 essenciais + 89 profissionais + 1.098 comunitárias em 16 categorias de domínio
 - 🔒 **Portões de Verificação** — Nenhuma tarefa é concluída sem evidência. Enforcement de TDD. Revisão de código em duas etapas.
 - 🌐 **9 Plataformas, Uma Configuração** — Escreva uma vez, execute no Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE, OpenClaw
 
@@ -57,7 +57,7 @@ Você será guiado por um assistente interativo:
 4. **Seleção de pacote** — escolha as skills para instalar:
    - **core** — 4 skills essenciais (webcrawler, pdf-reader, qdrant-memory, documentation)
    - **medium** — Core + 89 skills profissionais em 16 categorias + estrutura `.agent/`
-   - **full** — Tudo: Medium + 785 skills comunitárias (878 no total)
+   - **full** — Tudo: Medium + 1.098 skills comunitárias (1.191 no total)
    - **custom** — Core + você escolhe domínios específicos (AI Agents, DevOps, Segurança, Frontend, etc.)
 5. **Configuração de memória** — detecta Ollama/Docker/Qdrant; se ausente, pergunta se deseja instalar localmente ou usar uma URL personalizada (suporta Qdrant Cloud, servidores remotos)
 6. **Agent Teams** — opt-in para execução multi-agente paralela (grava `.claude/settings.json`)
@@ -80,7 +80,7 @@ python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
 | Funcionalidade                    | Descrição                                                                                     |
 | --------------------------------- | --------------------------------------------------------------------------------------------- |
 | **Execução Determinística**       | Separa lógica de negócio (scripts Python) do raciocínio da IA (Diretivas)                     |
-| **Sistema Modular de Skills**     | 878 skills plug-and-play em 3 níveis, organizadas em 16 categorias de domínio                 |
+| **Sistema Modular de Skills**     | 1.191 skills plug-and-play em 3 níveis, organizadas em 16 categorias de domínio                 |
 | **Execução de Plano Estruturado** | Execução em lote ou orientada por subagentes com revisão em duas etapas (spec + qualidade)    |
 | **Enforcement de TDD**            | Ciclo RED-GREEN-REFACTOR inquebrantável — sem código de produção sem teste falhando           |
 | **Portões de Verificação**        | Evidência antes de afirmações — sem conclusão sem saída de verificação atualizada             |
@@ -109,7 +109,7 @@ O framework AGI adota todos os melhores padrões do [obra/superpowers](https://g
 | Reforço de Fronteiras de Agente  |        ❌        |  ✅ Propriedade por tipo de arquivo   |
 | Geração Dinâmica de Perguntas    |        ❌        |      ✅ Trade-offs + prioridades      |
 | Protocolo Memory-First           |        ❌        |           ✅ Auto cache-hit           |
-| Criador de Skills + Catálogo     |        ❌        |       ✅ 878 skills combináveis       |
+| Criador de Skills + Catálogo     |        ❌        |       ✅ 1.191 skills combináveis       |
 | Assistente de Configuração       |        ❌        |     ✅ Configuração em um comando     |
 | Symlinks Multi-Plataforma        | ❌ Apenas Claude |           ✅ 9 plataformas            |
 
@@ -227,7 +227,7 @@ seu-projeto/
 ├── CLAUDE.md → AGENTS.md
 ├── OPENCODE.md → AGENTS.md
 ├── COPILOT.md → AGENTS.md
-├── skills/                # Até 878 skills (depende do pacote)
+├── skills/                # Até 1.191 skills (depende do pacote)
 │   ├── webcrawler/        # Coleta de documentação
 │   ├── qdrant-memory/     # Cache semântico & memória
 │   └── ...                # Mais 877 skills no pacote completo

@@ -1,9 +1,10 @@
 ---
-name: Shodan Reconnaissance and Pentesting
-description: This skill should be used when the user asks to "search for exposed devices on the internet," "perform Shodan reconnaissance," "find vulnerable services using Shodan," "scan IP ranges with Shodan," or "discover IoT devices and open ports." It provides comprehensive guidance for using Shodan's search engine, CLI, and API for penetration testing reconnaissance.
-metadata:
-  author: zebbern
-  version: "1.1"
+name: shodan-reconnaissance
+description: "This skill should be used when the user asks to \"search for exposed devices on the internet,\" \"perform Shodan reconnaissance,\" \"find vulnerable services using Shodan,\" \"scan IP ranges..."
+risk: unknown
+source: community
+author: zebbern
+date_added: "2026-02-27"
 ---
 
 # Shodan Reconnaissance and Pentesting
@@ -502,43 +503,55 @@ shodan download network_scan.json.gz 'net:192.168.1.0/24'
 | Empty Search Results | Too specific or syntax error | Use quotes for phrases: `'org:"Company Name"'`; broaden criteria |
 | Downloaded File Won't Parse | Corrupted or wrong format | Verify with `gunzip -t file.gz`, re-download with `--limit` |
 
+## When to Use
+This skill is applicable to execute the workflow or actions described in the overview.
 
 ---
 
-## 🧠 AGI Framework Integration
+<!-- AGI-INTEGRATION-START -->
+
+## AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Hybrid Memory Integration (Qdrant + BM25)
+### Memory-First Protocol
 
-Before executing complex tasks with this skill:
+Retrieve prior agent configurations, team compositions, and orchestration patterns. Critical for multi-agent system consistency.
+
 ```bash
-python3 execution/memory_manager.py auto --query "<task summary>"
+# Check for prior AI agent orchestration context before starting
+python3 execution/memory_manager.py auto --query "agent patterns and orchestration strategies for Shodan Reconnaissance"
 ```
 
-**Decision Tree:**
-- **Cache hit?** Use cached response directly — no need to re-process.
-- **Memory match?** Inject `context_chunks` into your reasoning.
-- **No match?** Proceed normally, then store results:
+### Storing Results
+
+After completing work, store AI agent orchestration decisions for future sessions:
 
 ```bash
 python3 execution/memory_manager.py store \
-  --content "Description of what was decided/solved" \
-  --type decision \
-  --tags Shodan Reconnaissance and Pentesting <relevant-tags>
+  --content "Agent pattern: hierarchical orchestration with Control Tower dispatcher, 3 specialist sub-agents" \
+  --type decision --project <project> \
+  --tags shodan-reconnaissance ai-agents
 ```
 
-> **Note:** Storing automatically updates both Vector (Qdrant) and Keyword (BM25) indices.
+### Multi-Agent Collaboration
 
-### Agent Team Collaboration
+This skill is inherently multi-agent. Use cross-agent context to coordinate task distribution and avoid duplicate work.
 
-- **Strategy**: This skill communicates via the shared memory system.
-- **Orchestration**: Invoked by `orchestrator` via intelligent routing.
-- **Context Sharing**: Always read previous agent outputs from memory before starting.
+```bash
+python3 execution/cross_agent_context.py store \
+  --agent "<your-agent>" \
+  --action "Agent architecture designed — Control Tower + specialist agents with shared Qdrant memory" \
+  --project <project>
+```
 
-### Local LLM Support
+### Control Tower Integration
 
-When available, use local Ollama models for embedding and lightweight inference:
-- Embeddings: `nomic-embed-text` via Qdrant memory system
-- Lightweight analysis: Local models reduce API costs for repetitive patterns
+Register agents and tasks with the Control Tower (`execution/control_tower.py`) for centralized orchestration across machines and LLM providers.
+
+### Blockchain Identity
+
+Each agent has a cryptographic Ed25519 identity. All memory writes are signed — enabling trust verification in multi-agent systems.
+
+<!-- AGI-INTEGRATION-END -->

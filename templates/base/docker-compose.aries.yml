@@ -1,0 +1,47 @@
+# Hyperledger Aries (ACA-Py) — Blockchain-Authenticated Agent Memory
+# Usage: docker compose -f docker-compose.aries.yml up -d
+# Credentials: set ARIES_ADMIN_KEY in your .env file
+
+services:
+  aries-agent:
+    image: ghcr.io/openwallet-foundation/acapy-agent:1.5.0
+    container_name: agi-aries-agent
+    ports:
+      - "${ARIES_HTTP_PORT:-8030}:8030"       # DIDComm endpoint
+      - "${ARIES_ADMIN_PORT:-8031}:8031"      # Admin REST API
+    environment:
+      ACAPY_ADMIN: "[0.0.0.0,8031]"
+      ACAPY_ADMIN_API_KEY: "${ARIES_ADMIN_KEY:-changeme_set_in_dotenv}"
+      ACAPY_ENDPOINT: "http://localhost:${ARIES_HTTP_PORT:-8030}"
+      ACAPY_LABEL: "AGI Memory Agent"
+      ACAPY_LOG_LEVEL: "info"
+      ACAPY_AUTO_PROVISION: "true"
+      ACAPY_WALLET_TYPE: "askar"
+      ACAPY_WALLET_NAME: "agi-memory-wallet"
+      ACAPY_WALLET_KEY: "${ARIES_WALLET_KEY:-changeme_wallet_key}"
+    command: >
+      start
+        --inbound-transport http 0.0.0.0 8030
+        --outbound-transport http
+        --admin 0.0.0.0 8031
+        --admin-api-key ${ARIES_ADMIN_KEY:-changeme_set_in_dotenv}
+        --auto-provision
+        --wallet-type askar
+        --wallet-name agi-memory-wallet
+        --wallet-key ${ARIES_WALLET_KEY:-changeme_wallet_key}
+        --label "AGI Memory Agent"
+        --endpoint http://localhost:${ARIES_HTTP_PORT:-8030}
+        --log-level info
+    volumes:
+      - aries_wallet:/home/aries/.aries_cloudagent
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-H", "X-API-Key: ${ARIES_ADMIN_KEY:-changeme_set_in_dotenv}", "http://localhost:8031/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  aries_wallet:
