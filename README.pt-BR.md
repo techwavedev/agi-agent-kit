@@ -16,6 +16,8 @@
 [![Antigravity IDE](https://img.shields.io/badge/Antigravity-DeepMind-red)](https://github.com/techwavedev/agi-agent-kit)
 [![AdaL CLI](https://img.shields.io/badge/AdaL%20CLI-SylphAI-pink)](https://sylph.ai/)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-CLI-teal)](https://github.com/openclaw/openclaw)
+[![Kiro](https://img.shields.io/badge/Kiro-AWS-yellow)](https://kiro.dev)
+[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blueviolet)](https://modelcontextprotocol.io)
 [![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a-coffee-d13610?logo=buymeacoffee&logoColor=white)](https://www.buymeacoffee.com/eltonmachado)
 
 **AGI Agent Kit** é o scaffolding de nível empresarial que transforma qualquer assistente de código com IA em uma **máquina de produção determinística**. Enquanto LLMs são probabilísticos (90% de precisão por etapa = 59% ao longo de 5 etapas), este framework os força através de uma **Arquitetura de 3 Camadas** — Intenção → Orquestração → Execução — onde a lógica de negócio vive em scripts testados, não em código alucinado.
@@ -28,7 +30,8 @@ A maioria das configurações de IA para código te dá um prompt e torce pelo m
 - 🎯 **19 Agentes Especialistas** — Experts delimitados por domínio (Frontend, Backend, Segurança, Mobile, Game Dev...) com propriedade de arquivos forçada
 - ⚡ **1.191 Skills Curadas** — 4 essenciais + 89 profissionais + 1.098 comunitárias em 16 categorias de domínio
 - 🔒 **Portões de Verificação** — Nenhuma tarefa é concluída sem evidência. Enforcement de TDD. Revisão de código em duas etapas.
-- 🌐 **9 Plataformas, Uma Configuração** — Escreva uma vez, execute no Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE, OpenClaw
+- 🌐 **10 Plataformas, Uma Configuração** — Escreva uma vez, execute no Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE, OpenClaw, Kiro
+- 🔌 **Compatível com MCP** — Expõe memória + coordenação entre agentes como ferramentas MCP para Claude Desktop e qualquer cliente de interface de chat
 
 ```bash
 npx @techwavedev/agi-agent-kit init
@@ -84,7 +87,8 @@ python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
 | **Execução de Plano Estruturado** | Execução em lote ou orientada por subagentes com revisão em duas etapas (spec + qualidade)    |
 | **Enforcement de TDD**            | Ciclo RED-GREEN-REFACTOR inquebrantável — sem código de produção sem teste falhando           |
 | **Portões de Verificação**        | Evidência antes de afirmações — sem conclusão sem saída de verificação atualizada             |
-| **Adaptativo à Plataforma**       | Auto-detecta Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL, Antigravity |
+| **Adaptativo à Plataforma**       | Auto-detecta Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL, Antigravity, Kiro |
+| **Compatível com MCP**            | Memória + coordenação entre agentes expostas como ferramentas MCP (`execution/mcp_server.py`) para Claude Desktop e qualquer cliente MCP |
 | **Orquestração Multi-Agente**     | Agent Teams, subagentes, Powers, ou personas sequenciais — adapta-se à plataforma             |
 | **Memória Híbrida**               | Vetores Qdrant + palavras-chave BM25 com mesclagem de pontuação ponderada (95% de economia)   |
 | **Workflows Auto-Reparáveis**     | Agentes leem logs de erro, corrigem scripts e atualizam diretivas automaticamente             |

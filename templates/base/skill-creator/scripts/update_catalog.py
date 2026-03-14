@@ -98,6 +98,7 @@ def scan_skills(skills_dir: Path) -> list:
             'scripts': [],
             'references': [],
             'has_assets': False,
+            'has_mcp': (item / 'mcp_server.py').exists(),
             'parent': None,
         }
         
@@ -155,7 +156,10 @@ def generate_skill_entry(skill: dict) -> str:
     lines.append("| -------- | ----- |")
     lines.append(f"| **Name** | `{skill['name']}` |")
     lines.append(f"| **Location** | `{skill['location']}` |")
-    
+
+    if skill.get('has_mcp'):
+        lines.append("| **MCP Server** | `mcp_server.py` |")
+
     if skill['parent']:
         parent_title = skill['parent'].replace('-', ' ').title()
         parent_anchor = skill['parent'].replace('-', '')

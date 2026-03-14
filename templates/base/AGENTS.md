@@ -1,6 +1,8 @@
 # Agent Instructions
 
-> `CLAUDE.md`, `GEMINI.md`, `OPENCODE.md`, `COPILOT.md`, and `OPENCLAW.md` are symlinks to this file, so the same instructions load in any AI environment.
+> `CLAUDE.md`, `GEMINI.md`, `OPENCODE.md`, `COPILOT.md`, and `OPENCLAW.md` are symlinks to this file.
+> Kiro reads `.kiro/steering/agents.md` (also a symlink here).
+> The same instructions load in any AI coding agent environment.
 
 ---
 
@@ -212,6 +214,17 @@ Memory types: `decision`, `code`, `error`, `technical`, `conversation`
 - ✅ You debugged and solved an error
 - ✅ You discovered a technical insight or API quirk
 - ✅ You completed a multi-step workflow
+
+#### Handling Conversation Compaction (MANDATORY)
+
+When you compact the chat or clear the context window to save tokens (such as when running `/compact` or automatically dropping early history), that context is permanently lost unless you explicitly save it. You MUST generate a summary of the vital context and push it to Qdrant immediately before the compaction:
+
+```bash
+python3 execution/memory_manager.py store \
+  --content "Pre-compaction summary: <insert key context, decisions, and current state>" \
+  --type conversation \
+  --project <project-name>
+```
 
 #### After Completing a Complex Task
 
@@ -752,6 +765,17 @@ python3 execution/cross_agent_context.py broadcast --agent "<name>" --message "<
 # Cross-agent: check pending handoffs
 python3 execution/cross_agent_context.py pending --agent "<name>" --project agi-agent-kit
 ```
+
+### MCP Servers
+
+Two MCP servers expose the framework to Claude Desktop, Antigravity, Cursor, Copilot, and any MCP client:
+
+| Server | File | Scope |
+|---|---|---|
+| `agi-framework` | `execution/mcp_server.py` | Memory + cross-agent + health (13 tools) |
+| `qdrant-memory` | `skills/qdrant-memory/mcp_server.py` | Direct Qdrant skill ops (6 tools) |
+
+> See `docs/mcp-compatibility.md` for full setup, config examples, and compatibility matrix.
 
 ### Rules
 
