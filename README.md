@@ -16,6 +16,8 @@
 [![Antigravity IDE](https://img.shields.io/badge/Antigravity-DeepMind-red)](https://github.com/techwavedev/agi-agent-kit)
 [![AdaL CLI](https://img.shields.io/badge/AdaL%20CLI-SylphAI-pink)](https://sylph.ai/)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-CLI-teal)](https://github.com/openclaw/openclaw)
+[![Kiro](https://img.shields.io/badge/Kiro-AWS-yellow)](https://kiro.dev)
+[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blueviolet)](https://modelcontextprotocol.io)
 [![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a-coffee-d13610?logo=buymeacoffee&logoColor=white)](https://www.buymeacoffee.com/eltonmachado)
 
 **AGI Agent Kit** is the enterprise-grade scaffolding that turns any AI coding assistant into a **deterministic production machine**. While LLMs are probabilistic (90% accuracy per step = 59% over 5 steps), this framework forces them through a **3-Layer Architecture** — Intent → Orchestration → Execution — where business logic lives in tested scripts, not hallucinated code.
@@ -28,7 +30,8 @@ Most AI coding setups give you a prompt and hope for the best. AGI Agent Kit giv
 - 🎯 **19 Specialist Agents** — Domain-bounded experts (Frontend, Backend, Security, Mobile, Game Dev...) with enforced file ownership
 - ⚡ **1,191 Curated Skills** — 4 core + 89 professional + 1,098 community skills across 16 domain categories
 - 🔒 **Verification Gates** — No task completes without evidence. TDD enforcement. Two-stage code review.
-- 🌐 **9 Platforms, One Config** — Write once, run on Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE, OpenClaw
+- 🌐 **10 Platforms, One Config** — Write once, run on Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE, OpenClaw, Kiro
+- 🔌 **MCP Compatible** — Exposes memory + cross-agent coordination as MCP tools for Claude Desktop and any chat-interface client
 
 ```bash
 npx @techwavedev/agi-agent-kit init
@@ -85,7 +88,8 @@ python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
 | **Distributed Agent Auth**    | HMAC-SHA256 signing, hash anchoring, project access control via shared Qdrant (Hyperledger Aries optional) |
 | **Real-Time Agent Events**    | Apache Pulsar event bus for push notifications between agents — graceful degradation if unavailable |
 | **Hybrid Memory**             | Qdrant vectors + BM25 keywords with weighted score merge (95% token savings)                  |
-| **Platform-Adaptive**         | Auto-detects Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL, Antigravity |
+| **Platform-Adaptive**         | Auto-detects Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL, Antigravity, Kiro |
+| **MCP Compatible**            | Memory + cross-agent coordination exposed as MCP tools (`execution/mcp_server.py`) for Claude Desktop and any MCP client |
 | **Multi-Agent Orchestration** | Agent Teams, subagents, Powers, or sequential personas — adapts to platform                   |
 | **Structured Plan Execution** | Batch or subagent-driven execution with two-stage review (spec + quality)                     |
 | **TDD Enforcement**           | Iron-law RED-GREEN-REFACTOR cycle — no production code without failing test                   |
@@ -106,7 +110,7 @@ The agi framework adopts all best patterns from [obra/superpowers](https://githu
 | Systematic Debugging         |        ✅        | ✅ Adapted + `debugger` agent  |
 | Verification Gates           |        ✅        | ✅ Adapted + 12 audit scripts  |
 | Two-Stage Code Review        |        ✅        |  ✅ Adapted into orchestrator  |
-| Multi-Platform Orchestration |  ❌ Claude only  |         ✅ 9 platforms         |
+| Multi-Platform Orchestration |  ❌ Claude only  |         ✅ 10 platforms        |
 | Semantic Memory (Qdrant)     |        ❌        |    ✅ 90-100% token savings    |
 | 19 Specialist Agents         |        ❌        |      ✅ Domain boundaries      |
 | Agent Boundary Enforcement   |        ❌        |     ✅ File-type ownership     |
@@ -114,7 +118,8 @@ The agi framework adopts all best patterns from [obra/superpowers](https://githu
 | Memory-First Protocol        |        ❌        |       ✅ Auto cache-hit        |
 | Skill Creator + Catalog      |        ❌        |  ✅ 1,191 composable skills   |
 | Platform Setup Wizard        |        ❌        |       ✅ One-shot config       |
-| Multi-Platform Symlinks      |  ❌ Claude only  |         ✅ 9 platforms         |
+| Multi-Platform Symlinks      |  ❌ Claude only  |        ✅ 10 platforms         |
+| MCP Server                   |        ❌        |   ✅ Memory + coordination     |
 
 ---
 
@@ -205,6 +210,7 @@ Skills are installed to the canonical `skills/` directory and symlinked to each 
 | **GitHub Copilot**  | N/A (paste)       | `COPILOT.md`     | Manual paste into context           |
 | **OpenCode**        | `.agent/skills/`  | `OPENCODE.md`    | Sequential personas via `@agent`    |
 | **AdaL CLI**        | `.adal/skills/`   | `AGENTS.md`      | Auto-load on demand                 |
+| **Kiro (AWS)**      | `.kiro/skills/`   | `.kiro/steering/agents.md` | Full agentic orchestration   |
 
 Run `/setup` to auto-detect and configure your platform, or use the setup script directly:
 
@@ -599,9 +605,10 @@ If these community skills help you, consider [starring the original repo](https:
 | **Blockchain Agent Trust & Tenancy** | ✅ Shipped   | HMAC-SHA256 signed writes, hash anchoring, project access control, audit trail — all via shared Qdrant `agent_auth` collection. Optional W3C DID via Hyperledger Aries ACA-Py 1.5.0. 36/36 tests. ([docs](./docs/blockchain-auth.md)) |
 | **Event-Driven Agent Streaming**    | ✅ Shipped    | Apache Pulsar event bus with auto-publish on `memory_manager.py store`. Project-scoped topics, graceful degradation. 19/19 tests. ([docs](./docs/agent-events.md))                                                        |
 | **Memory Mode Tiers**               | ✅ Shipped    | Solo → Team → Pro progression. Backward-compatible upgrades, no data migration. BM25 auto-synced from shared Qdrant on boot. ([docs](./docs/memory-modes.md))                                                            |
+| **MCP Compatibility**               | ✅ Shipped    | Memory + cross-agent coordination exposed as MCP tools via `execution/mcp_server.py` (13 tools) and `skills/qdrant-memory/mcp_server.py` (6 tools). Pure chat clients (Claude Desktop) get full memory access. ([docs](./docs/mcp-compatibility.md)) |
+| **Platform-Adaptive Orchestration** | ✅ Shipped    | 10 platforms share one `AGENTS.md` via symlinks (Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL, Antigravity, OpenClaw, Kiro). Each uses its native orchestration strategy automatically.           |
+| **Workflow Engine**                 | ✅ Shipped    | `execution/workflow_engine.py` executes `data/workflows.json` playbooks as guided multi-skill sequences with progress tracking, skip/abort, and state persistence in `.tmp/playbook_state.json`.                         |
 | **Control Tower Orchestrator**      | 🚧 Active    | Basic dispatcher for agent registration and heartbeat via Qdrant (`control_tower.py`). Needs dedicated docs, test coverage, and integration with `session_boot`.                                                          |
-| **Workflow Engine**                 | 📋 Planned   | Execute `data/workflows.json` playbooks as guided multi-skill sequences with progress tracking. Data schema exists, execution script not yet implemented.                                                                 |
-| **Platform-Adaptive Orchestration** | 🔬 Design    | Use platform-native orchestration when available (Anthropic Agent Teams, Gemini sub-agents) and fall back to Qdrant-based Control Tower dispatch otherwise. Unified interface across providers.                            |
 | **Secrets Management (Vault)**      | 🔬 Design    | HashiCorp Vault integration for secure secret sharing. Agents authenticate via Ed25519 keypair, access tenant-scoped secrets. Zero long-lived credentials.                                                                |
 
 ---

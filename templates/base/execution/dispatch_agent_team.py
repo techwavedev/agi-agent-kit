@@ -27,7 +27,6 @@ import json
 import sys
 import uuid
 import os
-import subprocess
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -103,29 +102,12 @@ def load_subagent_directive(root: Path, subagent_id: str) -> dict:
 
 
 def build_manifest(team_id: str, payload: dict, subagents: list, root: Path) -> dict:
-    """Build the full dispatch manifest with identity tagging."""
+    """Build the full dispatch manifest."""
     run_id = str(uuid.uuid4())[:8]
-    
-    # Resolve developer identity
-    developer_id = os.environ.get("AGI_DEVELOPER_ID")
-    if not developer_id:
-        try:
-            result = subprocess.run(
-                ["git", "config", "user.email"],
-                capture_output=True, text=True, timeout=5
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                developer_id = result.stdout.strip()
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            pass
-    if not developer_id:
-        developer_id = f"{os.environ.get('USER', 'unknown')}@{os.environ.get('HOSTNAME', 'local')}"
-
     return {
         "team": team_id,
         "run_id": run_id,
         "dispatched_at": datetime.now(timezone.utc).isoformat(),
-        "developer_id": developer_id,
         "payload": payload,
         "sub_agents": [load_subagent_directive(root, sa) for sa in subagents],
         "execution_mode": "sequential",
@@ -134,8 +116,8 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path) -> 
             f"Pass the original payload JSON as context. If a sub-agent works on a divided task, it MUST "
             f"return a 'handoff_state' object containing its state, 'next_steps' for the following agent, "
             f"and 'validation_requirements' for what must be tested. YOU MUST actively verify this plan, "
-            f"store the state as raw JSON to Qdrant memory via `python3 execution/memory_manager.py store "
-            f"--shared` tagged with '{run_id}' against conflicts, AND pass it directly to the next sequential "
+            f"store the state as raw JSON to Qdrant memory via `python3 execution/memory_manager.py store` "
+            f"tagged with '{run_id}' against conflicts, AND pass it directly to the next sequential "
             f"or testing sub-agent so they execute the required validation and next steps precisely. "
             f"Store final results to memory with tag '{team_id}'."
         ),
@@ -143,7 +125,7 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path) -> 
         "memory_store": (
             f"python3 execution/memory_manager.py store "
             f"--content \"{team_id} dispatched run {run_id}\" "
-            f"--type decision --tags {team_id} agent-team --shared"
+            f"--type decision --tags {team_id} agent-team"
         )
     }
 
@@ -166,8 +148,7 @@ def store_to_memory(root: Path, manifest: dict, dry_run: bool) -> bool:
             sys.executable, str(memory_script), "store",
             "--content", f"Agent team dispatched: {manifest['team']} run {manifest['run_id']}",
             "--type", "decision",
-            "--tags", manifest["team"], "agent-team-dispatch",
-            "--shared"
+            "--tags", manifest["team"], "agent-team-dispatch"
         ],
         capture_output=True,
         text=True,
