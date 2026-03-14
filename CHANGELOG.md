@@ -5,11 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.6.2] - 2026-03-14
 
 ### Added
 
-- **Contextual AGI Integration Blocks (1,200 Extended Skills)** — Updated all 1,200 extended skills in `templates/skills/extended/` with contextually adapted AGI Framework Integration blocks. Each block is tailored to the skill's domain and includes: Memory-First Protocol (skill-specific Qdrant query examples), Storing Results (concrete domain-relevant examples), Multi-Agent Collaboration (skill-specific cross-agent context sharing), and a 4th domain-specific section (e.g., Token Versioning for design-system, Brand Source of Truth for brand, Signed Audit Trail for security, Playbook Integration for devops).
+- **Contextual AGI Integration Blocks (1,200 Extended Skills)** — All 1,200 extended skills in `templates/skills/extended/` now include contextually adapted AGI Framework Integration blocks. Each block is domain-specific and provides: Memory-First Protocol (skill-specific Qdrant queries), Storing Results (concrete real-world examples), Multi-Agent Collaboration (skill-specific cross-agent sharing), and a 4th domain-specific section (e.g., Token Versioning for design-system, Brand Source of Truth for brand, Signed Audit Trail for security, Playbook Integration for devops, Asset Registry for banner design).
+
+### Fixed
+
+- **Python 3.11 f-string compatibility** — Resolved `SyntaxError` in `templates/skills/extended/frontend/ui-ux-pro-max/scripts/design_system.py`: backslash inside f-string expression extracted to intermediate variable.
 
 ## [1.6.1] - 2026-03-14
 
