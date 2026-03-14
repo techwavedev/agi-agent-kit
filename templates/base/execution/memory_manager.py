@@ -58,7 +58,7 @@ sys.path.insert(0, SKILL_SCRIPTS_DIR)
 
 from embedding_utils import check_embedding_service, get_embedding_dimension
 from semantic_cache import check_cache, store_response, clear_cache
-from memory_retrieval import retrieve_context, store_memory, list_memories, build_filter
+from memory_retrieval import retrieve_context, store_memory, list_memories, build_filter, resolve_developer_id, resolve_agent_id
 
 # Import BM25 index (optional — graceful if unavailable)
 try:
@@ -129,7 +129,9 @@ def auto_query(
     project: str = None, 
     threshold: float = 0.92,
     vector_weight: float = None,
-    text_weight: float = None
+    text_weight: float = None,
+    developer: str = None,
+    shared_only: bool = False
 ) -> dict:
     """
     Smart query: check cache first, then retrieve context using Hybrid Search.
@@ -145,7 +147,8 @@ def auto_query(
         "cache_hit": False,
         "context_chunks": [],
         "tokens_saved_estimate": 0,
-        "search_type": "hybrid"
+        "search_type": "hybrid",
+        "developer_id": developer or resolve_developer_id()
     }
 
     # Step 1: Semantic cache check
@@ -163,9 +166,22 @@ def auto_query(
 
     # Step 2: Context retrieval
     try:
-        filters = None
+        # Build identity-aware filter
+        filter_conditions = []
         if project:
-            filters = {"must": [{"key": "project", "match": {"value": project}}]}
+            filter_conditions.append({"key": "project", "match": {"value": project}})
+        if shared_only:
+            filter_conditions.append({"key": "shared", "match": {"value": True}})
+        elif developer:
+            # If not shared-only, filter by developer (own + shared)
+            filter_conditions.append({
+                "should": [
+                    {"key": "developer_id", "match": {"value": developer}},
+                    {"key": "shared", "match": {"value": True}}
+                ]
+            })
+
+        filters = {"must": filter_conditions} if filter_conditions else None
 
         context = retrieve_context(
             query, 
@@ -216,6 +232,8 @@ Examples:
     )
     auto_parser.add_argument("--vector-weight", type=float, help="Hybrid search vector weight")
     auto_parser.add_argument("--text-weight", type=float, help="Hybrid search text weight")
+    auto_parser.add_argument("--developer", help="Filter by developer ID (default: auto-detect)")
+    auto_parser.add_argument("--shared-only", action="store_true", help="Only retrieve shared memories")
 
     # Store command
     store_parser = subparsers.add_parser(
@@ -230,6 +248,9 @@ Examples:
     )
     store_parser.add_argument("--project", help="Project name")
     store_parser.add_argument("--tags", nargs="+", help="Tags for the memory")
+    store_parser.add_argument("--developer", help="Override developer ID")
+    store_parser.add_argument("--agent", help="Override agent ID")
+    store_parser.add_argument("--shared", action="store_true", help="Mark as team-visible (shared) memory")
 
     # Retrieve command
     retrieve_parser = subparsers.add_parser(
@@ -246,6 +267,9 @@ Examples:
     )
     retrieve_parser.add_argument("--vector-weight", type=float, help="Hybrid search vector weight")
     retrieve_parser.add_argument("--text-weight", type=float, help="Hybrid search text weight")
+    retrieve_parser.add_argument("--developer", help="Filter by developer ID")
+    retrieve_parser.add_argument("--agent", help="Filter by agent ID")
+    retrieve_parser.add_argument("--shared-only", action="store_true", help="Only retrieve shared memories")
 
     # Cache store command
     cache_parser = subparsers.add_parser(
@@ -260,6 +284,8 @@ Examples:
     list_parser = subparsers.add_parser("list", help="List stored memories")
     list_parser.add_argument("--type", help="Filter by memory type")
     list_parser.add_argument("--project", help="Filter by project")
+    list_parser.add_argument("--developer", help="Filter by developer ID")
+    list_parser.add_argument("--shared-only", action="store_true", help="Only list shared memories")
     list_parser.add_argument("--limit", type=int, default=20, help="Max results")
 
     # Health command
@@ -285,7 +311,9 @@ Examples:
                 args.project, 
                 args.threshold,
                 vector_weight=args.vector_weight,
-                text_weight=args.text_weight
+                text_weight=args.text_weight,
+                developer=args.developer,
+                shared_only=getattr(args, "shared_only", False)
             )
             print(json.dumps(result, indent=2))
             sys.exit(0 if result["source"] != "none" else 1)
@@ -296,13 +324,22 @@ Examples:
                 metadata["project"] = args.project
             if args.tags:
                 metadata["tags"] = args.tags
-            result = store_memory(args.content, args.type, metadata)
+            result = store_memory(
+                args.content, args.type, metadata,
+                shared=getattr(args, "shared", False),
+                developer_id=getattr(args, "developer", None),
+                agent_id=getattr(args, "agent", None)
+            )
             print(json.dumps(result, indent=2))
             sys.exit(0)
 
         elif args.command == "retrieve":
             filters = build_filter(
-                type_filter=getattr(args, "type", None), project=args.project
+                type_filter=getattr(args, "type", None),
+                project=args.project,
+                developer=getattr(args, "developer", None),
+                agent=getattr(args, "agent", None),
+                shared_only=getattr(args, "shared_only", False)
             )
             result = retrieve_context(
                 args.query,
@@ -325,7 +362,10 @@ Examples:
 
         elif args.command == "list":
             filters = build_filter(
-                type_filter=getattr(args, "type", None), project=args.project
+                type_filter=getattr(args, "type", None),
+                project=args.project,
+                developer=getattr(args, "developer", None),
+                shared_only=getattr(args, "shared_only", False)
             )
             result = list_memories(
                 filters={"must": filters["must"]} if filters else None, limit=args.limit
