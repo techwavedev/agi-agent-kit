@@ -215,6 +215,17 @@ Memory types: `decision`, `code`, `error`, `technical`, `conversation`
 - ✅ You discovered a technical insight or API quirk
 - ✅ You completed a multi-step workflow
 
+#### Handling Conversation Compaction (MANDATORY)
+
+When you compact the chat or clear the context window to save tokens (such as when running `/compact` or automatically dropping early history), that context is permanently lost unless you explicitly save it. You MUST generate a summary of the vital context and push it to Qdrant immediately before the compaction:
+
+```bash
+python3 execution/memory_manager.py store \
+  --content "Pre-compaction summary: <insert key context, decisions, and current state>" \
+  --type conversation \
+  --project <project-name>
+```
+
 #### After Completing a Complex Task
 
 ```bash

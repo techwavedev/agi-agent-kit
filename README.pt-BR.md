@@ -16,6 +16,8 @@
 [![Antigravity IDE](https://img.shields.io/badge/Antigravity-DeepMind-red)](https://github.com/techwavedev/agi-agent-kit)
 [![AdaL CLI](https://img.shields.io/badge/AdaL%20CLI-SylphAI-pink)](https://sylph.ai/)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-CLI-teal)](https://github.com/openclaw/openclaw)
+[![Kiro](https://img.shields.io/badge/Kiro-AWS-yellow)](https://kiro.dev)
+[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blueviolet)](https://modelcontextprotocol.io)
 [![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a-coffee-d13610?logo=buymeacoffee&logoColor=white)](https://www.buymeacoffee.com/eltonmachado)
 
 **AGI Agent Kit** é o scaffolding de nível empresarial que transforma qualquer assistente de código com IA em uma **máquina de produção determinística**. Enquanto LLMs são probabilísticos (90% de precisão por etapa = 59% ao longo de 5 etapas), este framework os força através de uma **Arquitetura de 3 Camadas** — Intenção → Orquestração → Execução — onde a lógica de negócio vive em scripts testados, não em código alucinado.

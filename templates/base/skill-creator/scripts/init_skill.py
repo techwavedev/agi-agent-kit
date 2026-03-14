@@ -15,6 +15,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Path to the templates directory (sibling of scripts/)
+_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
+
 
 SKILL_TEMPLATE = """---
 name: {skill_name}
@@ -261,12 +264,35 @@ def init_skill(skill_name, path):
         print(f"❌ Error creating resource directories: {e}")
         return None
 
+    # Create optional MCP server files (additive — skipped if templates missing)
+    mcp_template = _TEMPLATES_DIR / "mcp_server_template.py"
+    mcp_tools_template = _TEMPLATES_DIR / "mcp_tools_template.json"
+
+    if mcp_template.exists():
+        try:
+            mcp_server_content = mcp_template.read_text().replace("__SKILL_NAME__", skill_name)
+            mcp_server_path = skill_dir / "mcp_server.py"
+            mcp_server_path.write_text(mcp_server_content)
+            mcp_server_path.chmod(0o755)
+            print("✅ Created mcp_server.py")
+        except Exception as e:
+            print(f"  ⚠️  Could not create mcp_server.py: {e}")
+
+    if mcp_tools_template.exists():
+        try:
+            mcp_tools_path = skill_dir / "mcp_tools.json"
+            mcp_tools_path.write_text(mcp_tools_template.read_text())
+            print("✅ Created mcp_tools.json")
+        except Exception as e:
+            print(f"  ⚠️  Could not create mcp_tools.json: {e}")
+
     # Print next steps
     print(f"\n✅ Skill '{skill_name}' initialized successfully at {skill_dir}")
     print("\nNext steps:")
     print("1. Edit SKILL.md to complete the TODO items and update the description")
     print("2. Customize or delete the example files in scripts/, references/, and assets/")
-    print("3. Run the validator when ready to check the skill structure")
+    print("3. Fill in mcp_server.py + mcp_tools.json to expose tools via MCP (optional)")
+    print("4. Run the validator when ready to check the skill structure")
 
     return skill_dir
 
