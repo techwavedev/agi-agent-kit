@@ -217,6 +217,26 @@ def main():
     pulsar = check_pulsar()
     report["pulsar"] = pulsar
 
+    # Step 6: Auto-sync BM25 index from shared Qdrant (ensures keyword search works on every machine)
+    bm25_result = {"status": "skipped"}
+    if report.get("qdrant", {}).get("status") == "ok":
+        try:
+            import subprocess
+            bm25_script = PROJECT_DIR / "execution" / "memory_manager.py"
+            proc = subprocess.run(
+                ["python3", str(bm25_script), "bm25-sync"],
+                capture_output=True, text=True, timeout=60,
+                cwd=str(PROJECT_DIR)
+            )
+            if proc.returncode == 0:
+                import json as _json
+                bm25_result = _json.loads(proc.stdout)
+            else:
+                bm25_result = {"status": "error", "message": proc.stderr[:200]}
+        except Exception as e:
+            bm25_result = {"status": "error", "message": str(e)}
+    report["bm25_sync"] = bm25_result
+
     # Final readiness
     qdrant = report["qdrant"]
     ollama = report["ollama"]
@@ -262,6 +282,9 @@ def main():
                 print(f"   📡 Pulsar: connected (real-time events)")
             elif MEMORY_MODE in ("team", "pro"):
                 print(f"   ℹ️  Pulsar: not running (optional: docker compose -f docker-compose.pulsar.yml up -d)")
+            bm25 = report.get("bm25_sync", {})
+            if bm25.get("status") == "synced":
+                print(f"   🔍 BM25: synced from Qdrant ({bm25.get('indexed', 0)} indexed, {bm25.get('total', 0)} total)")
         else:
             print("❌ Memory system not ready:")
             for issue in report["issues"]:
