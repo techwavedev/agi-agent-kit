@@ -36,6 +36,15 @@ from typing import List
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
+# Optional Langfuse Observability for token tracking
+try:
+    from langfuse.decorators import observe
+except ImportError:
+    def observe(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+
 # Configuration with Ollama as default (local/private)
 EMBEDDING_PROVIDER = os.environ.get("EMBEDDING_PROVIDER", "ollama")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
@@ -190,6 +199,7 @@ def get_embedding_bedrock(text: str) -> List[float]:
     return result.get("embedding", result.get("embeddings", [[]])[0])
 
 
+@observe(name="generate_embedding", as_type="generation")
 def get_embedding(text: str) -> List[float]:
     """
     Generate embedding using the configured provider.

@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [1.6.5] - 2026-03-19
+
+### Added
+
+- **Skill Self-Improvement (Karpathy Loop)** — Autonomous test → improve → commit/reset cycle for continuous skill quality improvement. Inspired by Andrej Karpathy's "auto-research" concept:
+  - `execution/run_skill_eval.py` — Binary assertion runner with 18 assertion types (`contains`, `regex_match`, `max_words`, `has_yaml_frontmatter`, `no_trailing_whitespace`, etc.)
+  - `execution/karpathy_loop.py` — Autonomous loop orchestrator with git commit/reset integration, dry-run mode, and status reporting
+  - `eval/evals.json` standard — Structured binary assertion format for objective skill quality measurement
+- **Skill Creator: Step 8** — Added "Self-Improvement Loop (Karpathy Loop)" step to `SKILL_skillcreator.md` with methodology, assertion examples, and auto-generation guidance
+- **Eval Directory Scaffolding** — `init_skill.py` now creates `eval/evals.json` with 4 starter assertions (frontmatter, description quality, structure, no-placeholders) for every new skill
+- **Example evals** — `skills/qdrant-memory/eval/evals.json` added as reference implementation (17/17 passing)
+
+### Documentation
+
+- **`AGENTS.md`** — Added "Skill Self-Improvement (Karpathy Loop)" section with quick start commands, assertion types reference, and key rules. Updated directory structure to show `eval/`. Added eval scripts to Key Scripts section.
 
 ## [1.6.4] - 2026-03-14
 

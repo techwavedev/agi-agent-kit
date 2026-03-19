@@ -398,7 +398,8 @@ project/
 │   └── <skill-name>/
 │       ├── SKILL.md      # Skill instructions and triggers
 │       ├── scripts/      # Executable tools
-│       └── references/   # Documentation loaded on-demand
+│       ├── references/   # Documentation loaded on-demand
+│       └── eval/         # Binary assertions for self-improvement (evals.json)
 └── AGENTS.md             # This file (symlinked as CLAUDE.md, GEMINI.md)
 ```
 
@@ -539,6 +540,42 @@ When a user says `/playbook`, "run a playbook", or asks for a multi-step workflo
 > **State persistence:** Progress is saved in `.tmp/playbook_state.json`. If a session ends mid-playbook, the next session can resume with `python3 execution/workflow_engine.py next`.
 
 > **Skill availability:** The engine checks which recommended skills are actually installed and flags missing ones with ⚠️ so you can adapt.
+
+---
+
+## Skill Self-Improvement (Karpathy Loop)
+
+Skills can autonomously improve their quality using the **Karpathy Loop** — an iterative cycle of test → change → eval → commit/reset.
+
+> Inspired by Andrej Karpathy's "auto-research" concept. See `skill-creator/SKILL_skillcreator.md` Step 8 for full methodology.
+
+### Quick Start
+
+```bash
+# Check current skill quality
+python3 execution/run_skill_eval.py --evals skills/my-skill/eval/evals.json --verbose
+
+# See failing assertions for a skill
+python3 execution/karpathy_loop.py --skill skills/my-skill --status-only
+
+# Run autonomous improvement loop
+python3 execution/karpathy_loop.py --skill skills/my-skill --max-iterations 10
+```
+
+### How It Works
+
+1. Each skill has `eval/evals.json` with **binary assertions** (true/false only)
+2. `run_skill_eval.py` runs assertions and reports pass rate
+3. `karpathy_loop.py` orchestrates: agent edits SKILL.md → run evals → `git commit` if improved, `git reset` if not
+4. Loop continues until perfect score or max iterations
+
+### Assertion Types
+
+`contains`, `not_contains`, `max_words`, `min_words`, `max_lines`, `min_lines`, `regex_match`, `regex_not_match`, `starts_with`, `ends_with`, `has_yaml_frontmatter`, `no_consecutive_blank_lines`, `max_chars`, `min_chars`, `contains_all`, `contains_any`, `line_count_equals`, `no_trailing_whitespace`
+
+### Key Rule
+
+Only use **binary assertions** — never subjective. `"max_words": 300` ✅, "Is the text good?" ❌.
 
 ---
 
@@ -764,6 +801,12 @@ python3 execution/cross_agent_context.py broadcast --agent "<name>" --message "<
 
 # Cross-agent: check pending handoffs
 python3 execution/cross_agent_context.py pending --agent "<name>" --project agi-agent-kit
+
+# Skill eval: run binary assertions
+python3 execution/run_skill_eval.py --evals skills/<skill>/eval/evals.json --verbose
+
+# Skill self-improvement: Karpathy Loop
+python3 execution/karpathy_loop.py --skill skills/<skill> --status-only
 ```
 
 ### MCP Servers

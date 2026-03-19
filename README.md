@@ -95,6 +95,7 @@ python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
 | **TDD Enforcement**           | Iron-law RED-GREEN-REFACTOR cycle — no production code without failing test                   |
 | **Verification Gates**        | Evidence before claims — no completion without fresh verification output                      |
 | **Self-Healing Workflows**    | Agents read error logs, patch scripts, and update directives automatically                    |
+| **Skill Self-Improvement**    | Karpathy Loop: autonomous test → improve → commit/reset cycle with 18 binary assertion types  |
 | **One-Shot Setup**            | Platform detection + project stack scan + auto-configuration in one command                   |
 
 ---
@@ -608,6 +609,7 @@ If these community skills help you, consider [starring the original repo](https:
 | **MCP Compatibility**               | ✅ Shipped    | Memory + cross-agent coordination exposed as MCP tools via `execution/mcp_server.py` (13 tools) and `skills/qdrant-memory/mcp_server.py` (6 tools). Pure chat clients (Claude Desktop) get full memory access. ([docs](./docs/mcp-compatibility.md)) |
 | **Platform-Adaptive Orchestration** | ✅ Shipped    | 10 platforms share one `AGENTS.md` via symlinks (Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL, Antigravity, OpenClaw, Kiro). Each uses its native orchestration strategy automatically.           |
 | **Workflow Engine**                 | ✅ Shipped    | `execution/workflow_engine.py` executes `data/workflows.json` playbooks as guided multi-skill sequences with progress tracking, skip/abort, and state persistence in `.tmp/playbook_state.json`.                         |
+| **Skill Self-Improvement**          | ✅ Shipped    | Karpathy Loop: `run_skill_eval.py` (18 binary assertion types) + `karpathy_loop.py` (autonomous test/improve/commit/reset). Skills include `eval/evals.json` for objective quality measurement.                           |
 | **Control Tower Orchestrator**      | 🚧 Active    | Basic dispatcher for agent registration and heartbeat via Qdrant (`control_tower.py`). Needs dedicated docs, test coverage, and integration with `session_boot`.                                                          |
 | **Secrets Management (Vault)**      | 🔬 Design    | HashiCorp Vault integration for secure secret sharing. Agents authenticate via Ed25519 keypair, access tenant-scoped secrets. Zero long-lived credentials.                                                                |
 
