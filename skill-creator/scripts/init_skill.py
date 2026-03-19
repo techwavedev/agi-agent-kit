@@ -103,6 +103,13 @@ Files not intended to be loaded into context, but rather used within the output 
 
 ---
 
+### eval/
+Binary assertion tests for autonomous self-improvement (Karpathy Loop).
+
+Contains an `evals.json` file with objective true/false test cases that validate the skill's SKILL.md structure and quality.
+
+**When to use:** Run `python3 execution/run_skill_eval.py --evals eval/evals.json` to validate, or use `python3 execution/karpathy_loop.py --skill .` for autonomous improvement.
+
 **Any unneeded directories can be deleted.** Not every skill requires all three types of resources.
 """
 
@@ -189,6 +196,54 @@ Example asset files from other skills:
 Note: This is a text placeholder. Actual assets can be any file type.
 """
 
+EVALS_TEMPLATE = """{
+  "skill": "__SKILL_NAME__",
+  "version": "1.0.0",
+  "description": "Binary assertions for __SKILL_TITLE__ skill quality",
+  "evaluations": [
+    {
+      "name": "frontmatter-valid",
+      "description": "SKILL.md has proper YAML frontmatter with name and description",
+      "input_file": "../SKILL.md",
+      "assertions": [
+        {"type": "has_yaml_frontmatter", "value": true},
+        {"type": "contains", "value": "name:"},
+        {"type": "contains", "value": "description:"}
+      ]
+    },
+    {
+      "name": "description-quality",
+      "description": "Description is comprehensive (not a placeholder)",
+      "input_file": "../SKILL.md",
+      "assertions": [
+        {"type": "not_contains", "value": "[TODO:"},
+        {"type": "min_chars", "value": 200},
+        {"type": "min_words", "value": 30}
+      ]
+    },
+    {
+      "name": "structure-complete",
+      "description": "SKILL.md has overview and proper heading structure",
+      "input_file": "../SKILL.md",
+      "assertions": [
+        {"type": "regex_match", "pattern": "^# "},
+        {"type": "regex_match", "pattern": "^## "},
+        {"type": "no_consecutive_blank_lines", "value": true}
+      ]
+    },
+    {
+      "name": "no-placeholder-content",
+      "description": "No leftover placeholder text from template",
+      "input_file": "../SKILL.md",
+      "assertions": [
+        {"type": "not_contains", "value": "[TODO:"},
+        {"type": "not_contains", "value": "Replace with"},
+        {"type": "not_contains", "value": "Delete this entire"}
+      ]
+    }
+  ]
+}"""
+
 
 def title_case_skill_name(skill_name):
     """Convert hyphenated skill name to Title Case for display."""
@@ -260,6 +315,16 @@ def init_skill(skill_name, path):
         example_asset = assets_dir / 'example_asset.txt'
         example_asset.write_text(EXAMPLE_ASSET)
         print("✅ Created assets/example_asset.txt")
+
+        # Create eval/ directory with evals.json template
+        eval_dir = skill_dir / 'eval'
+        eval_dir.mkdir(exist_ok=True)
+        evals_json = eval_dir / 'evals.json'
+        evals_content = (EVALS_TEMPLATE
+                         .replace("__SKILL_NAME__", skill_name)
+                         .replace("__SKILL_TITLE__", title_case_skill_name(skill_name)))
+        evals_json.write_text(evals_content)
+        print("✅ Created eval/evals.json")
     except Exception as e:
         print(f"❌ Error creating resource directories: {e}")
         return None
