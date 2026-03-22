@@ -20,6 +20,9 @@ venv/
 # Private / Internal
 .agent/
 .claude/
+# Allow context-mode hooks and shared settings
+!.claude/hooks/
+!.claude/settings.json
 .gemini/
 *.skill
 
