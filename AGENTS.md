@@ -221,6 +221,14 @@ python3 execution/memory_manager.py cache-store \
   --response "The complete response that was generated"
 ```
 
+#### Session Close Protocol (MANDATORY)
+
+At the end of a work session, run the wrap-up script to verify cleanup and formally commit all contextual learnings to the shared cross-agent memory:
+
+```bash
+python3 execution/session_wrapup.py
+```
+
 #### Proving Usage (Auditable)
 
 To verify the agent is actually using memory:
@@ -393,9 +401,9 @@ project/
 
 Skills are modular packages that extend agent capabilities with specialized workflows, scripts, and domain knowledge. Each skill contains:
 
-- **SKILL.md** — Instructions with YAML frontmatter (`name`, `description`) for triggering
+- **SKILL.md** — Instructions with YAML frontmatter (`name`, `description`) for triggering. **Must be under 200 lines.** Use progressive disclosure by linking to reference files.
 - **scripts/** — Deterministic tools the agent can execute
-- **references/** — Documentation loaded only when needed
+- **references/** — Documentation loaded only when needed (to prevent token bloat)
 
 **Key Resources:**
 
@@ -539,6 +547,7 @@ Markdown files containing instructions, SOPs, and documentation (`.md`) are fed 
 2. **Modularize Large Files**: If a directive or documentation file exceeds 1,500 words or 10,000 bytes, split it into smaller, logically separated files and use parent-child references.
 3. **Prefer Examples Over Prose**: Use concise input/output examples rather than verbose textual descriptions of how something should work.
 4. **Remove Filler**: Eliminate conversational filler, redundant instructions, and obvious statements. Focus on the *what* and the *how*.
+5. **Use Mermaid Context Compression**: Replace long, verbose textual descriptions of system architectures or folder structures with lightweight Mermaid diagrams to compress context window usage.
 
 ---
 

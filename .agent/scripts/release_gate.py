@@ -84,9 +84,12 @@ def check_git_status():
     if status:
         print("⚠️  Uncommitted changes detected:")
         print(status)
-        response = input("Continue anyway? (y/N): ")
-        if response.lower() != 'y':
-            sys.exit(1)
+        if sys.stdin.isatty():
+            response = input("Continue anyway? (y/N): ")
+            if response.lower() != 'y':
+                sys.exit(1)
+        else:
+            print("   (non-interactive mode — continuing with warning)")
     else:
         print("✅ Git working directory clean.")
 
@@ -163,18 +166,26 @@ def check_versions():
                         if old_parts[2] < 99 and new_parts[0] == old_parts[0]:
                             print(f"❌ MINOR BUMP REJECTED: You are trying to bump minor ({old_version} -> {version}), but patch has not reached .99 yet.")
                             print("   Our standard protocol is to exhaust the patch number up to .99 for bug fixes and small features before incrementing minor.")
-                            response = input("Is this a mandated structural overhaul overriding this rule? (y/N): ")
-                            if response.lower() != 'y':
+                            if sys.stdin.isatty():
+                                response = input("Is this a mandated structural overhaul overriding this rule? (y/N): ")
+                                if response.lower() != 'y':
+                                    sys.exit(1)
+                            else:
+                                print("   (non-interactive mode — blocking minor bump)")
                                 sys.exit(1)
         except Exception as e:
             print(f"⚠️  Could not run the Patch-99 git check: {e}")
-        
+
         if changelog.exists():
             content = changelog.read_text()
             if version not in content:
                 print(f"⚠️  Version {version} not found in CHANGELOG.md!")
-                response = input("Continue anyway? (y/N): ")
-                if response.lower() != 'y':
+                if sys.stdin.isatty():
+                    response = input("Continue anyway? (y/N): ")
+                    if response.lower() != 'y':
+                        sys.exit(1)
+                else:
+                    print("   (non-interactive mode — blocking: version must be in CHANGELOG)")
                     sys.exit(1)
             else:
                 print("✅ Version present in CHANGELOG.")
