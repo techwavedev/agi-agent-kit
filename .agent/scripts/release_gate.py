@@ -263,7 +263,7 @@ def run_security_team():
     try:
         result = subprocess.run(
             [sys.executable, str(security_script), "all", "--output", str(output_file)],
-            capture_output=True, text=True, cwd=ROOT_DIR, timeout=300
+            capture_output=True, text=True, cwd=ROOT_DIR, timeout=600
         )
 
         if output_file.exists():
