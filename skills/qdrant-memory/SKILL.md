@@ -128,19 +128,26 @@ export OPENAI_API_KEY="sk-..."
 
 ### MCP Server Configuration
 
+This skill ships its own MCP server (`mcp_server.py`) that wraps the skill's Python modules directly — no external package needed.
+
 ```json
 {
-  "qdrant-mcp": {
-    "command": "npx",
-    "args": ["-y", "@qdrant/mcp-server-qdrant"],
-    "env": {
-      "QDRANT_URL": "http://localhost:6333",
-      "QDRANT_API_KEY": "${QDRANT_API_KEY}",
-      "COLLECTION_NAME": "agent_memory"
+  "mcpServers": {
+    "qdrant-memory": {
+      "command": "python3",
+      "args": ["/absolute/path/to/skills/qdrant-memory/mcp_server.py"],
+      "env": {
+        "QDRANT_URL": "http://localhost:6333",
+        "EMBEDDING_PROVIDER": "ollama",
+        "OLLAMA_URL": "http://localhost:11434"
+      }
     }
   }
 }
 ```
+
+> For the full AGI framework (memory + cross-agent coordination + health) use `execution/mcp_server.py` instead.
+> See `docs/mcp-compatibility.md` for the complete setup guide and compatibility matrix.
 
 ### Initialize Memory Collection
 

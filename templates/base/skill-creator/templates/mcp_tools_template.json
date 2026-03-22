@@ -1,0 +1,18 @@
+{
+  "tools": [
+    {
+      "name": "example_tool",
+      "description": "[TODO: What this tool does and when to use it]",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string",
+            "description": "[TODO: describe this argument]"
+          }
+        },
+        "required": ["input"]
+      }
+    }
+  ]
+}

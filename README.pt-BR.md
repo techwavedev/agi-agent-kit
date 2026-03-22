@@ -16,6 +16,8 @@
 [![Antigravity IDE](https://img.shields.io/badge/Antigravity-DeepMind-red)](https://github.com/techwavedev/agi-agent-kit)
 [![AdaL CLI](https://img.shields.io/badge/AdaL%20CLI-SylphAI-pink)](https://sylph.ai/)
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-CLI-teal)](https://github.com/openclaw/openclaw)
+[![Kiro](https://img.shields.io/badge/Kiro-AWS-yellow)](https://kiro.dev)
+[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blueviolet)](https://modelcontextprotocol.io)
 [![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a-coffee-d13610?logo=buymeacoffee&logoColor=white)](https://www.buymeacoffee.com/eltonmachado)
 
 **AGI Agent Kit** é o scaffolding de nível empresarial que transforma qualquer assistente de código com IA em uma **máquina de produção determinística**. Enquanto LLMs são probabilísticos (90% de precisão por etapa = 59% ao longo de 5 etapas), este framework os força através de uma **Arquitetura de 3 Camadas** — Intenção → Orquestração → Execução — onde a lógica de negócio vive em scripts testados, não em código alucinado.
@@ -28,7 +30,8 @@ A maioria das configurações de IA para código te dá um prompt e torce pelo m
 - 🎯 **19 Agentes Especialistas** — Experts delimitados por domínio (Frontend, Backend, Segurança, Mobile, Game Dev...) com propriedade de arquivos forçada
 - ⚡ **1.191 Skills Curadas** — 4 essenciais + 89 profissionais + 1.098 comunitárias em 16 categorias de domínio
 - 🔒 **Portões de Verificação** — Nenhuma tarefa é concluída sem evidência. Enforcement de TDD. Revisão de código em duas etapas.
-- 🌐 **9 Plataformas, Uma Configuração** — Escreva uma vez, execute no Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE, OpenClaw
+- 🌐 **10 Plataformas, Uma Configuração** — Escreva uma vez, execute no Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL CLI, Antigravity IDE, OpenClaw, Kiro
+- 🔌 **Compatível com MCP** — Expõe memória + coordenação entre agentes como ferramentas MCP para Claude Desktop e qualquer cliente de interface de chat
 
 ```bash
 npx @techwavedev/agi-agent-kit init
@@ -84,7 +87,8 @@ python3 skills/plugin-discovery/scripts/platform_setup.py --project-dir .
 | **Execução de Plano Estruturado** | Execução em lote ou orientada por subagentes com revisão em duas etapas (spec + qualidade)    |
 | **Enforcement de TDD**            | Ciclo RED-GREEN-REFACTOR inquebrantável — sem código de produção sem teste falhando           |
 | **Portões de Verificação**        | Evidência antes de afirmações — sem conclusão sem saída de verificação atualizada             |
-| **Adaptativo à Plataforma**       | Auto-detecta Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL, Antigravity |
+| **Adaptativo à Plataforma**       | Auto-detecta Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL, Antigravity, Kiro |
+| **Compatível com MCP**            | Memória + coordenação entre agentes expostas como ferramentas MCP (`execution/mcp_server.py`) para Claude Desktop e qualquer cliente MCP |
 | **Orquestração Multi-Agente**     | Agent Teams, subagentes, Powers, ou personas sequenciais — adapta-se à plataforma             |
 | **Memória Híbrida**               | Vetores Qdrant + palavras-chave BM25 com mesclagem de pontuação ponderada (95% de economia)   |
 | **Workflows Auto-Reparáveis**     | Agentes leem logs de erro, corrigem scripts e atualizam diretivas automaticamente             |
@@ -103,7 +107,7 @@ O framework AGI adota todos os melhores padrões do [obra/superpowers](https://g
 | Debugging Sistemático            |        ✅        |    ✅ Adaptado + agente `debugger`    |
 | Portões de Verificação           |        ✅        |   ✅ Adaptado + 12 scripts de audit   |
 | Revisão de Código em Duas Etapas |        ✅        |      ✅ Adaptado no orquestrador      |
-| Orquestração Multi-Plataforma    | ❌ Apenas Claude |           ✅ 9 plataformas            |
+| Orquestração Multi-Plataforma    | ❌ Apenas Claude |          ✅ 10 plataformas            |
 | Memória Semântica (Qdrant)       |        ❌        |     ✅ 90-100% economia de tokens     |
 | 19 Agentes Especialistas         |        ❌        |       ✅ Fronteiras de domínio        |
 | Reforço de Fronteiras de Agente  |        ❌        |  ✅ Propriedade por tipo de arquivo   |
@@ -111,7 +115,8 @@ O framework AGI adota todos os melhores padrões do [obra/superpowers](https://g
 | Protocolo Memory-First           |        ❌        |           ✅ Auto cache-hit           |
 | Criador de Skills + Catálogo     |        ❌        |       ✅ 1.191 skills combináveis       |
 | Assistente de Configuração       |        ❌        |     ✅ Configuração em um comando     |
-| Symlinks Multi-Plataforma        | ❌ Apenas Claude |           ✅ 9 plataformas            |
+| Symlinks Multi-Plataforma        | ❌ Apenas Claude |          ✅ 10 plataformas            |
+| Servidor MCP                     |        ❌        |    ✅ Memória + coordenação           |
 
 ---
 
@@ -202,6 +207,7 @@ Skills são instaladas no diretório canônico `skills/` e vinculadas via symlin
 | **GitHub Copilot**  | N/A (colar)        | `COPILOT.md`         | Colar manualmente no contexto        |
 | **OpenCode**        | `.agent/skills/`   | `OPENCODE.md`        | Personas sequenciais via `@agent`    |
 | **AdaL CLI**        | `.adal/skills/`    | `AGENTS.md`          | Carregamento automático sob demanda  |
+| **Kiro (AWS)**      | `.kiro/skills/`    | `.kiro/steering/agents.md` | Orquestração agêntica completa |
 
 Execute `/setup` para auto-detectar e configurar sua plataforma, ou use o script de configuração diretamente:
 
@@ -506,12 +512,17 @@ Se essas skills comunitárias te ajudam, considere [dar uma estrela no repositó
 
 ## 🗺️ Roadmap
 
-| Funcionalidade                         | Status       | Descrição                                                                                                                                                                                                                                                           |
-| -------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Memória Federada de Agentes**        | 🔬 Design    | Compartilhamento de conhecimento entre agentes via coleções Qdrant com escopo de projeto. Agentes no mesmo projeto leem decisões, erros e padrões uns dos outros — construindo inteligência coletiva entre sessões e plataformas.                                   |
-| **Memória Autenticada por Blockchain** | 🔬 Design    | Camada de confiança criptográfica para memória compartilhada usando blockchains empresariais (Hyperledger Fabric, MultiChain ou Quorum) — auto-hospedado, sem taxas, sem criptomoeda. Escritas de agentes são assinadas, hashes de conteúdo são ancorados on-chain. |
-| **Streaming de Agentes Event-Driven**  | 🔬 Design    | Comunicação em tempo real entre agentes via Kafka/Flink. Agentes publicam decisões e observações em tópicos, habilitando workflows reativos — ex: agente de segurança aciona remediação quando o agente de varredura publica achados.                               |
-| **Motor de Workflows**                 | 📋 Planejado | Execução de playbooks `data/workflows.json` como sequências multi-skill guiadas com rastreamento de progresso e lógica de ramificação.                                                                                                                              |
+| Funcionalidade                             | Status       | Descrição                                                                                                                                                                                                                                                           |
+| ------------------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Memória Federada de Agentes**            | ✅ Entregue  | Compartilhamento de conhecimento entre agentes via Qdrant compartilhado. Multi-tenancy com isolamento por desenvolvedor, flag `--shared` para visibilidade em equipe. 15/15 testes. ([docs](./docs/memory-modes.md)) |
+| **Autenticação Blockchain de Agentes**     | ✅ Entregue  | Escritas assinadas com HMAC-SHA256, ancoragem de hash, controle de acesso por projeto, trilha de auditoria — tudo via coleção Qdrant `agent_auth`. DID W3C opcional via Hyperledger Aries ACA-Py 1.5.0. 36/36 testes. ([docs](./docs/blockchain-auth.md)) |
+| **Streaming Event-Driven de Agentes**      | ✅ Entregue  | Barramento de eventos Apache Pulsar com auto-publicação no `memory_manager.py store`. Tópicos com escopo de projeto, degradação graciosa. 19/19 testes. ([docs](./docs/agent-events.md)) |
+| **Níveis de Modo de Memória**              | ✅ Entregue  | Progressão Solo → Team → Pro. Upgrades com compatibilidade retroativa, sem migração de dados. BM25 auto-sincronizado do Qdrant compartilhado no boot. ([docs](./docs/memory-modes.md)) |
+| **Compatibilidade MCP**                    | ✅ Entregue  | Memória + coordenação entre agentes expostas como ferramentas MCP via `execution/mcp_server.py` (13 ferramentas) e `skills/qdrant-memory/mcp_server.py` (6 ferramentas). ([docs](./docs/mcp-compatibility.md)) |
+| **Orquestração Adaptativa à Plataforma**   | ✅ Entregue  | 10 plataformas compartilham um `AGENTS.md` via symlinks (Claude Code, Gemini CLI, Codex CLI, Cursor, Copilot, OpenCode, AdaL, Antigravity, OpenClaw, Kiro). Cada uma usa sua estratégia de orquestração nativa automaticamente. |
+| **Motor de Workflows**                     | ✅ Entregue  | `execution/workflow_engine.py` executa playbooks `data/workflows.json` como sequências multi-skill guiadas com rastreamento de progresso, pular/abortar e persistência de estado em `.tmp/playbook_state.json`. |
+| **Control Tower Orchestrator**             | 🚧 Ativo     | Dispatcher básico para registro de agentes e heartbeat via Qdrant (`control_tower.py`). Precisa de docs dedicados e cobertura de testes. |
+| **Gerenciamento de Segredos (Vault)**      | 🔬 Design    | Integração HashiCorp Vault para compartilhamento seguro de segredos. Agentes autenticam via keypair Ed25519, acessam segredos com escopo de tenant. Zero credenciais de longa duração. |
 
 ---
 

@@ -17,37 +17,50 @@ This plan maps the concepts extracted from your NotebookLM link to the current s
 
 Please review the proposed changes below. Let me know if you would like me to adjust any of these scopes or add other concepts (e.g. Cloud Tasks or Telegram bot integration)!
 
-## Proposed Changes
+## Implemented Changes (2026-03-22)
 
-### Core Execution Layer
-Summary: Introduce the session wrap-up protocol to formally close sessions and commit learnings to the shared OS memory.
+### Core Execution Layer — DONE
+Summary: Introduced the session wrap-up protocol to formally close sessions and commit learnings to shared memory.
 
-#### [NEW] execution/session_wrapup.py
-- A script to run at the end of an agent session.
-- Automatically triggers `cross_agent_context.py store` to log the day's accomplishments.
-- Verifies `.tmp/` is cleaned out.
-- Reminds the agent to run `memory_manager.py store` if it hasn't.
+#### [DONE] execution/session_wrapup.py
+- Runs at the end of an agent session.
+- Queries Qdrant for recent memories, verifies at least one was stored.
+- Optionally broadcasts accomplishments via `cross_agent_context.py store` (`--auto-broadcast`).
+- Scans `.tmp/` for stale files (>24h).
+- Deregisters from Control Tower heartbeat.
+- Exit codes: 0 (success), 1 (zero stores warning), 2 (Qdrant unreachable).
+- Docs: `docs/execution/session_wrapup.md`
 
-### Documentation Layer
-Summary: Update the core directives and agent rules to reflect the new token-saving best practices.
+### Documentation Layer — DONE
+Summary: Updated core directives and agent rules with token-saving best practices.
 
-#### [MODIFY] AGENTS.md
-- Add the **Session Close Protocol** (mandatory `session_wrapup.py`).
-- Add to the Markdown/Token Rules: "Use Mermaid diagrams to compress structural or architectural context instead of long paragraphs."
-- Add to Skill Rules: "Keep `SKILL.md` under 200 lines; use progressive disclosure by linking to `references/` files."
+#### [DONE] AGENTS.md
+- Added **Session Close Protocol** (mandatory `session_wrapup.py`).
+- Added Mermaid Context Compression rule to Markdown best practices.
+- Added Progressive Disclosure rule: `SKILL.md` must stay under 200 lines.
+- Added `evaluate_skill.py` command reference under Skill Creator.
 
-### Skill Creator Layer
-Summary: Add autonomous skill evaluation loops.
+### Skill Creator Layer — DONE
+Summary: Added autonomous skill evaluation loops.
 
-#### [NEW] skill-creator/scripts/evaluate_skill.py
-- A script that allows an agent to define a test input, run a specific skill, evaluate the output against a binary criteria (e.g., "Did it generate a valid JSON?"), and output a pass/fail report to help the agent self-correct the skill.
+#### [DONE] skill-creator/scripts/evaluate_skill.py
+- Evaluates skills against binary criteria (structural checks + keyword heuristics).
+- 8 built-in checks: SKILL.md exists, YAML frontmatter, required fields, line count, scripts dir, references dir, executability, naming convention.
+- Stores results in Qdrant with historical trend comparison.
+- Graceful degradation when Qdrant/Ollama unavailable.
+- Docs: `docs/skill-creator/evaluate_skill.md`
 
 ## Verification Plan
 
 ### Automated Tests
-- Run `python3 execution/session_wrapup.py` to ensure it successfully performs cleanup and syncs to memory.
-- Run `python3 .agent/scripts/release_gate.py` and `python3 execution/validate_template.py` to ensure the AGENTS.md changes pass the framework release policies.
-- Run `evaluate_skill.py` against a non-destructive skill (like `pdf-reader`) to verify the evaluation loop works.
+- [ ] Run `python3 execution/session_wrapup.py` to ensure it successfully performs cleanup and syncs to memory.
+- [ ] Run `python3 .agent/scripts/release_gate.py` and `python3 execution/validate_template.py` to ensure the AGENTS.md changes pass the framework release policies.
+- [ ] Run `evaluate_skill.py` against a non-destructive skill (like `pdf-reader`) to verify the evaluation loop works.
 
 ### Templates Sync
-- Run `python3 execution/sync_to_template.py --sync` to propagate all the root changes to `templates/base/` and `templates/skills/`.
+- [ ] Run `python3 execution/sync_to_template.py --sync` to propagate all the root changes to `templates/base/` and `templates/skills/`.
+
+### Documentation Team
+- [x] doc-writer: Created `docs/execution/session_wrapup.md` and `docs/skill-creator/evaluate_skill.md` (2026-03-22)
+- [x] doc-reviewer: Verified docs match source code (2026-03-22)
+- [x] changelog-updater: Added entries under `[Unreleased]` in CHANGELOG.md (2026-03-22)

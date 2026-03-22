@@ -1,6 +1,8 @@
 # Agent Instructions
 
-> `CLAUDE.md`, `GEMINI.md`, `OPENCODE.md`, `COPILOT.md`, and `OPENCLAW.md` are symlinks to this file, so the same instructions load in any AI environment.
+> `CLAUDE.md`, `GEMINI.md`, `OPENCODE.md`, `COPILOT.md`, and `OPENCLAW.md` are symlinks to this file.
+> Kiro reads `.kiro/steering/agents.md` (also a symlink here).
+> The same instructions load in any AI coding agent environment.
 
 ---
 
@@ -213,6 +215,17 @@ Memory types: `decision`, `code`, `error`, `technical`, `conversation`
 - ✅ You discovered a technical insight or API quirk
 - ✅ You completed a multi-step workflow
 
+#### Handling Conversation Compaction (MANDATORY)
+
+When you compact the chat or clear the context window to save tokens (such as when running `/compact` or automatically dropping early history), that context is permanently lost unless you explicitly save it. You MUST generate a summary of the vital context and push it to Qdrant immediately before the compaction:
+
+```bash
+python3 execution/memory_manager.py store \
+  --content "Pre-compaction summary: <insert key context, decisions, and current state>" \
+  --type conversation \
+  --project <project-name>
+```
+
 #### After Completing a Complex Task
 
 ```bash
@@ -220,6 +233,30 @@ python3 execution/memory_manager.py cache-store \
   --query "The original user question" \
   --response "The complete response that was generated"
 ```
+
+#### Session Close Protocol (MANDATORY)
+
+At the end of a work session, run the wrap-up script to verify cleanup and formally commit all contextual learnings to the shared cross-agent memory:
+
+```bash
+python3 execution/session_wrapup.py --auto-broadcast
+```
+
+**What it does:**
+
+1. **Reviews session activity** — queries Qdrant for memories stored in the last 60 minutes
+2. **Verifies memory stores** — warns if zero decisions/learnings were stored (protocol violation)
+3. **Broadcasts to all agents** — calls `cross_agent_context.py store` so other LLMs see what was accomplished
+4. **Checks stale .tmp/ files** — lists files older than 24h for manual cleanup
+5. **Updates Control Tower** — marks session as ended in the orchestrator
+
+**Options:**
+
+```bash
+python3 execution/session_wrapup.py --agent gemini --project myapp --since 90 --json
+```
+
+**Exit codes:** 0 = clean wrapup, 1 = zero stores warning, 2 = memory unreachable
 
 #### Proving Usage (Auditable)
 
@@ -385,7 +422,8 @@ project/
 │   └── <skill-name>/
 │       ├── SKILL.md      # Skill instructions and triggers
 │       ├── scripts/      # Executable tools
-│       └── references/   # Documentation loaded on-demand
+│       ├── references/   # Documentation loaded on-demand
+│       └── eval/         # Binary assertions for self-improvement (evals.json)
 └── AGENTS.md             # This file (symlinked as CLAUDE.md, GEMINI.md)
 ```
 
@@ -393,14 +431,22 @@ project/
 
 Skills are modular packages that extend agent capabilities with specialized workflows, scripts, and domain knowledge. Each skill contains:
 
-- **SKILL.md** — Instructions with YAML frontmatter (`name`, `description`) for triggering
+- **SKILL.md** — Instructions with YAML frontmatter (`name`, `description`) for triggering. **Must be under 200 lines.** Use progressive disclosure by linking to reference files.
 - **scripts/** — Deterministic tools the agent can execute
-- **references/** — Documentation loaded only when needed
+- **references/** — Documentation loaded only when needed (to prevent token bloat)
 
 **Key Resources:**
 
 - **Skills Catalog:** `skills/SKILLS_CATALOG.md` — Complete documentation of all available skills
 - **Skill Creator Guide:** `skill-creator/SKILL_skillcreator.md` — How to create new skills
+
+**Progressive Disclosure Rules (MANDATORY):**
+
+- `SKILL.md` MUST be under 200 lines — it is a process router, not an encyclopedia
+- Put step-by-step instructions, output formatting, and routing logic in `SKILL.md`
+- Put deep knowledge, long examples, brand context, and frameworks in `references/`
+- Claude loads reference files only when `SKILL.md` explicitly tells it to, then unloads them
+- YAML frontmatter MUST include `name` (hyphen-case) and `description` (trigger conditions)
 
 **Commands:**
 
@@ -410,11 +456,19 @@ python3 skill-creator/scripts/init_skill.py <name> --path skills/
 
 # Update the skills catalog (MANDATORY after any skill change)
 python3 skill-creator/scripts/update_catalog.py --skills-dir skills/
+
+# Evaluate a skill against structural criteria (Skills 2.0)
+python3 skill-creator/scripts/evaluate_skill.py \
+  --skill-path skills/<name> \
+  --test-input "test prompt" \
+  --criteria '["SKILL.md exists", "Has YAML frontmatter", "Under 200 lines", "Has references/ directory"]'
 ```
+
+The evaluation stores results in Qdrant for cross-agent visibility and tracks historical pass rates.
 
 ### Deliverables vs. Intermediates
 
-| Type              | Location       | Examples                                             |
+| Type              | Location       | VExamples                                             |
 | ----------------- | -------------- | ---------------------------------------------------- |
 | **Deliverables**  | Cloud services | Google Sheets, Slides, Drive files, database records |
 | **Intermediates** | `.tmp/`        | Scraped HTML, processed JSON, temp exports           |
@@ -529,6 +583,42 @@ When a user says `/playbook`, "run a playbook", or asks for a multi-step workflo
 
 ---
 
+## Skill Self-Improvement (Karpathy Loop)
+
+Skills can autonomously improve their quality using the **Karpathy Loop** — an iterative cycle of test → change → eval → commit/reset.
+
+> Inspired by Andrej Karpathy's "auto-research" concept. See `skill-creator/SKILL_skillcreator.md` Step 8 for full methodology.
+
+### Quick Start
+
+```bash
+# Check current skill quality
+python3 execution/run_skill_eval.py --evals skills/my-skill/eval/evals.json --verbose
+
+# See failing assertions for a skill
+python3 execution/karpathy_loop.py --skill skills/my-skill --status-only
+
+# Run autonomous improvement loop
+python3 execution/karpathy_loop.py --skill skills/my-skill --max-iterations 10
+```
+
+### How It Works
+
+1. Each skill has `eval/evals.json` with **binary assertions** (true/false only)
+2. `run_skill_eval.py` runs assertions and reports pass rate
+3. `karpathy_loop.py` orchestrates: agent edits SKILL.md → run evals → `git commit` if improved, `git reset` if not
+4. Loop continues until perfect score or max iterations
+
+### Assertion Types
+
+`contains`, `not_contains`, `max_words`, `min_words`, `max_lines`, `min_lines`, `regex_match`, `regex_not_match`, `starts_with`, `ends_with`, `has_yaml_frontmatter`, `no_consecutive_blank_lines`, `max_chars`, `min_chars`, `contains_all`, `contains_any`, `line_count_equals`, `no_trailing_whitespace`
+
+### Key Rule
+
+Only use **binary assertions** — never subjective. `"max_words": 300` ✅, "Is the text good?" ❌.
+
+---
+
 ## Best Practices for Directives and Markdown (Token Optimization)
 
 Markdown files containing instructions, SOPs, and documentation (`.md`) are fed directly into the model's context window. **Long, extended markdown files waste precious tokens and dilute the agent's focus**, making it less effective.
@@ -539,6 +629,12 @@ Markdown files containing instructions, SOPs, and documentation (`.md`) are fed 
 2. **Modularize Large Files**: If a directive or documentation file exceeds 1,500 words or 10,000 bytes, split it into smaller, logically separated files and use parent-child references.
 3. **Prefer Examples Over Prose**: Use concise input/output examples rather than verbose textual descriptions of how something should work.
 4. **Remove Filler**: Eliminate conversational filler, redundant instructions, and obvious statements. Focus on the *what* and the *how*.
+5. **Use Mermaid Context Compression**: Replace long, verbose textual descriptions of system architectures, folder structures, or process workflows with lightweight Mermaid diagrams. A Mermaid diagram costs a few hundred tokens; the same information as prose costs thousands. LLMs parse structured diagrams more efficiently than block paragraphs. Example — instead of a 20-line text description of a 5-step workflow, use:
+
+   ```mermaid
+   graph LR
+     A[Input] --> B[Process] --> C[Validate] --> D[Store] --> E[Output]
+   ```
 
 ---
 
@@ -751,7 +847,24 @@ python3 execution/cross_agent_context.py broadcast --agent "<name>" --message "<
 
 # Cross-agent: check pending handoffs
 python3 execution/cross_agent_context.py pending --agent "<name>" --project agi-agent-kit
+
+# Skill eval: run binary assertions
+python3 execution/run_skill_eval.py --evals skills/<skill>/eval/evals.json --verbose
+
+# Skill self-improvement: Karpathy Loop
+python3 execution/karpathy_loop.py --skill skills/<skill> --status-only
 ```
+
+### MCP Servers
+
+Two MCP servers expose the framework to Claude Desktop, Antigravity, Cursor, Copilot, and any MCP client:
+
+| Server | File | Scope |
+|---|---|---|
+| `agi-framework` | `execution/mcp_server.py` | Memory + cross-agent + health (13 tools) |
+| `qdrant-memory` | `skills/qdrant-memory/mcp_server.py` | Direct Qdrant skill ops (6 tools) |
+
+> See `docs/mcp-compatibility.md` for full setup, config examples, and compatibility matrix.
 
 ### Rules
 
