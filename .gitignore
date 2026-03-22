@@ -18,6 +18,7 @@ venv/
 .venv/
 
 # Private / Internal
+docker-compose.langfuse.yml
 .agent/
 .claude/
 # Allow context-mode hooks and shared settings
