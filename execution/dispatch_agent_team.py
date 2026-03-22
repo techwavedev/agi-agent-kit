@@ -3,16 +3,25 @@
 Script: dispatch_agent_team.py
 Purpose: Dispatch a named agent team by reading its directive and preparing
          a structured manifest of sub-agents to invoke, shared via Qdrant memory.
+         Supports --parallel mode using git worktrees for agent isolation.
 
 Usage:
     python3 execution/dispatch_agent_team.py \\
         --team <team_id> \\
         --payload '<json_string>'
 
+    # Parallel mode: each sub-agent gets its own git worktree
+    python3 execution/dispatch_agent_team.py \\
+        --team <team_id> \\
+        --payload '<json_string>' \\
+        --parallel [--partitions '<json>']
+
 Arguments:
-    --team      Team ID matching a file in directives/teams/ (required)
-    --payload   JSON string with task context (required)
-    --dry-run   Print the manifest without storing to memory (optional)
+    --team        Team ID matching a file in directives/teams/ (required)
+    --payload     JSON string with task context (required)
+    --parallel    Run sub-agents in parallel using git worktree isolation
+    --partitions  JSON mapping agent IDs to file globs they'll modify (optional)
+    --dry-run     Print the manifest without storing to memory (optional)
 
 Exit Codes:
     0 - Success, manifest printed to stdout
@@ -20,10 +29,12 @@ Exit Codes:
     2 - Team directive not found
     3 - Invalid payload JSON
     4 - Memory store error
+    5 - Partition overlap detected (parallel mode)
 """
 
 import argparse
 import json
+import subprocess
 import sys
 import uuid
 import os
@@ -101,17 +112,29 @@ def load_subagent_directive(root: Path, subagent_id: str) -> dict:
         }
 
 
-def build_manifest(team_id: str, payload: dict, subagents: list, root: Path) -> dict:
+def build_manifest(team_id: str, payload: dict, subagents: list, root: Path,
+                   parallel=False, worktree_info=None):
     """Build the full dispatch manifest."""
     run_id = str(uuid.uuid4())[:8]
-    return {
-        "team": team_id,
-        "run_id": run_id,
-        "dispatched_at": datetime.now(timezone.utc).isoformat(),
-        "payload": payload,
-        "sub_agents": [load_subagent_directive(root, sa) for sa in subagents],
-        "execution_mode": "sequential",
-        "instructions": (
+    execution_mode = "parallel-worktree" if parallel else "sequential"
+
+    if parallel:
+        instructions = (
+            f"You are the Orchestrator. Each sub-agent has its own isolated git worktree. "
+            f"Dispatch ALL sub-agents in parallel — they cannot conflict because each works "
+            f"in a separate directory on a separate branch. "
+            f"Pass the original payload JSON as context plus the worktree_path for each agent. "
+            f"Each sub-agent MUST work ONLY within its assigned worktree directory. "
+            f"When ALL sub-agents complete, run: "
+            f"`python3 execution/worktree_isolator.py merge-all --run-id {run_id}` "
+            f"to merge all branches back sequentially. Then run: "
+            f"`python3 execution/worktree_isolator.py status --run-id {run_id}` to verify. "
+            f"Finally, cleanup with: "
+            f"`python3 execution/worktree_isolator.py merge-all --run-id {run_id}` followed by cleanup. "
+            f"Store final results to memory with tag '{team_id}'."
+        )
+    else:
+        instructions = (
             f"You are the Orchestrator. Invoke each sub-agent in order based on their specialized skills. "
             f"Pass the original payload JSON as context. If a sub-agent works on a divided task, it MUST "
             f"return a 'handoff_state' object containing its state, 'next_steps' for the following agent, "
@@ -120,7 +143,16 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path) -> 
             f"tagged with '{run_id}' against conflicts, AND pass it directly to the next sequential "
             f"or testing sub-agent so they execute the required validation and next steps precisely. "
             f"Store final results to memory with tag '{team_id}'."
-        ),
+        )
+
+    manifest = {
+        "team": team_id,
+        "run_id": run_id,
+        "dispatched_at": datetime.now(timezone.utc).isoformat(),
+        "payload": payload,
+        "sub_agents": [load_subagent_directive(root, sa) for sa in subagents],
+        "execution_mode": execution_mode,
+        "instructions": instructions,
         "memory_query": f"python3 execution/memory_manager.py auto --query \"{team_id} {payload.get('commit_msg', '')}\"",
         "memory_store": (
             f"python3 execution/memory_manager.py store "
@@ -128,6 +160,30 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path) -> 
             f"--type decision --tags {team_id} agent-team"
         )
     }
+
+    if parallel and worktree_info:
+        manifest["worktree_isolation"] = worktree_info
+        _attach_worktree_paths(manifest, worktree_info)
+
+    return manifest
+
+
+def _attach_worktree_paths(manifest, worktree_info):
+    """Enrich sub-agent entries with their worktree paths."""
+    wt_lookup = {}
+    for wt_entry in worktree_info.get("agents", []):
+        name = wt_entry.get("agent", "").replace("-", "_")
+        wt_lookup[name] = wt_entry
+
+    enriched = []
+    for sa in manifest.get("sub_agents", []):
+        agent_id = sa.get("id", "").replace("-", "_")
+        entry = {**sa}
+        if agent_id in wt_lookup:
+            entry["worktree_path"] = wt_lookup[agent_id].get("worktree_path")
+            entry["branch"] = wt_lookup[agent_id].get("branch")
+        enriched.append(entry)
+    manifest["sub_agents"] = enriched
 
 
 def store_to_memory(root: Path, manifest: dict, dry_run: bool) -> bool:
@@ -163,10 +219,56 @@ def store_to_memory(root: Path, manifest: dict, dry_run: bool) -> bool:
     return True
 
 
+def setup_parallel_worktrees(root, subagents, run_id=None):
+    """Create worktrees for all sub-agents using worktree_isolator."""
+    isolator = root / "execution" / "worktree_isolator.py"
+    if not isolator.exists():
+        print(json.dumps({
+            "status": "error",
+            "message": "worktree_isolator.py not found in execution/"
+        }), file=sys.stderr)
+        sys.exit(2)
+
+    agent_names = json.dumps(subagents)
+    cmd = [sys.executable, str(isolator), "create-all", "--agents", agent_names]
+    if run_id:
+        cmd.extend(["--run-id", run_id])
+
+    result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(root))
+    if result.returncode != 0:
+        print(json.dumps({
+            "status": "error",
+            "message": f"Failed to create worktrees: {result.stderr.strip()}"
+        }), file=sys.stderr)
+        sys.exit(2)
+
+    return json.loads(result.stdout)
+
+
+def validate_partitions(root, partitions_json):
+    """Validate file partitions don't overlap before parallel dispatch."""
+    isolator = root / "execution" / "worktree_isolator.py"
+    result = subprocess.run(
+        [sys.executable, str(isolator), "validate-partitions",
+         "--partitions", partitions_json],
+        capture_output=True, text=True, cwd=str(root)
+    )
+    if result.returncode == 4:
+        print(result.stdout)
+        sys.exit(5)
+    return result.returncode == 0
+
+
 def main():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description="Dispatch agent teams (sequential or parallel with worktree isolation)"
+    )
     parser.add_argument("--team", required=True, help="Team ID (matches directives/teams/<id>.md)")
     parser.add_argument("--payload", required=True, help="JSON payload string with task context")
+    parser.add_argument("--parallel", action="store_true",
+                        help="Run sub-agents in parallel using git worktree isolation")
+    parser.add_argument("--partitions",
+                        help="JSON mapping agent IDs to file globs (validates no overlap)")
     parser.add_argument("--dry-run", action="store_true", help="Print manifest without storing to memory")
     args = parser.parse_args()
 
@@ -192,7 +294,18 @@ def main():
             "hint": "Check that the Sub-Agents section uses ### N. `name` format"
         }))
 
-    manifest = build_manifest(args.team, payload, subagents, root)
+    worktree_info = None
+
+    if args.parallel:
+        # Validate partitions if provided
+        if args.partitions:
+            validate_partitions(root, args.partitions)
+
+        # Create worktrees for all sub-agents
+        worktree_info = setup_parallel_worktrees(root, subagents)
+
+    manifest = build_manifest(args.team, payload, subagents, root,
+                              parallel=args.parallel, worktree_info=worktree_info)
     store_to_memory(root, manifest, args.dry_run)
 
     print(json.dumps(manifest, indent=2))

@@ -1,0 +1,46 @@
+{
+  "skill": "cowork-export",
+  "version": "1.0.0",
+  "assertions": [
+    {
+      "name": "SKILL.md exists and has frontmatter",
+      "file": "SKILL.md",
+      "type": "has_yaml_frontmatter"
+    },
+    {
+      "name": "SKILL.md under 200 lines",
+      "file": "SKILL.md",
+      "type": "max_lines",
+      "value": 200
+    },
+    {
+      "name": "SKILL.md has name in frontmatter",
+      "file": "SKILL.md",
+      "type": "contains",
+      "value": "name: cowork-export"
+    },
+    {
+      "name": "Has export script",
+      "file": "scripts/export_context.py",
+      "type": "contains",
+      "value": "def main():"
+    },
+    {
+      "name": "Script has argparse",
+      "file": "scripts/export_context.py",
+      "type": "contains",
+      "value": "argparse"
+    },
+    {
+      "name": "Has references directory",
+      "file": "references/cowork-patterns.md",
+      "type": "contains",
+      "value": "Cowork Export Patterns"
+    },
+    {
+      "name": "No consecutive blank lines in SKILL.md",
+      "file": "SKILL.md",
+      "type": "no_consecutive_blank_lines"
+    }
+  ]
+}

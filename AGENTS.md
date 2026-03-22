@@ -785,12 +785,55 @@ Then invoke each sub-agent in the manifest in order:
 
 **Tasks are not complete until the documentation team has run and passed.**
 
+### Parallel Dispatch with Worktree Isolation
+
+When sub-agents can work independently (different files), use `--parallel` to give each its own git worktree:
+
+```bash
+# Parallel mode: each sub-agent gets isolated worktree
+python3 execution/dispatch_agent_team.py \
+  --team my_team \
+  --payload '{"task": "..."}' \
+  --parallel \
+  --partitions '{"agent-1": ["src/api/**"], "agent-2": ["tests/**"]}'
+```
+
+**How it works:**
+
+```
+Orchestrator
+  ├─ validate-partitions (ensure no file overlap)
+  ├─ create-all worktrees (one per sub-agent, separate branch each)
+  ├─ dispatch sub-agents IN PARALLEL (each in its own directory)
+  ├─ merge-all (sequential merge back to source branch)
+  └─ cleanup (remove worktrees + branches)
+```
+
+**Worktree isolator commands:**
+
+```bash
+python3 execution/worktree_isolator.py create --agent <name> --run-id <id>
+python3 execution/worktree_isolator.py merge --agent <name> --run-id <id>
+python3 execution/worktree_isolator.py merge-all --run-id <id>
+python3 execution/worktree_isolator.py cleanup --agent <name> --run-id <id>
+python3 execution/worktree_isolator.py status [--run-id <id>]
+python3 execution/worktree_isolator.py validate-partitions --partitions '<json>'
+```
+
+**Claude Code native support:** Use `isolation: "worktree"` on the Agent tool to auto-create an isolated worktree per subagent.
+
+**Key rules:**
+- Always validate file partitions before parallel dispatch
+- `.env` files are auto-copied to each worktree
+- Merge branches back sequentially (first-come-first-merged)
+- Never push worktree branches directly to main — use named branches + PRs
+
 ### Pattern Reference
 
 | Pattern | When to Use | How |
 |---------|-------------|-----|
 | Single sub-agent (sequential) | Independent task + two-stage review | `code_review_team` |
-| Parallel sub-agents | 2+ independent domains | Multiple dispatches in parallel |
+| Parallel sub-agents (worktree) | 2+ independent domains, different files | `--parallel` flag on dispatch |
 | Doc-team-on-code | After any code change | `documentation_team` (always) |
 | Full pipeline | Release-quality flow | `code_review_team` → `documentation_team` → `qa_team` |
 
@@ -806,6 +849,44 @@ python3 execution/run_test_scenario.py --all
 
 ---
 
+## Cloud Automation (Cowork, Cloud Tasks, Channels)
+
+> See `directives/cloud_automation.md` for full SOP.
+
+The framework integrates with Claude's cloud-native features for full automation without human interaction:
+
+| Tier | Tool | When | How |
+|------|------|------|-----|
+| Local | Worktrees + `/loop` | Terminal-based, parallel agents | `worktree_isolator.py`, `/loop 10m <task>` |
+| Cowork | Desktop VM agent | Skills + file ops + connectors | `cowork-export` skill, Dispatch from phone |
+| Cloud | Cloud Tasks (24/7) | Critical scheduled runs | `claude.ai/code` web UI |
+| Remote | Channels (Telegram) | Phone → terminal control | `/plugin install telegram` |
+
+### Cowork Integration
+
+```bash
+# Export context + task to Cowork (clipboard)
+python3 skills/cowork-export/scripts/export_context.py \
+  --project agi-agent-kit \
+  --task "Build a new automation project with these specs" \
+  --include-files CLAUDE.md \
+  --clipboard
+
+# Track the handoff in Qdrant
+python3 execution/cross_agent_context.py handoff \
+  --from "claude" --to "cowork" \
+  --task "Build automation project" \
+  --project agi-agent-kit
+```
+
+### Full Automation Patterns
+
+1. **Hands-free dev cycle**: Cloud Task (nightly tests) → Cowork (morning briefing) → Local agent (implement) → Cowork (review)
+2. **Mobile dispatch**: Phone → Cowork Dispatch → Desktop executes → Phone gets summary
+3. **Project bootstrap**: Export spec → Cowork builds full project → Pull back locally
+
+---
+
 ## Framework Self-Development (Dogfooding)
 
 When working on the AGI Agent Kit framework itself, use its own system:
@@ -818,6 +899,7 @@ When working on the AGI Agent Kit framework itself, use its own system:
 | `directives/template_sync.md` | Keeping root ↔ templates/base/ in sync |
 | `directives/skill_development.md` | Creating/updating/testing skills |
 | `directives/multi_llm_collaboration.md` | Multi-LLM collaboration via Qdrant |
+| `directives/cloud_automation.md` | Cloud Tasks, Cowork, Channels, full automation |
 
 ### Key Workflows
 

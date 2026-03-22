@@ -154,9 +154,56 @@ All cross-agent entries use structured tags for filtering:
 | `upstream-sync` | Upstream synchronization context |
 | `release` | Release-related decisions |
 
+## Pattern 5: Parallel Worktree Isolation (Same Machine)
+
+When multiple agents work on the same repo from the same machine, use **git worktrees** to prevent conflicts. Each agent gets an isolated copy of the repo on a separate branch.
+
+```
+Orchestrator
+  ├─ worktree_isolator.py create-all --agents '["claude-1", "gemini-1"]'
+  │     ├── .worktrees/<run-id>-claude-1/  (branch: worktree/<run-id>/claude-1)
+  │     └── .worktrees/<run-id>-gemini-1/  (branch: worktree/<run-id>/gemini-1)
+  ├─ Dispatch agents to their worktree directories (in parallel)
+  ├─ Wait for completion
+  ├─ worktree_isolator.py merge-all --run-id <run-id>
+  └─ worktree_isolator.py cleanup (remove worktrees + branches)
+```
+
+### Key Rules
+
+1. **Validate partitions first** — Before parallel dispatch, check that agents won't edit the same files:
+   ```bash
+   python3 execution/worktree_isolator.py validate-partitions \
+     --partitions '{"agent-1": ["src/api/**"], "agent-2": ["src/ui/**"]}'
+   ```
+2. **Copy .env manually** — `.env` files don't auto-copy to worktrees. The script handles this.
+3. **Merge sequentially** — After all agents finish, merge branches back one at a time to catch conflicts early.
+4. **Never push worktree branches to main** — Always push to a named branch, then PR.
+
+### Claude Code Integration
+
+Claude Code's Agent tool supports `isolation: "worktree"` natively:
+```
+Agent(prompt="Task description", isolation="worktree")
+```
+
+### dispatch_agent_team.py --parallel
+
+```bash
+python3 execution/dispatch_agent_team.py \
+  --team my_team \
+  --payload '{"task": "..."}' \
+  --parallel \
+  --partitions '{"agent-1": ["src/api/**"], "agent-2": ["tests/**"]}'
+```
+
+This auto-creates worktrees, validates partitions, and enriches the manifest with worktree paths per sub-agent.
+
 ## Edge Cases
 
 - **Qdrant down**: All agents fall back to local-only mode. Sync when Qdrant recovers.
 - **Conflicting decisions**: Last-write-wins. If two agents decide differently, the most recent Qdrant entry takes precedence. Broadcast to resolve.
 - **Agent not available**: Handoffs persist in Qdrant indefinitely. The target agent picks them up whenever it starts a session.
 - **Stale context**: Use `--hours` flag on sync to limit lookback window (default 24h).
+- **Worktree merge conflict**: `merge-all` aborts the conflicting merge, reports which agents conflict, and continues merging the rest. Resolve manually.
+- **Orphaned worktrees**: Run `python3 execution/worktree_isolator.py status` to find stale worktrees, then `cleanup` them.
