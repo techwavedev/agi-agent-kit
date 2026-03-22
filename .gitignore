@@ -1,5 +1,7 @@
-# Credentials
+# Credentials (all directories, all variants)
 .env
+.env.*
+!.env.example
 credentials.json
 token.json
 *.pem
