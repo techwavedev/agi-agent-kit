@@ -27,6 +27,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
@@ -207,6 +208,21 @@ def main():
             else:
                 report["issues"].append("Collections missing. Run: python3 execution/session_init.py")
 
+    # Step 3.5: Check Langfuse observability (optional, for local dev)
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from langfuse_tracing import check_langfuse
+        langfuse = check_langfuse()
+        report["langfuse"] = langfuse
+        if langfuse["status"] == "ok":
+            report["actions_taken"].append("Langfuse tracing active")
+        elif langfuse["status"] == "not_configured":
+            report["langfuse"]["note"] = "Optional: set LANGFUSE_* in .env for observability"
+        elif langfuse["status"] == "unreachable":
+            report["langfuse"]["note"] = "Langfuse server not running (optional)"
+    except Exception:
+        report["langfuse"] = {"status": "skipped"}
+
     # Step 4: Register with Control Tower (best-effort)
     try:
         from control_tower import register_agent
@@ -217,6 +233,19 @@ def main():
         report["actions_taken"].append(f"Registered with Control Tower as {agent_name}")
     except Exception:
         report["control_tower"] = {"status": "skipped"}
+
+    # Step 5: Write session boot marker (for PreToolUse enforcement)
+    try:
+        tmp_dir = PROJECT_DIR / ".tmp"
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        boot_marker = tmp_dir / "session_booted.json"
+        boot_marker.write_text(json.dumps({
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "agent": os.environ.get("AGENT_NAME", "claude"),
+            "memory_ready": True,  # Will be updated below
+        }, indent=2))
+    except Exception:
+        pass  # Non-blocking
 
     # Final readiness
     qdrant = report["qdrant"]

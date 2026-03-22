@@ -1,4 +1,13 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(git cherry-pick:*)",
+      "Bash(git stash:*)"
+    ],
+    "additionalDirectories": [
+      "/tmp/stash_other_work"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -7,6 +16,18 @@
           {
             "type": "command",
             "command": "python3 .claude/hooks/context_session_start.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/pre_tool_enforce.py",
             "timeout": 10
           }
         ]

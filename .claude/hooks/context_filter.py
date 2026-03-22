@@ -256,6 +256,10 @@ def main():
     if qdrant_enabled and tool_name in QDRANT_PERSIST_TOOLS and raw_bytes > COMPRESSION_THRESHOLD * 2:
         persist_to_qdrant(tool_name, compressed, file_path)
 
+    # Auto-classify: detect errors in Bash output and track as high-priority
+    if tool_name == "Bash" and any(kw in output.lower() for kw in ("error", "traceback", "exception", "fatal")):
+        track_in_sqlite(tool_name, compressed[:300], raw_bytes, filtered_bytes, "high")
+
     # If no meaningful compression, allow through unchanged
     if saved_pct < 10:
         sys.exit(0)
