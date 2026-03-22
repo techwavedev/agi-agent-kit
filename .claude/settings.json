@@ -1,21 +1,4 @@
 {
-  "permissions": {
-    "allow": [
-      "WebFetch(domain:notebooklm.google.com)",
-      "Read(//Users/elton/.claude/skills/**)",
-      "Bash(python scripts/run.py ask_question.py --question \"What is wd39 and the autoresearch god mode concept? Explain the full details including how it works, what it does autonomously, and how it could be applied to an AI agent framework.\" --notebook-url \"https://notebooklm.google.com/notebook/855cb3a0-a2cc-4d9c-91e1-d2fdb3bbdc7d\")",
-      "Bash(python scripts/run.py ask_question.py --question \"What new sources were just added? Specifically look for any content about Claude Code combined with Karpathy AutoResearch, God Mode implementation details, program.md structure, orchestrator setup, eval suites, and the specific technical architecture for making Claude Code self-improving. Give me ALL implementation details and code patterns.\" --notebook-url \"https://notebooklm.google.com/notebook/855cb3a0-a2cc-4d9c-91e1-d2fdb3bbdc7d\")",
-      "Bash(grep -r \"def.*loop\\\\|--loop\\\\|max.*iter\\\\|until.*perfect\" /Users/elton/Library/CloudStorage/SynologyDrive-M1/Documents/code/agi/execution/*.py)",
-      "Bash(chmod +x /Users/elton/Library/CloudStorage/SynologyDrive-M1/Documents/code/agi/execution/god_mode.py)",
-      "Bash(echo \"EXIT: $?\")",
-      "Bash(cp /Users/elton/Library/CloudStorage/SynologyDrive-M1/Documents/code/agi/.claude/worktrees/agent-a3ce252f/execution/parallel_eval.py /Users/elton/Library/CloudStorage/SynologyDrive-M1/Documents/code/agi/execution/parallel_eval.py)",
-      "Bash(cp /Users/elton/Library/CloudStorage/SynologyDrive-M1/Documents/code/agi/.claude/worktrees/agent-a0b1363e/directives/god_mode_program.md /Users/elton/Library/CloudStorage/SynologyDrive-M1/Documents/code/agi/directives/god_mode_program.md)"
-    ],
-    "additionalDirectories": [
-      "/Users/elton/Library/CloudStorage/SynologyDrive-M1/Documents/code/agi/.claude",
-      "/Users/elton/Library/CloudStorage/SynologyDrive-M1/Documents/code/agi/.claude/worktrees/agent-a3ce252f"
-    ]
-  },
   "hooks": {
     "SessionStart": [
       {
