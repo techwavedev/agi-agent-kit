@@ -220,6 +220,58 @@ def check_stale_tmp_files() -> list:
     return stale_files
 
 
+def apply_session_learnings() -> dict:
+    """Apply accumulated learnings to skill.md files and sync to Qdrant."""
+    learnings_script = PROJECT_DIR / "execution" / "learnings_engine.py"
+    if not learnings_script.exists():
+        return {"status": "skipped", "reason": "learnings_engine.py not found"}
+
+    result = {"learnings_applied": 0, "qdrant_synced": False}
+
+    # Apply learnings to all skills (dry-run safe)
+    try:
+        proc = subprocess.run(
+            ["python3", str(learnings_script), "apply-all"],
+            capture_output=True, text=True, timeout=30,
+            cwd=str(PROJECT_DIR),
+        )
+        if proc.returncode == 0:
+            try:
+                data = json.loads(proc.stdout)
+                applied = [r for r in data.get("results", []) if r.get("status") == "applied"]
+                result["learnings_applied"] = len(applied)
+            except json.JSONDecodeError:
+                pass
+    except Exception as e:
+        result["apply_error"] = str(e)
+
+    # Sync learnings to Qdrant
+    try:
+        proc = subprocess.run(
+            ["python3", str(learnings_script), "sync"],
+            capture_output=True, text=True, timeout=15,
+            cwd=str(PROJECT_DIR),
+        )
+        result["qdrant_synced"] = proc.returncode == 0
+    except Exception:
+        pass
+
+    # Export context_mode session data
+    ctx_script = PROJECT_DIR / "execution" / "context_mode.py"
+    if ctx_script.exists():
+        try:
+            subprocess.run(
+                ["python3", str(ctx_script), "export"],
+                capture_output=True, text=True, timeout=15,
+                cwd=str(PROJECT_DIR),
+            )
+            result["context_exported"] = True
+        except Exception:
+            result["context_exported"] = False
+
+    return result
+
+
 def deregister_control_tower(agent: str, project: str = None) -> dict:
     """Best-effort heartbeat update via control_tower.py to mark session end."""
     try:
@@ -290,11 +342,15 @@ def main():
     else:
         report["broadcast_status"] = "not_requested"
 
-    # Step 4: Cleanup check for .tmp/
+    # Step 4: Apply session learnings and export context
+    learnings_result = apply_session_learnings()
+    report["learnings"] = learnings_result
+
+    # Step 5: Cleanup check for .tmp/
     stale = check_stale_tmp_files()
     report["stale_tmp_files"] = stale
 
-    # Step 5: Control Tower deregister (best-effort)
+    # Step 6: Control Tower deregister (best-effort)
     ct_result = deregister_control_tower(args.agent, args.project)
     report["control_tower"] = ct_result
 
@@ -345,6 +401,21 @@ def main():
                 print(f"    ... and {len(stale) - 5} more")
         else:
             print("\n  No stale .tmp/ files.")
+
+        # Learnings
+        lr = report.get("learnings", {})
+        applied = lr.get("learnings_applied", 0)
+        synced = lr.get("qdrant_synced", False)
+        ctx_exp = lr.get("context_exported", False)
+        if applied > 0 or synced or ctx_exp:
+            parts = []
+            if applied > 0:
+                parts.append(f"{applied} skills updated")
+            if synced:
+                parts.append("Qdrant synced")
+            if ctx_exp:
+                parts.append("context exported")
+            print(f"\n  Self-correcting loop: {', '.join(parts)}")
 
         # Broadcast
         if args.auto_broadcast:

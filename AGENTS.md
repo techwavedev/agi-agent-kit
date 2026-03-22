@@ -638,6 +638,90 @@ Markdown files containing instructions, SOPs, and documentation (`.md`) are fed 
 
 ---
 
+## Context Mode (Token Saving & Session Persistence)
+
+Context Mode dramatically extends session lifespan by sandbox-filtering heavy tool outputs and persisting session state in SQLite + Qdrant. Hooks auto-intercept tool calls so the system works transparently.
+
+```mermaid
+graph LR
+  A[Tool Output] --> B{> 8KB?}
+  B -->|Yes| C[Sandbox Filter]
+  B -->|No| D[Pass Through]
+  C --> E[Compressed Summary]
+  E --> F[SQLite Track]
+  D --> F
+  F --> G[Context Window]
+  H[Auto-Compact] --> I[Re-inject from SQLite + Qdrant]
+  I --> G
+```
+
+### Quick Start
+
+```bash
+# Manual init (hooks auto-init on SessionStart)
+python3 execution/context_mode.py init --session-id my-session --project myapp
+
+# Track a decision
+python3 execution/context_mode.py track --type decision --content "Chose X" --priority high
+
+# Track heavy data with sandbox filtering
+python3 execution/context_mode.py track --type file_read --content "..." --sandbox
+
+# Token savings dashboard
+python3 execution/context_mode.py status
+
+# Re-inject context after compaction
+python3 execution/context_mode.py reinject --max-tokens 2000
+
+# Export session to Qdrant
+python3 execution/context_mode.py export
+```
+
+### Hooks (Auto-Configured)
+
+Hooks in `.claude/settings.json` auto-intercept tool calls:
+
+| Hook | Event | Purpose |
+|------|-------|---------|
+| `context_session_start.py` | `SessionStart` | Auto-init SQLite session |
+| `context_filter.py` | `PostToolUse` | Sandbox-filter Read/Grep/Bash/Glob/WebFetch outputs > 8KB |
+| `context_reinject.py` | `PreCompact` | Re-inject critical context before compaction |
+
+### Environment Variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `CTX_COMPRESSION_THRESHOLD` | `8192` | Bytes threshold for sandbox filtering |
+| `CTX_REINJECT_TOKENS` | `2000` | Max tokens for re-injection payload |
+| `CTX_QDRANT_PERSIST` | `false` | Also store filtered context in Qdrant |
+| `CTX_AGENT` | `claude` | Agent name for session tracking |
+| `CTX_PROJECT` | `agi-agent-kit` | Project name for session tracking |
+
+### Self-Correcting Memory Loop (learnings.md)
+
+Skills self-improve via accumulated feedback:
+
+```bash
+# Log a learning after a failure or correction
+python3 execution/learnings_engine.py log --skill brainstorming --learning "Keep under 500 words" --severity warning
+
+# Read learnings before executing a skill
+python3 execution/learnings_engine.py read --skill brainstorming
+
+# Apply learnings to SKILL.md (rewrites the file)
+python3 execution/learnings_engine.py apply --skill brainstorming
+
+# Apply all accumulated learnings at session end
+python3 execution/learnings_engine.py apply-all
+
+# Sync learnings to Qdrant
+python3 execution/learnings_engine.py sync
+```
+
+**Agent protocol:** Before executing any skill, read its learnings. After any failure or user correction, log the learning. `session_wrapup.py` auto-applies and syncs at session end.
+
+---
+
 ## Best Practices for Execution Scripts
 
 ### Script Template
