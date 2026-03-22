@@ -89,6 +89,8 @@ def check_git_status():
         print(status)
         if is_ci():
             print("ℹ️  CI environment — skipping interactive prompt (detached HEAD checkout is expected).")
+        elif not sys.stdin.isatty():
+            print("ℹ️  Non-interactive environment — skipping prompt (e.g. pre-push hook).")
         else:
             response = input("Continue anyway? (y/N): ")
             if response.lower() != 'y':
