@@ -5,10 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.6.3] - 2026-03-14
+## [1.7.0] - 2026-03-22
 
 ### Added
 
+- **Parallel Agent Isolation via Git Worktrees** — Full worktree lifecycle management for parallel agent dispatch.
+- **Parallel Dispatch Mode** — `--parallel` and `--partitions` flags for worktree-isolated parallel execution.
+- **Cloud Automation 4-Tier Architecture** — Local Agent, Cowork, Cloud Tasks, Channels.
+- **Cowork Project Bootstrap** — Delegate full project creation to Claude Cowork.
+- **Session Close Protocol** — End-of-session wrapup with memory verification.
+- **Skill Evaluation Script** — Automated structural evaluation with Qdrant storage.
+
+## [1.6.5] - 2026-03-19
+
+### Added
+
+- **Skill Self-Improvement (Karpathy Loop)** — Autonomous test → improve → commit/reset cycle.
+
+## [1.6.4] - 2026-03-14
+
+### Fixed
+
+- **CI publish pipeline** — `release_gate.py` no longer hangs on interactive prompts in CI.
+
+## [1.6.3] - 2026-03-14
+
+### Added
 - **MCP Compatibility Layer** — The framework is now consumable as MCP servers by Claude Desktop, Antigravity, Cursor, Copilot, OpenCode, OpenClaw, and any MCP-compatible client. Two servers provided:
   - `execution/mcp_server.py` (`agi-framework`) — 13 tools covering the full execution layer: memory auto-query, store, retrieve, cache, list, cross-agent coordination (store/sync/status/handoff/broadcast/pending), and session health check.
   - `skills/qdrant-memory/mcp_server.py` (`qdrant-memory`) — 6 tools wrapping the skill's Python modules directly (no subprocess, no external package).

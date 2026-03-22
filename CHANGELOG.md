@@ -4,10 +4,38 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-## [1.6.5] - 2026-03-19
+
+## [Unreleased]
+
+## [1.7.0] - 2026-03-22
 
 ### Added
 
+- **Parallel Agent Isolation via Git Worktrees** (`execution/worktree_isolator.py`) — Full worktree lifecycle management for parallel agent dispatch. 7 commands: `create`, `create-all`, `merge`, `merge-all`, `cleanup`, `status`, `validate-partitions`. Branch naming: `worktree/{run_id}/{agent}`. Auto-copies `.env` files to worktrees. Worktrees placed in `/tmp/agi-worktrees/<project>/` for performance on cloud-synced filesystems (Synology Drive).
+- **Parallel Dispatch Mode** (`execution/dispatch_agent_team.py`) — New `--parallel` and `--partitions` flags for running sub-agents in parallel using git worktree isolation. File partition validation prevents agents from editing the same files. Manifest enriched with worktree paths and branches per sub-agent. Exit code 5 for partition overlap.
+- **Cloud Automation Directive** (`directives/cloud_automation.md`) — 4-tier automation SOP: Tier 1 Local Agent (Claude Code CLI), Tier 2 Claude Cowork (desktop VM with skills/MCP/scheduling), Tier 3 Cloud Tasks (24/7 scheduled on Anthropic servers), Tier 4 Channels (Telegram/Discord bot). Full automation patterns for hands-free dev cycles, mobile-first control, and project bootstrap.
+- **Cowork Project Bootstrap** (`skills/cowork-export/SKILL.md`) — New "Project Bootstrap Pattern" for delegating full project creation to Claude Cowork. Includes framework structure embedding, constraint passing, and pull-back workflow. Added 5 common automation project ideas.
+- **Session Close Protocol** (`execution/session_wrapup.py`) — End-of-session script that reviews Qdrant activity, verifies memory stores, optionally broadcasts accomplishments to other agents, and flags stale `.tmp/` files. Counterpart to `session_boot.py`.
+- **Skill Evaluation Script** (`skill-creator/scripts/evaluate_skill.py`) — Automated structural evaluation of skills against binary criteria (YAML frontmatter, line count, naming convention, script executability, etc.) with Qdrant storage for historical trend tracking.
+- **Progressive Disclosure Rule** — `SKILL.md` files must stay under 200 lines; overflow content goes into `references/` files.
+- **Mermaid Context Compression** — Added best practice rule to use Mermaid diagrams instead of verbose textual descriptions of architecture to reduce token usage.
+
+### Changed
+
+- **AGENTS.md** — Added Parallel Dispatch with Worktree Isolation section, Cloud Automation section (tier table, Cowork integration, full automation patterns), Session Close Protocol, `evaluate_skill.py` command reference, progressive disclosure enforcement, and Mermaid context compression examples. Added `directives/cloud_automation.md` to Key Directives table. Updated Pattern Reference with "Parallel sub-agents (worktree)".
+- **Multi-LLM Collaboration** (`directives/multi_llm_collaboration.md`) — Added "Pattern 5: Parallel Worktree Isolation (Same Machine)" with architecture diagram, key rules, Claude Code `isolation: "worktree"` integration, dispatch command examples, and edge cases for merge conflicts and orphaned worktrees.
+- **Subagent-Driven Development** (`templates/skills/extended/ai-agents/subagent-driven-development/SKILL.md`) — Added parallel mode comparison, full "Parallel Dispatch with Worktree Isolation" section with prerequisites, workflow, Claude Code Agent tool usage, and decision matrix.
+- **`.gitignore`** — Added `.worktrees/` exclusion for agent worktree directories.
+
+### Documentation
+
+- **`docs/execution/worktree_isolator.md`** — New. Full reference for worktree isolation commands, flags, exit codes, and edge cases.
+- **`docs/execution/dispatch_agent_team.md`** — New. Updated dispatch documentation covering parallel mode, partitions, and worktree integration.
+- **`docs/directives/cloud_automation.md`** — New. Summary doc pointing to the 4-tier cloud automation directive.
+
+## [1.6.5] - 2026-03-19
+
+### Added
 - **Skill Self-Improvement (Karpathy Loop)** — Autonomous test → improve → commit/reset cycle for continuous skill quality improvement. Inspired by Andrej Karpathy's "auto-research" concept:
   - `execution/run_skill_eval.py` — Binary assertion runner with 18 assertion types (`contains`, `regex_match`, `max_words`, `has_yaml_frontmatter`, `no_trailing_whitespace`, etc.)
   - `execution/karpathy_loop.py` — Autonomous loop orchestrator with git commit/reset integration, dry-run mode, and status reporting

@@ -22,6 +22,9 @@ venv/
 *.skill
 
 
+# Agent worktrees (parallel isolation)
+.worktrees/
+
 # IDE/OS
 .idea/
 .vscode/
