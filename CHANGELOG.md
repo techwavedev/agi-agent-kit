@@ -36,7 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.6.5] - 2026-03-19
 
 ### Added
-
 - **Skill Self-Improvement (Karpathy Loop)** — Autonomous test → improve → commit/reset cycle for continuous skill quality improvement. Inspired by Andrej Karpathy's "auto-research" concept:
   - `execution/run_skill_eval.py` — Binary assertion runner with 18 assertion types (`contains`, `regex_match`, `max_words`, `has_yaml_frontmatter`, `no_trailing_whitespace`, etc.)
   - `execution/karpathy_loop.py` — Autonomous loop orchestrator with git commit/reset integration, dry-run mode, and status reporting

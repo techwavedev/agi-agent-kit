@@ -4,33 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.7.0] - 2026-03-22
+
+### Added
+
+- **Parallel Agent Isolation via Git Worktrees** — Full worktree lifecycle management for parallel agent dispatch.
+- **Parallel Dispatch Mode** — `--parallel` and `--partitions` flags for worktree-isolated parallel execution.
+- **Cloud Automation 4-Tier Architecture** — Local Agent, Cowork, Cloud Tasks, Channels.
+- **Cowork Project Bootstrap** — Delegate full project creation to Claude Cowork.
+- **Session Close Protocol** — End-of-session wrapup with memory verification.
+- **Skill Evaluation Script** — Automated structural evaluation with Qdrant storage.
+
 ## [1.6.5] - 2026-03-19
 
 ### Added
 
-- **Skill Self-Improvement (Karpathy Loop)** — Autonomous test → improve → commit/reset cycle for continuous skill quality improvement. Inspired by Andrej Karpathy's "auto-research" concept:
-  - `execution/run_skill_eval.py` — Binary assertion runner with 18 assertion types (`contains`, `regex_match`, `max_words`, `has_yaml_frontmatter`, `no_trailing_whitespace`, etc.)
-  - `execution/karpathy_loop.py` — Autonomous loop orchestrator with git commit/reset integration, dry-run mode, and status reporting
-  - `eval/evals.json` standard — Structured binary assertion format for objective skill quality measurement
-- **Skill Creator: Step 8** — Added "Self-Improvement Loop (Karpathy Loop)" step to `SKILL_skillcreator.md` with methodology, assertion examples, and auto-generation guidance
-- **Eval Directory Scaffolding** — `init_skill.py` now creates `eval/evals.json` with 4 starter assertions (frontmatter, description quality, structure, no-placeholders) for every new skill
-- **Example evals** — `skills/qdrant-memory/eval/evals.json` added as reference implementation (17/17 passing)
-
-### Documentation
-
-- **`AGENTS.md`** — Added "Skill Self-Improvement (Karpathy Loop)" section with quick start commands, assertion types reference, and key rules. Updated directory structure to show `eval/`. Added eval scripts to Key Scripts section.
+- **Skill Self-Improvement (Karpathy Loop)** — Autonomous test → improve → commit/reset cycle.
 
 ## [1.6.4] - 2026-03-14
 
 ### Fixed
 
-- **CI publish pipeline** — `release_gate.py` no longer hangs on interactive prompts when running in GitHub Actions. All `input()` calls are now CI-aware: auto-fail with a clear error message in non-interactive environments.
-- **CHANGELOG version check** — release gate now exits non-zero with an actionable message instead of prompting when the version is missing from CHANGELOG.
+- **CI publish pipeline** — `release_gate.py` no longer hangs on interactive prompts in CI.
 
 ## [1.6.3] - 2026-03-14
 
 ### Added
-
 - **MCP Compatibility Layer** — The framework is now consumable as MCP servers by Claude Desktop, Antigravity, Cursor, Copilot, OpenCode, OpenClaw, and any MCP-compatible client. Two servers provided:
   - `execution/mcp_server.py` (`agi-framework`) — 13 tools covering the full execution layer: memory auto-query, store, retrieve, cache, list, cross-agent coordination (store/sync/status/handoff/broadcast/pending), and session health check.
   - `skills/qdrant-memory/mcp_server.py` (`qdrant-memory`) — 6 tools wrapping the skill's Python modules directly (no subprocess, no external package).
