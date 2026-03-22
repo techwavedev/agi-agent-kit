@@ -272,6 +272,20 @@ def apply_session_learnings() -> dict:
     return result
 
 
+def langfuse_session_summary(since_minutes: int = 60) -> dict:
+    """Get Langfuse trace summary for the session and flush pending events."""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from langfuse_tracing import get_session_summary, flush, shutdown
+        summary = get_session_summary(since_minutes)
+        flush()
+        return summary
+    except ImportError:
+        return {"status": "not_installed"}
+    except Exception as e:
+        return {"status": f"error: {e}"}
+
+
 def deregister_control_tower(agent: str, project: str = None) -> dict:
     """Best-effort heartbeat update via control_tower.py to mark session end."""
     try:
@@ -346,11 +360,15 @@ def main():
     learnings_result = apply_session_learnings()
     report["learnings"] = learnings_result
 
-    # Step 5: Cleanup check for .tmp/
+    # Step 5: Langfuse session metrics (optional, local dev)
+    langfuse_summary = langfuse_session_summary(args.since)
+    report["langfuse"] = langfuse_summary
+
+    # Step 6: Cleanup check for .tmp/
     stale = check_stale_tmp_files()
     report["stale_tmp_files"] = stale
 
-    # Step 6: Control Tower deregister (best-effort)
+    # Step 7: Control Tower deregister (best-effort)
     ct_result = deregister_control_tower(args.agent, args.project)
     report["control_tower"] = ct_result
 
@@ -416,6 +434,18 @@ def main():
             if ctx_exp:
                 parts.append("context exported")
             print(f"\n  Self-correcting loop: {', '.join(parts)}")
+
+        # Langfuse observability
+        lf = report.get("langfuse", {})
+        lf_status = lf.get("status", "disabled")
+        if lf_status == "ok" and lf.get("traces", 0) > 0:
+            print(f"\n  Langfuse: {lf['traces']} traces, {lf.get('errors', 0)} errors, avg {lf.get('avg_latency_ms', 0)}ms")
+            for op_name, op_data in lf.get("operations", {}).items():
+                print(f"    {op_name}: {op_data['count']}x, {op_data.get('avg_latency_ms', 0)}ms avg")
+        elif lf_status == "ok":
+            print(f"\n  Langfuse: active, no traces this session")
+        elif lf_status not in ("disabled", "not_installed", "not_configured"):
+            print(f"\n  Langfuse: {lf_status}")
 
         # Broadcast
         if args.auto_broadcast:
