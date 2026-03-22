@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Skill Evaluation Script** (`skill-creator/scripts/evaluate_skill.py`) — Automated structural evaluation of skills against binary criteria (YAML frontmatter, line count, naming convention, script executability, etc.) with Qdrant storage for historical trend tracking.
 - **Progressive Disclosure Rule** — `SKILL.md` files must stay under 200 lines; overflow content goes into `references/` files.
 - **Mermaid Context Compression** — Added best practice rule to use Mermaid diagrams instead of verbose textual descriptions of architecture to reduce token usage.
+- **Security Team** (`directives/teams/security_team.md`) — New mandatory pre-release agent team with 3 sequential sub-agents: `secret-scanner` (enhanced regex + Shannon entropy + dangerous file detection), `dependency-auditor` (npm audit + license compliance), `code-security-reviewer` (OWASP Top 10 static analysis with CWE tags). Any critical/high finding blocks the release.
+- **Security Scan Script** (`execution/security_scan.py`) — Deterministic security scanner with 4 modes: `secrets`, `dependencies`, `code`, `all`. Supports 16 secret patterns, entropy analysis, npm audit integration, license compliance checks, and 16 OWASP code patterns across Python and JavaScript. Exit code 2 = release blocked, 3 = warnings only.
+- **Security Sub-Agents** — `secret_scanner.md`, `dependency_auditor.md`, `code_security_reviewer.md` in `directives/subagents/`.
 
 ### Changed
 
@@ -26,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Multi-LLM Collaboration** (`directives/multi_llm_collaboration.md`) — Added "Pattern 5: Parallel Worktree Isolation (Same Machine)" with architecture diagram, key rules, Claude Code `isolation: "worktree"` integration, dispatch command examples, and edge cases for merge conflicts and orphaned worktrees.
 - **Subagent-Driven Development** (`templates/skills/extended/ai-agents/subagent-driven-development/SKILL.md`) — Added parallel mode comparison, full "Parallel Dispatch with Worktree Isolation" section with prerequisites, workflow, Claude Code Agent tool usage, and decision matrix.
 - **`.gitignore`** — Added `.worktrees/` exclusion for agent worktree directories.
+- **Release Gate** (`.agent/scripts/release_gate.py`) — Now runs the full Security Team scan (`execution/security_scan.py all`) as a mandatory final check. Release is blocked if any critical/high security findings are detected.
+- **Publish Workflow** (`.agent/workflows/publish-npm.md`) — Added Step 3 "Security Team Review" as mandatory gate before version bump. Renumbered steps 4-10.
 
 ### Documentation
 
