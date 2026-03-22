@@ -89,6 +89,8 @@ def check_git_status():
         print(status)
         if is_ci():
             print("ℹ️  CI environment — skipping interactive prompt (detached HEAD checkout is expected).")
+        elif not sys.stdin.isatty():
+            print("ℹ️  Non-interactive environment — skipping prompt (e.g. pre-push hook).")
         else:
             response = input("Continue anyway? (y/N): ")
             if response.lower() != 'y':
@@ -246,6 +248,65 @@ def check_markdown_size():
     else:
         print("✅ Markdown files are reasonably sized.")
 
+def run_security_team():
+    """Run the full security team scan (secrets + dependencies + code). Blocks release on failure."""
+    print("🔍 Running Security Team scan (secrets + dependencies + code)...")
+    security_script = ROOT_DIR / "execution" / "security_scan.py"
+    if not security_script.exists():
+        print("❌ Security scan script not found: execution/security_scan.py")
+        sys.exit(1)
+
+    output_dir = ROOT_DIR / ".tmp" / "security"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / "full_report.json"
+
+    try:
+        result = subprocess.run(
+            [sys.executable, str(security_script), "all", "--output", str(output_file)],
+            capture_output=True, text=True, cwd=ROOT_DIR, timeout=300
+        )
+
+        if output_file.exists():
+            report = json.loads(output_file.read_text())
+            blocked = report.get("release_blocked", False)
+            overall = report.get("overall_status", "unknown")
+
+            for scan_name, scan_data in report.get("scans", {}).items():
+                status = scan_data.get("status", "unknown")
+                stats = scan_data.get("stats", {})
+                critical = stats.get("critical", 0)
+                high = stats.get("high", 0)
+                icon = "✅" if status == "pass" else ("⚠️" if status == "warn" else "❌")
+                print(f"   {icon} {scan_name}: {status.upper()} (critical={critical}, high={high})")
+
+            if blocked:
+                print(f"❌ Security Team: RELEASE BLOCKED (overall={overall})")
+                print(f"   Full report: {output_file}")
+                sys.exit(1)
+            elif overall == "warn":
+                print(f"⚠️  Security Team: WARNINGS (review {output_file})")
+            else:
+                print("✅ Security Team: ALL CLEAR")
+        else:
+            if result.returncode == 2:
+                print("❌ Security Team: Critical findings detected. Release blocked.")
+                sys.exit(1)
+            elif result.returncode == 3:
+                print("⚠️  Security Team: Warnings detected. Review before proceeding.")
+            elif result.returncode == 0:
+                print("✅ Security Team: ALL CLEAR")
+            else:
+                print(f"❌ Security Team: Scan failed (exit code {result.returncode})")
+                sys.exit(1)
+
+    except subprocess.TimeoutExpired:
+        print("❌ Security Team: Scan timed out (300s limit)")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Security Team: Unexpected error — {e}")
+        sys.exit(1)
+
+
 def main():
     print("🚀 Starting Release Gate Protocol...")
     print("-----------------------------------")
@@ -260,6 +321,9 @@ def main():
     check_versions()
     syntax_check()
     check_markdown_size()
+
+    # ── Security Team (MANDATORY — blocks release on failure) ──
+    run_security_team()
 
     print("-----------------------------------")
     print("✅ All checks passed. Ready for release.")

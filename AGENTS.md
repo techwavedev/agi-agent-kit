@@ -234,6 +234,30 @@ python3 execution/memory_manager.py cache-store \
   --response "The complete response that was generated"
 ```
 
+#### Session Close Protocol (MANDATORY)
+
+At the end of a work session, run the wrap-up script to verify cleanup and formally commit all contextual learnings to the shared cross-agent memory:
+
+```bash
+python3 execution/session_wrapup.py --auto-broadcast
+```
+
+**What it does:**
+
+1. **Reviews session activity** — queries Qdrant for memories stored in the last 60 minutes
+2. **Verifies memory stores** — warns if zero decisions/learnings were stored (protocol violation)
+3. **Broadcasts to all agents** — calls `cross_agent_context.py store` so other LLMs see what was accomplished
+4. **Checks stale .tmp/ files** — lists files older than 24h for manual cleanup
+5. **Updates Control Tower** — marks session as ended in the orchestrator
+
+**Options:**
+
+```bash
+python3 execution/session_wrapup.py --agent gemini --project myapp --since 90 --json
+```
+
+**Exit codes:** 0 = clean wrapup, 1 = zero stores warning, 2 = memory unreachable
+
 #### Proving Usage (Auditable)
 
 To verify the agent is actually using memory:
@@ -407,14 +431,22 @@ project/
 
 Skills are modular packages that extend agent capabilities with specialized workflows, scripts, and domain knowledge. Each skill contains:
 
-- **SKILL.md** — Instructions with YAML frontmatter (`name`, `description`) for triggering
+- **SKILL.md** — Instructions with YAML frontmatter (`name`, `description`) for triggering. **Must be under 200 lines.** Use progressive disclosure by linking to reference files.
 - **scripts/** — Deterministic tools the agent can execute
-- **references/** — Documentation loaded only when needed
+- **references/** — Documentation loaded only when needed (to prevent token bloat)
 
 **Key Resources:**
 
 - **Skills Catalog:** `skills/SKILLS_CATALOG.md` — Complete documentation of all available skills
 - **Skill Creator Guide:** `skill-creator/SKILL_skillcreator.md` — How to create new skills
+
+**Progressive Disclosure Rules (MANDATORY):**
+
+- `SKILL.md` MUST be under 200 lines — it is a process router, not an encyclopedia
+- Put step-by-step instructions, output formatting, and routing logic in `SKILL.md`
+- Put deep knowledge, long examples, brand context, and frameworks in `references/`
+- Claude loads reference files only when `SKILL.md` explicitly tells it to, then unloads them
+- YAML frontmatter MUST include `name` (hyphen-case) and `description` (trigger conditions)
 
 **Commands:**
 
@@ -424,11 +456,19 @@ python3 skill-creator/scripts/init_skill.py <name> --path skills/
 
 # Update the skills catalog (MANDATORY after any skill change)
 python3 skill-creator/scripts/update_catalog.py --skills-dir skills/
+
+# Evaluate a skill against structural criteria (Skills 2.0)
+python3 skill-creator/scripts/evaluate_skill.py \
+  --skill-path skills/<name> \
+  --test-input "test prompt" \
+  --criteria '["SKILL.md exists", "Has YAML frontmatter", "Under 200 lines", "Has references/ directory"]'
 ```
+
+The evaluation stores results in Qdrant for cross-agent visibility and tracks historical pass rates.
 
 ### Deliverables vs. Intermediates
 
-| Type              | Location       | Examples                                             |
+| Type              | Location       | VExamples                                             |
 | ----------------- | -------------- | ---------------------------------------------------- |
 | **Deliverables**  | Cloud services | Google Sheets, Slides, Drive files, database records |
 | **Intermediates** | `.tmp/`        | Scraped HTML, processed JSON, temp exports           |
@@ -589,6 +629,12 @@ Markdown files containing instructions, SOPs, and documentation (`.md`) are fed 
 2. **Modularize Large Files**: If a directive or documentation file exceeds 1,500 words or 10,000 bytes, split it into smaller, logically separated files and use parent-child references.
 3. **Prefer Examples Over Prose**: Use concise input/output examples rather than verbose textual descriptions of how something should work.
 4. **Remove Filler**: Eliminate conversational filler, redundant instructions, and obvious statements. Focus on the *what* and the *how*.
+5. **Use Mermaid Context Compression**: Replace long, verbose textual descriptions of system architectures, folder structures, or process workflows with lightweight Mermaid diagrams. A Mermaid diagram costs a few hundred tokens; the same information as prose costs thousands. LLMs parse structured diagrams more efficiently than block paragraphs. Example — instead of a 20-line text description of a 5-step workflow, use:
+
+   ```mermaid
+   graph LR
+     A[Input] --> B[Process] --> C[Validate] --> D[Store] --> E[Output]
+   ```
 
 ---
 
@@ -739,12 +785,55 @@ Then invoke each sub-agent in the manifest in order:
 
 **Tasks are not complete until the documentation team has run and passed.**
 
+### Parallel Dispatch with Worktree Isolation
+
+When sub-agents can work independently (different files), use `--parallel` to give each its own git worktree:
+
+```bash
+# Parallel mode: each sub-agent gets isolated worktree
+python3 execution/dispatch_agent_team.py \
+  --team my_team \
+  --payload '{"task": "..."}' \
+  --parallel \
+  --partitions '{"agent-1": ["src/api/**"], "agent-2": ["tests/**"]}'
+```
+
+**How it works:**
+
+```
+Orchestrator
+  ├─ validate-partitions (ensure no file overlap)
+  ├─ create-all worktrees (one per sub-agent, separate branch each)
+  ├─ dispatch sub-agents IN PARALLEL (each in its own directory)
+  ├─ merge-all (sequential merge back to source branch)
+  └─ cleanup (remove worktrees + branches)
+```
+
+**Worktree isolator commands:**
+
+```bash
+python3 execution/worktree_isolator.py create --agent <name> --run-id <id>
+python3 execution/worktree_isolator.py merge --agent <name> --run-id <id>
+python3 execution/worktree_isolator.py merge-all --run-id <id>
+python3 execution/worktree_isolator.py cleanup --agent <name> --run-id <id>
+python3 execution/worktree_isolator.py status [--run-id <id>]
+python3 execution/worktree_isolator.py validate-partitions --partitions '<json>'
+```
+
+**Claude Code native support:** Use `isolation: "worktree"` on the Agent tool to auto-create an isolated worktree per subagent.
+
+**Key rules:**
+- Always validate file partitions before parallel dispatch
+- `.env` files are auto-copied to each worktree
+- Merge branches back sequentially (first-come-first-merged)
+- Never push worktree branches directly to main — use named branches + PRs
+
 ### Pattern Reference
 
 | Pattern | When to Use | How |
 |---------|-------------|-----|
 | Single sub-agent (sequential) | Independent task + two-stage review | `code_review_team` |
-| Parallel sub-agents | 2+ independent domains | Multiple dispatches in parallel |
+| Parallel sub-agents (worktree) | 2+ independent domains, different files | `--parallel` flag on dispatch |
 | Doc-team-on-code | After any code change | `documentation_team` (always) |
 | Full pipeline | Release-quality flow | `code_review_team` → `documentation_team` → `qa_team` |
 
@@ -760,6 +849,44 @@ python3 execution/run_test_scenario.py --all
 
 ---
 
+## Cloud Automation (Cowork, Cloud Tasks, Channels)
+
+> See `directives/cloud_automation.md` for full SOP.
+
+The framework integrates with Claude's cloud-native features for full automation without human interaction:
+
+| Tier | Tool | When | How |
+|------|------|------|-----|
+| Local | Worktrees + `/loop` | Terminal-based, parallel agents | `worktree_isolator.py`, `/loop 10m <task>` |
+| Cowork | Desktop VM agent | Skills + file ops + connectors | `cowork-export` skill, Dispatch from phone |
+| Cloud | Cloud Tasks (24/7) | Critical scheduled runs | `claude.ai/code` web UI |
+| Remote | Channels (Telegram) | Phone → terminal control | `/plugin install telegram` |
+
+### Cowork Integration
+
+```bash
+# Export context + task to Cowork (clipboard)
+python3 skills/cowork-export/scripts/export_context.py \
+  --project agi-agent-kit \
+  --task "Build a new automation project with these specs" \
+  --include-files CLAUDE.md \
+  --clipboard
+
+# Track the handoff in Qdrant
+python3 execution/cross_agent_context.py handoff \
+  --from "claude" --to "cowork" \
+  --task "Build automation project" \
+  --project agi-agent-kit
+```
+
+### Full Automation Patterns
+
+1. **Hands-free dev cycle**: Cloud Task (nightly tests) → Cowork (morning briefing) → Local agent (implement) → Cowork (review)
+2. **Mobile dispatch**: Phone → Cowork Dispatch → Desktop executes → Phone gets summary
+3. **Project bootstrap**: Export spec → Cowork builds full project → Pull back locally
+
+---
+
 ## Framework Self-Development (Dogfooding)
 
 When working on the AGI Agent Kit framework itself, use its own system:
@@ -772,6 +899,7 @@ When working on the AGI Agent Kit framework itself, use its own system:
 | `directives/template_sync.md` | Keeping root ↔ templates/base/ in sync |
 | `directives/skill_development.md` | Creating/updating/testing skills |
 | `directives/multi_llm_collaboration.md` | Multi-LLM collaboration via Qdrant |
+| `directives/cloud_automation.md` | Cloud Tasks, Cowork, Channels, full automation |
 
 ### Key Workflows
 

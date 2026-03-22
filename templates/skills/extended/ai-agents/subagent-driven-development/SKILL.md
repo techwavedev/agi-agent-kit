@@ -35,6 +35,12 @@ digraph when_to_use {
 - Two-stage review after each task: spec compliance first, then code quality
 - Faster iteration (no human-in-loop between tasks)
 
+**Parallel mode (with worktree isolation):**
+- When tasks are independent and touch different files, dispatch multiple implementer subagents **in parallel**
+- Each subagent gets its own git worktree (isolated copy of the repo on a separate branch)
+- Use `isolation: "worktree"` on the Agent tool or `python3 execution/worktree_isolator.py create-all`
+- After all complete, merge branches back sequentially with `merge-all`
+
 ## The Process
 
 ```dot
@@ -197,6 +203,49 @@ Final reviewer: All requirements met, ready to merge
 Done!
 ```
 
+## Parallel Dispatch with Worktree Isolation
+
+When tasks are **independent** (touch different files), you can dispatch multiple implementer subagents simultaneously. Each gets its own git worktree — a full isolated copy of the repo on a separate branch.
+
+### Prerequisites
+
+1. Tasks must not edit the same files (validate with `validate-partitions`)
+2. Each task must be self-contained (no dependency on another task's output)
+
+### Parallel Workflow
+
+```
+[Extract all tasks, identify independent ones]
+[Validate file partitions: python3 execution/worktree_isolator.py validate-partitions --partitions '{"agent-1": ["src/api/**"], "agent-2": ["src/ui/**"]}']
+[Create worktrees: python3 execution/worktree_isolator.py create-all --agents '["agent-1", "agent-2"]']
+
+[Dispatch implementer subagents IN PARALLEL with isolation: "worktree"]
+  Agent 1 → works in .worktrees/<run-id>-agent-1/
+  Agent 2 → works in .worktrees/<run-id>-agent-2/
+
+[Wait for all to complete]
+[Merge all: python3 execution/worktree_isolator.py merge-all --run-id <run-id>]
+[Run spec + quality reviews on merged result]
+[Cleanup: python3 execution/worktree_isolator.py cleanup --agent agent-1 --run-id <run-id>]
+```
+
+### Claude Code Agent Tool
+
+When using Claude Code's Agent tool, set `isolation: "worktree"` to auto-create an isolated worktree per subagent:
+
+```
+Agent(prompt="Implement feature X", isolation="worktree")
+```
+
+### Decision: Sequential vs. Parallel
+
+| Signal | Mode |
+|--------|------|
+| Tasks touch same files | Sequential (default) |
+| Tasks are independent, different files | **Parallel with worktrees** |
+| Tasks depend on each other's output | Sequential |
+| Speed is critical, tasks are isolated | **Parallel with worktrees** |
+
 ## Advantages
 
 **vs. Manual execution:**
@@ -235,7 +284,7 @@ Done!
 - Start implementation on main/master branch without explicit user consent
 - Skip reviews (spec compliance OR code quality)
 - Proceed with unfixed issues
-- Dispatch multiple implementation subagents in parallel (conflicts)
+- Dispatch multiple implementation subagents in parallel **without worktree isolation** (conflicts)
 - Make subagent read plan file (provide full text instead)
 - Skip scene-setting context (subagent needs to understand where task fits)
 - Ignore subagent questions (answer before letting them proceed)

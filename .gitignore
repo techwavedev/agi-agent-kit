@@ -1,5 +1,7 @@
-# Credentials
+# Credentials (all directories, all variants)
 .env
+.env.*
+!.env.example
 credentials.json
 token.json
 *.pem
@@ -21,6 +23,9 @@ venv/
 .gemini/
 *.skill
 
+
+# Agent worktrees (parallel isolation)
+.worktrees/
 
 # IDE/OS
 .idea/
