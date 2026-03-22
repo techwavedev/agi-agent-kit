@@ -161,8 +161,8 @@ When multiple agents work on the same repo from the same machine, use **git work
 ```
 Orchestrator
   ├─ worktree_isolator.py create-all --agents '["claude-1", "gemini-1"]'
-  │     ├── .worktrees/<run-id>-claude-1/  (branch: worktree/<run-id>/claude-1)
-  │     └── .worktrees/<run-id>-gemini-1/  (branch: worktree/<run-id>/gemini-1)
+  │     ├── /tmp/agi-worktrees/<project>/<run-id>-claude-1/  (branch: worktree/<run-id>/claude-1)
+  │     └── /tmp/agi-worktrees/<project>/<run-id>-gemini-1/  (branch: worktree/<run-id>/gemini-1)
   ├─ Dispatch agents to their worktree directories (in parallel)
   ├─ Wait for completion
   ├─ worktree_isolator.py merge-all --run-id <run-id>
@@ -176,7 +176,7 @@ Orchestrator
    python3 execution/worktree_isolator.py validate-partitions \
      --partitions '{"agent-1": ["src/api/**"], "agent-2": ["src/ui/**"]}'
    ```
-2. **Copy .env manually** — `.env` files don't auto-copy to worktrees. The script handles this.
+2. **`.env` auto-copied** — `worktree_isolator.py` automatically copies `.env` from the repo root into each new worktree.
 3. **Merge sequentially** — After all agents finish, merge branches back one at a time to catch conflicts early.
 4. **Never push worktree branches to main** — Always push to a named branch, then PR.
 
