@@ -33,7 +33,7 @@ All pods run in namespace `crs`. Key services:
 
 | Layer | Services |
 |-------|----------|
-| Infra | redis, dind, litellm, registry-cache |
+| Infra | redis, dind, registry-cache |
 | Orchestration | scheduler, task-server, task-downloader, scratch-cleaner |
 | Fuzzing | build-bot, fuzzer-bot, coverage-bot, tracer-bot, merger-bot |
 | Analysis | patcher, seed-gen, program-model, pov-reproducer |
@@ -257,7 +257,7 @@ Quick reference:
 - **DinD**: `kubectl logs -n crs -l app=dind --tail=100` -- look for docker daemon crashes, storage driver errors
 - **Build-bot**: check build queue depth, DinD connectivity, OOM during compilation
 - **Fuzzer-bot**: corpus disk usage, CPU throttling, crash queue backlog
-- **Patcher**: LiteLLM connectivity, LLM timeout, patch queue depth
+- **Patcher**: LLM connectivity, LLM timeout, patch queue depth
 - **Scheduler**: the central brain -- `kubectl logs -n crs -l app=scheduler --tail=-1 --prefix | grep "WAIT_PATCH_PASS\|ERROR\|SUBMIT"`
 
 ## Diagnostic Script

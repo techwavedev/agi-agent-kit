@@ -18,7 +18,7 @@ Agent checks Langfuse Health → not running? → start (docker-compose up)
     ↓ running
 Agent provides Langfuse UI link (localhost:3000)
     ↓
-Agent instruments requests via LiteLLM / Langfuse SDK wrappers
+Agent instruments requests via Langfuse SDK wrappers
     ↓
 Agent queries traces inside Langfuse (or reviews dashboard)
     ↓
@@ -90,7 +90,7 @@ run.py status → running?
 1. **Check if Langfuse container status is running** — `run.py status`. 
 2. **Launch Langfuse** — If down, `run.py start`.
 3. **Instruct the User** — Direct the user to go to `http://localhost:3000`, register an admin account (in local dev mode, first login creates the admin account), and generate API keys.
-4. **Hook it into the code** — Using the provided API keys, instrument the project code (via LiteLLM proxy, OpenAI SDK wrapper, or directly with Langfuse Python/TS SDKs).
+4. **Hook it into the code** — Using the provided API keys, instrument the project code (via OpenAI SDK wrapper or directly with Langfuse Python/TS SDKs).
 5. **Run tests/Agents** — Execute the standard project agent flow so traces start flowing.
 6. **Review Dashboard** — The user can verify LLM cost, generation latency, and full prompt structures via the trace Explorer.
 

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Removed LiteLLM/Trivy (TeamPCP compromise). Added blocked-package enforcement and `supply-chain-monitor` skill.
+
+### Added
+
+- **Langfuse Model Proxy** (`execution/langfuse_model_proxy.py`) — Traced LLM call wrapper for Anthropic models. Resolves model aliases (`haiku`, `sonnet`, `opus`), records each call as a Langfuse generation with token counts, cost, and latency. Provides `call_llm`, `estimate_cost`, and `call_llm_with_validation` (retry loop with assertion feedback). Langfuse tracing failure never blocks the API call. CLI: `call` and `cost` subcommands.
+- **Langfuse Dashboard** (`execution/langfuse_dashboard.py`) — Observability CLI for querying Langfuse traces. Commands: `overview`, `compare` (before/after windows), `traces` (name filter), `errors`, `slow` (latency threshold). HTTP Basic auth; normalises Langfuse latency units automatically.
+- **Harness Engine Directive** (`directives/harness_engine.md`) — Design reference for the full-stack agent execution harness. Documents 8 pillars: Langfuse observability, state management, human-in-the-loop fan-out via Pulsar, model tier strategy, sandboxed execution, context compression, validation loops, and multi-agent fan-out.
+- **Harness Engine** (`execution/harness_engine.py`) — Main orchestrator implementing the `init → planning → executing → validating → complete` state machine. `HarnessEngine.run()` auto-plans via Sonnet, dispatches steps to bash/python/llm/memory/delegate executors, validates outputs with binary assertions, retries with exponential backoff, scores the session in Langfuse, and stores a summary in Qdrant. `fan_out()` executes multiple independent tasks with isolated per-task context. State persisted to `.tmp/harness_state.json` for session resume. All dependencies (Langfuse, harness_context, harness_validator, langfuse_model_proxy) degrade gracefully to no-ops when unavailable.
+
+- **Agent Harness Context Manager** (`execution/harness_context.py`) — Retrieves relevant Qdrant memory chunks, compresses them to a token budget, and packages task + context for delegation to cheaper sub-agent models. Provides `prepare_subagent_context`, `compress_context`, `build_delegation_prompt`, `fan_out_tasks`, and `store_subagent_result`. CLI: `prepare` (single task) and `fan-out` (multi-task). Per-chunk token ceiling, near-duplicate deduplication, and graceful Qdrant-unreachable fallback.
+- **Langfuse Harness** (`execution/langfuse_harness.py`) — State-file-based cross-process span manager for Claude Code hooks. `init_session_trace()` creates a session-level Langfuse trace persisted in `.tmp/langfuse_session.json`; `open_span()` / `close_span()` open and end child spans per tool call, correlating PreToolUse and PostToolUse processes via deterministic MD5 span keys (`.tmp/langfuse_spans/`); `child_span()` lets execution scripts nest finer-grained spans without depending on the hook lifecycle; `score_trace()` attaches numeric scores; `end_session()` finalises the trace, flushes the client, and removes all state files. Atomic writes (temp + rename) and optional `filelock` prevent race conditions. Full no-op behaviour when `LANGFUSE_ENABLED != true`. CLI: `test`, `status`, `cleanup`.
+
+### Documentation
+
+- **`docs/execution/langfuse_harness.md`** — New. Full API reference for all public functions, state file schemas, CLI commands, env vars, and design notes.
+- **`docs/execution/langfuse_dashboard.md`** — Updated. Corrected argument defaults to match code (`--before 60`, `--after 30`, `--threshold 2000`); expanded command descriptions with output column details.
+- **`docs/directives/harness_engine.md`** — Updated. Added `langfuse_harness.py` to Key Scripts table.
+
 ## [1.7.0] - 2026-03-22
 
 ### Added

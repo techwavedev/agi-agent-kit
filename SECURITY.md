@@ -32,6 +32,5 @@ This framework includes built-in security mechanisms:
 - **Automated GitHub Scanning:** comprehensive CI/CD security pipeline including:
   - **Dependabot:** Automated dependency updates for NPM, Pip, and Actions.
   - **CodeQL:** Static application security testing (SAST) for Python and JavaScript.
-  - **Trivy:** Container and filesystem vulnerability scanning for secrets and CVEs.
   - **VirusTotal:** Release artifact scanning for malware/viruses.
 - **Provenance:** We use NPM provenance to verify build integrity.

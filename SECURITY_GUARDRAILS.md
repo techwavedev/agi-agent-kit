@@ -42,6 +42,31 @@ _Examples: Linting, Log Analysis, Configuration Auditing._
 
 ---
 
+## 🚫 Blocked Packages & Tools
+
+The following packages and tools are **banned from this codebase** due to confirmed supply chain compromises or critical security vulnerabilities. No skill, directive, execution script, or CI workflow may reference, recommend, or depend on them.
+
+| Package / Tool | Reason | Date Blocked | Alternative |
+|----------------|--------|--------------|-------------|
+| `litellm` | TeamPCP supply chain backdoor (versions 1.82.7–1.82.8) — credential harvesting, K8s lateral movement, persistent backdoor | 2026-03-25 | Direct SDK wrappers (OpenAI SDK, Langfuse SDK) |
+| `trivy` / `aquasecurity/trivy-action` | 75/76 version tags force-pushed to credential stealer by TeamPCP | 2026-03-25 | Snyk, Checkov, CodeQL, Semgrep |
+| `aquasecurity/setup-trivy` | Tags v0.2.0-v0.2.6 force-pushed — exfiltrates CI/CD secrets | 2026-03-25 | Snyk, Checkov, CodeQL, Semgrep |
+
+### Enforcement
+
+1. **Pre-publish scan**: `execution/security_scan.py` checks for blocked package references before release.
+2. **CI gate**: Any PR introducing a blocked package name in code or docs will be flagged.
+3. **To add a new entry**: Append to the table above and add the pattern to `execution/security_scan.py` `BLOCKED_PACKAGES` list.
+
+### Requesting an Unblock
+
+If a blocked package has been remediated and you want to re-allow it:
+1. Verify the fix with an independent security audit or CVE resolution.
+2. Open a PR with evidence and update this table with the unblock rationale.
+3. Requires explicit maintainer approval.
+
+---
+
 ## ⚖️ Legal Disclaimer
 
 By using this framework, you agree that:

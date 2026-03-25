@@ -1,0 +1,15 @@
+{
+  "skill": "supply-chain-monitor",
+  "version": "1.0.0",
+  "assertions": [
+    {"name": "SKILL.md has frontmatter", "file": "SKILL.md", "type": "has_yaml_frontmatter"},
+    {"name": "SKILL.md under 200 lines", "file": "SKILL.md", "type": "max_lines", "value": 200},
+    {"name": "SKILL.md has name", "file": "SKILL.md", "type": "contains", "value": "name: supply-chain-monitor"},
+    {"name": "Scraper script has main", "file": "scripts/scrape_thn.py", "type": "contains", "value": "def main():"},
+    {"name": "Scraper uses argparse", "file": "scripts/scrape_thn.py", "type": "contains", "value": "argparse"},
+    {"name": "Extractor has confidence scoring", "file": "scripts/extract_packages.py", "type": "contains", "value": "confidence"},
+    {"name": "Updater has dry_run", "file": "scripts/update_blocklist.py", "type": "contains", "value": "dry_run"},
+    {"name": "Updater has confirm flag", "file": "scripts/update_blocklist.py", "type": "contains", "value": "--confirm"},
+    {"name": "References file exists", "file": "references/thn_selectors.md", "type": "contains", "value": "CSS"}
+  ]
+}

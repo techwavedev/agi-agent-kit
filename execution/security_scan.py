@@ -5,10 +5,11 @@ Purpose: Deterministic security scanning for pre-release gate.
          Three modes: secrets, dependencies, code.
 
 Usage:
-    python3 execution/security_scan.py secrets   --output .tmp/security/secret_scan.json
-    python3 execution/security_scan.py dependencies --output .tmp/security/dependency_audit.json
-    python3 execution/security_scan.py code      --output .tmp/security/code_security.json
-    python3 execution/security_scan.py all       --output .tmp/security/full_report.json
+    python3 execution/security_scan.py secrets          --output .tmp/security/secret_scan.json
+    python3 execution/security_scan.py dependencies    --output .tmp/security/dependency_audit.json
+    python3 execution/security_scan.py code            --output .tmp/security/code_security.json
+    python3 execution/security_scan.py blocked         --output .tmp/security/blocked_packages.json
+    python3 execution/security_scan.py all             --output .tmp/security/full_report.json
 
 Exit Codes:
     0 - All checks passed
@@ -501,6 +502,96 @@ def scan_code() -> dict:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# BLOCKED PACKAGES SCAN
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Packages banned due to confirmed supply chain compromises.
+# To add a new entry: append here AND update SECURITY_GUARDRAILS.md.
+BLOCKED_PACKAGES = [
+    {
+        "name": "litellm",
+        "pattern": r"\blitellm\b",
+        "reason": "TeamPCP supply chain backdoor (versions 1.82.7-1.82.8) — credential harvesting, K8s lateral movement",
+        "date_blocked": "2026-03-25",
+        "alternative": "Direct SDK wrappers (OpenAI SDK, Langfuse SDK)",
+    },
+    {
+        "name": "trivy",
+        "pattern": r"\btrivy\b",
+        "reason": "Compromised CI/CD credentials used as attack vector in TeamPCP campaign",
+        "date_blocked": "2026-03-25",
+        "alternative": "Snyk, Checkov, CodeQL, Semgrep",
+    },
+    {
+        "name": "aquasecurity/trivy-action",
+        "pattern": r"aquasecurity/trivy-action",
+        "reason": "75 of 76 version tags force-pushed to credential stealer by TeamPCP",
+        "date_blocked": "2026-03-25",
+        "alternative": "Snyk GitHub Action, CodeQL Action",
+    },
+    {
+        "name": "aquasecurity/setup-trivy",
+        "pattern": r"aquasecurity/setup-trivy",
+        "reason": "Tags v0.2.0-v0.2.6 force-pushed to malicious commits — exfiltrates CI/CD secrets",
+        "date_blocked": "2026-03-25",
+        "alternative": "Snyk GitHub Action, CodeQL Action",
+    },
+]
+
+
+def scan_blocked_packages() -> dict:
+    """Scan repository for references to blocked/compromised packages."""
+    findings = []
+    files_scanned = 0
+
+    for path in ROOT_DIR.rglob("*"):
+        if should_skip(path) or not path.is_file():
+            continue
+        if path.suffix not in TEXT_EXTENSIONS:
+            continue
+        # Skip this scanner's own definitions
+        rel_path = str(path.relative_to(ROOT_DIR))
+        if rel_path == "execution/security_scan.py":
+            continue
+        if rel_path == "SECURITY_GUARDRAILS.md":
+            continue
+
+        try:
+            content = path.read_text(errors="ignore")
+        except Exception:
+            continue
+
+        files_scanned += 1
+        lines = content.split("\n")
+
+        for blocked in BLOCKED_PACKAGES:
+            for i, line in enumerate(lines, 1):
+                if re.search(blocked["pattern"], line, re.IGNORECASE):
+                    findings.append({
+                        "file": rel_path,
+                        "line": i,
+                        "blocked_package": blocked["name"],
+                        "reason": blocked["reason"],
+                        "alternative": blocked["alternative"],
+                        "severity": "critical",
+                        "recommendation": f"Remove reference to '{blocked['name']}'. Use '{blocked['alternative']}' instead.",
+                    })
+
+    critical_count = len(findings)
+
+    return {
+        "scan": "blocked_packages",
+        "status": "fail" if critical_count > 0 else "pass",
+        "findings": findings,
+        "stats": {
+            "files_scanned": files_scanned,
+            "blocked_patterns": len(BLOCKED_PACKAGES),
+            "critical": critical_count,
+        }
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -510,7 +601,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__
     )
-    parser.add_argument("mode", choices=["secrets", "dependencies", "code", "all"],
+    parser.add_argument("mode", choices=["secrets", "dependencies", "code", "blocked", "all"],
                         help="Scan mode")
     parser.add_argument("--output", required=True, help="Output JSON file path")
     args = parser.parse_args()
@@ -523,6 +614,7 @@ def main():
         "secrets": scan_secrets,
         "dependencies": scan_dependencies,
         "code": scan_code,
+        "blocked": scan_blocked_packages,
     }
 
     if args.mode == "all":
