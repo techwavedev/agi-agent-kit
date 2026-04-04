@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `py/clear-text-logging-sensitive-data` (×13) and `py/clear-text-storage-sensitive-data` (×1) across the `007`, `whatsapp-cloud-api`, and `instagram` skill templates — refactored to never bind bearer tokens to named locals that flow to `print`, added regex-based `_redact()` scrubbers at every print/write sink, masked phone numbers as PII before logging, and removed full-response dumps that echoed the Authorization header.
 - **Dependabot hardened** — `.github/dependabot.yml` now covers the nested `ui-ux-pro-max/cli` package and Docker images, splits production vs dev npm groups, labels all PRs with `security`, and keeps the existing weekly cadence for pip + github-actions. Security (CVE-triggered) updates remain always-on by default.
 
+## [1.7.3] - 2026-04-04
+
+### Fixed
+
+- **Publish job Node version** — Previous v1.7.2 only fixed the `publish-github` job; the `publish` (NPM) job still used Node 22 + `npm install -g npm@latest` which broke with `MODULE_NOT_FOUND` on `promise-retry`. Both jobs now use Node 24 (native npm 11.x).
+
 ## [1.7.2] - 2026-04-04
 
 ### Fixed
