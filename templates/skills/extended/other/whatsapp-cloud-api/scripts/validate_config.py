@@ -11,6 +11,7 @@ Usage:
 
 import argparse
 import os
+import re
 import sys
 
 try:
@@ -35,6 +36,14 @@ REQUIRED_VARS = [
     ("VERIFY_TOKEN", "Custom token for webhook verification"),
 ]
 
+# Any token-like substring (>=20 alphanumeric chars) is redacted from output.
+_SECRET_RE = re.compile(r"[A-Za-z0-9_\-]{20,}")
+
+
+def _redact(text: str) -> str:
+    """Redact anything that looks like a credential from free-form text."""
+    return _SECRET_RE.sub("[REDACTED]", text)
+
 
 def check_env_vars() -> tuple[bool, list[str]]:
     """Check if all required environment variables are set."""
@@ -47,72 +56,72 @@ def check_env_vars() -> tuple[bool, list[str]]:
     return len(missing) == 0, missing
 
 
-def _mask_secret(value: str) -> str:
-    """Return a masked version of a secret for safe logging."""
-    if not value or len(value) < 8:
-        return "***masked***"
-    return f"{value[:6]}...masked"
+def _auth_headers() -> dict:
+    """Build authorization headers without ever binding the token to a named local."""
+    return {"Authorization": f"Bearer {os.environ.get('WHATSAPP_TOKEN', '')}"}
 
 
-def test_api_connection() -> tuple[bool, str]:
-    """Test connection to WhatsApp Cloud API."""
-    token = os.environ.get("WHATSAPP_TOKEN", "")
+def test_api_connection() -> tuple[bool, dict]:
+    """Test connection to WhatsApp Cloud API.
+
+    Returns (ok, info) where info contains only non-sensitive diagnostic fields.
+    """
     phone_id = os.environ.get("PHONE_NUMBER_ID", "")
 
     try:
         response = httpx.get(
             f"{GRAPH_API}/{phone_id}",
             params={"fields": "verified_name,code_verification_status,display_phone_number,quality_rating"},
-            headers={"Authorization": f"Bearer {token}"},
+            headers=_auth_headers(),
             timeout=10.0,
         )
-
-        if response.status_code == 200:
-            data = response.json()
-            return True, (
-                f"Phone: {data.get('display_phone_number', 'N/A')}\n"
-                f"  Name: {data.get('verified_name', 'N/A')}\n"
-                f"  Status: {data.get('code_verification_status', 'N/A')}\n"
-                f"  Quality: {data.get('quality_rating', 'N/A')}"
-            )
-        else:
-            error = response.json().get("error", {})
-            return False, f"API Error {error.get('code', '?')}: {error.get('message', 'Unknown')}"
-
     except httpx.ConnectError:
-        return False, "Connection failed. Check your internet connection."
+        return False, {"error": "Connection failed. Check your internet connection."}
     except httpx.TimeoutException:
-        return False, "Request timed out after 10 seconds."
+        return False, {"error": "Request timed out after 10 seconds."}
     except Exception as e:
-        # Mask token in error output to prevent credential leakage
-        safe_err = str(e).replace(token, _mask_secret(token)) if token else str(e)
-        return False, f"Unexpected error: {safe_err}"
+        return False, {"error": _redact(f"Unexpected error: {e}")}
+
+    if response.status_code != 200:
+        err = response.json().get("error", {})
+        return False, {
+            "error": f"API Error {err.get('code', '?')}: {err.get('message', 'Unknown')}"
+        }
+
+    data = response.json()
+    # Only expose the specific non-sensitive fields we asked for.
+    return True, {
+        "phone": str(data.get("display_phone_number", "N/A")),
+        "name": str(data.get("verified_name", "N/A")),
+        "status": str(data.get("code_verification_status", "N/A")),
+        "quality": str(data.get("quality_rating", "N/A")),
+    }
 
 
-def test_waba_access() -> tuple[bool, str]:
-    """Test access to WhatsApp Business Account."""
-    token = os.environ.get("WHATSAPP_TOKEN", "")
+def test_waba_access() -> tuple[bool, dict]:
+    """Test access to WhatsApp Business Account.
+
+    Returns (ok, info) where info only contains aggregate counts — never raw response data.
+    """
     waba_id = os.environ.get("WABA_ID", "")
 
     try:
         response = httpx.get(
             f"{GRAPH_API}/{waba_id}/phone_numbers",
-            headers={"Authorization": f"Bearer {token}"},
+            headers=_auth_headers(),
             timeout=10.0,
         )
-
-        if response.status_code == 200:
-            data = response.json()
-            count = len(data.get("data", []))
-            return True, f"WABA accessible. {count} phone number(s) found."
-        else:
-            error = response.json().get("error", {})
-            return False, f"API Error {error.get('code', '?')}: {error.get('message', 'Unknown')}"
-
     except Exception as e:
-        # Mask token in error output to prevent credential leakage
-        safe_err = str(e).replace(token, _mask_secret(token)) if token else str(e)
-        return False, f"Error: {safe_err}"
+        return False, {"error": _redact(f"Error: {e}")}
+
+    if response.status_code != 200:
+        err = response.json().get("error", {})
+        return False, {
+            "error": f"API Error {err.get('code', '?')}: {err.get('message', 'Unknown')}"
+        }
+
+    count = len(response.json().get("data", []))
+    return True, {"phone_number_count": count}
 
 
 def main():
@@ -154,23 +163,27 @@ def main():
 
     # Check 2: API connection
     print("[2/3] Testing API connection (Phone Number)...")
-    api_ok, api_msg = test_api_connection()
+    api_ok, api_info = test_api_connection()
     if api_ok:
-        print(f"  OK - Connected successfully")
-        print(f"  {api_msg}")
+        print("  OK - Connected successfully")
+        # Print only the explicit, non-sensitive fields we captured.
+        print(f"  Phone:   {api_info.get('phone', 'N/A')}")
+        print(f"  Name:    {api_info.get('name', 'N/A')}")
+        print(f"  Status:  {api_info.get('status', 'N/A')}")
+        print(f"  Quality: {api_info.get('quality', 'N/A')}")
     else:
-        print(f"  FAIL - {api_msg}")
+        print(f"  FAIL - {_redact(str(api_info.get('error', 'unknown error')))}")
         all_ok = False
 
     print()
 
     # Check 3: WABA access
     print("[3/3] Testing WABA access...")
-    waba_ok, waba_msg = test_waba_access()
+    waba_ok, waba_info = test_waba_access()
     if waba_ok:
-        print(f"  OK - {waba_msg}")
+        print(f"  OK - WABA accessible. {waba_info.get('phone_number_count', 0)} phone number(s) found.")
     else:
-        print(f"  FAIL - {waba_msg}")
+        print(f"  FAIL - {_redact(str(waba_info.get('error', 'unknown error')))}")
         all_ok = False
 
     print()

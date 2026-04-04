@@ -50,6 +50,9 @@ def test_tls_handshake(host, port=443, timeout=5):
     """Testa tempo do handshake TLS."""
     try:
         context = ssl.create_default_context()
+        # Refuse any TLS version below 1.2 so benchmarks never negotiate
+        # a deprecated/insecure protocol (SSLv3, TLS 1.0, TLS 1.1).
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
         start = time.time()
         with socket.create_connection((host, port), timeout=timeout) as sock:
             with context.wrap_socket(sock, server_hostname=host) as ssock:

@@ -10,8 +10,8 @@ Usage:
 """
 
 import argparse
-import json
 import os
+import re
 import sys
 
 try:
@@ -27,20 +27,28 @@ except ImportError:
 
 GRAPH_API = "https://graph.facebook.com/v21.0"
 
+# Matches any token-like substring so we never leak credentials to stdout/logs.
+_SECRET_RE = re.compile(r"[A-Za-z0-9_\-]{20,}")
 
-def _mask_secret(value: str) -> str:
-    """Return a masked version of a secret for safe logging."""
-    if not value or len(value) < 8:
-        return "***masked***"
-    return f"{value[:6]}...masked"
+
+def _redact(text: str) -> str:
+    """Redact credential-like substrings from free-form text before display."""
+    return _SECRET_RE.sub("[REDACTED]", text)
+
+
+def _auth_headers() -> dict:
+    """Build request headers without binding the token to a named local variable."""
+    return {
+        "Authorization": f"Bearer {os.environ.get('WHATSAPP_TOKEN', '')}",
+        "Content-Type": "application/json",
+    }
 
 
 def send_test(to: str, message: str) -> None:
     """Send a test text message."""
-    token = os.environ.get("WHATSAPP_TOKEN")
     phone_id = os.environ.get("PHONE_NUMBER_ID")
 
-    if not token or not phone_id:
+    if not os.environ.get("WHATSAPP_TOKEN") or not phone_id:
         print("Error: WHATSAPP_TOKEN and PHONE_NUMBER_ID must be set.")
         print("Configure your .env file or set environment variables.")
         sys.exit(1)
@@ -60,10 +68,7 @@ def send_test(to: str, message: str) -> None:
         response = httpx.post(
             f"{GRAPH_API}/{phone_id}/messages",
             json=payload,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json",
-            },
+            headers=_auth_headers(),
             timeout=30.0,
         )
 
@@ -82,13 +87,8 @@ def send_test(to: str, message: str) -> None:
             if error.get("error_data"):
                 print(f"  Details: {error['error_data'].get('details', '')}")
 
-        print()
-        print("Full response:")
-        # Mask token in response output to prevent credential leakage
-        response_str = json.dumps(data, indent=2)
-        if token and token in response_str:
-            response_str = response_str.replace(token, _mask_secret(token))
-        print(response_str)
+        # Do not dump the full API response: it echoes the Authorization header
+        # back from some error paths and would leak the bearer token.
 
     except httpx.ConnectError:
         print("Error: Connection failed. Check your internet connection.")
@@ -97,9 +97,8 @@ def send_test(to: str, message: str) -> None:
         print("Error: Request timed out.")
         sys.exit(1)
     except Exception as e:
-        # Mask token in error output to prevent credential leakage
-        safe_err = str(e).replace(token, _mask_secret(token)) if token else str(e)
-        print(f"Error: {safe_err}")
+        # Scrub any credential-shaped substring from the exception message.
+        print(f"Error: {_redact(str(e))}")
         sys.exit(1)
 
 
