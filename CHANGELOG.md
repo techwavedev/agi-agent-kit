@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.2] - 2026-04-04
+
+### Fixed
+
+- **NPM publish workflow** — Migrated from token-based auth to OIDC trusted publisher. Upgraded to Node 24 (ships with npm 11.x needed for OIDC). Added skip-if-already-published guard for GitHub Packages to allow re-running failed workflows.
+
 ## [1.7.1] - 2026-04-04
 
 ### Security
