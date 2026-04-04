@@ -430,7 +430,7 @@ def cmd_run(args) -> int:
     # ─── PHASE 3: EVALUATE (Parallel Statistical Eval) ────────────────────
 
     if not json_output:
-        print(f"\n  [3/5] EVALUATE — Running parallel eval ({parallel_runs} runs)...")
+        print(f"\n  [3/5] EVALUATE — Running parallel evaluation with {parallel_runs} runs...")
 
     if parallel_runs > 1:
         eval_result = run_parallel_eval(skill_path, parallel_runs)

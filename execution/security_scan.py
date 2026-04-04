@@ -31,7 +31,12 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
 # Directories to skip entirely
-SKIP_DIRS = {"node_modules", ".git", ".venv", ".venv.test", ".idea", ".tmp", "__pycache__", ".mypy_cache", "venv", "env"}
+SKIP_DIRS = {"node_modules", ".git", ".venv", ".venv.test", ".idea", ".tmp", "__pycache__",
+             ".mypy_cache", "venv", "env", "browser_state", "browser_profile",
+             "_metadata", ".playwright-browsers"}
+# Files always skipped (gitignored, private, or generated)
+SKIP_FILES = {"docker-compose.langfuse.yml", "library.json", "auth_info.json",
+              "state.json", "verified_contents.json"}
 # Extensions to scan for secrets and code
 TEXT_EXTENSIONS = {".py", ".js", ".ts", ".jsx", ".tsx", ".json", ".yml", ".yaml", ".md",
                    ".sh", ".bash", ".cfg", ".ini", ".toml", ".env", ".txt", ".html", ".css"}
@@ -113,6 +118,8 @@ def should_skip(path: Path) -> bool:
     """Check if a path should be skipped."""
     parts = set(path.parts)
     if parts & SKIP_DIRS:
+        return True
+    if path.name in SKIP_FILES:
         return True
     try:
         if path.stat().st_size > MAX_FILE_SIZE:
@@ -564,9 +571,21 @@ def scan_blocked_packages() -> dict:
         files_scanned += 1
         lines = content.split("\n")
 
+        # Patterns that indicate the line is documenting *removal* of a blocked
+        # package, not using it. These are safe historical references.
+        removal_context = re.compile(
+            r"\b(removed?|remove|deleted?|deprecated?|blocked|banned|replaced?|"
+            r"no longer|disallowed?|forbidden|ripped out|yanked|purged?|"
+            r"eliminated?|abandoned?|avoid(ed)?|compromised?|backdoor(ed)?)\b",
+            re.IGNORECASE,
+        )
+
         for blocked in BLOCKED_PACKAGES:
             for i, line in enumerate(lines, 1):
                 if re.search(blocked["pattern"], line, re.IGNORECASE):
+                    # Skip if line is in a removal/historical context
+                    if removal_context.search(line):
+                        continue
                     findings.append({
                         "file": rel_path,
                         "line": i,
