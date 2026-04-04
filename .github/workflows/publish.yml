@@ -125,6 +125,9 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
+      - name: Upgrade npm to OIDC-compatible version
+        run: npm install -g npm@latest
+
       - name: Verify version matches release tag
         run: |
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
@@ -135,10 +138,8 @@ jobs:
           fi
           echo "✅ Version match: $PACKAGE_VERSION"
 
-      - name: Publish to NPM with provenance
+      - name: Publish to NPM with provenance (OIDC trust)
         run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # ─────────────────────────────────────────────────────────────
   # PUBLISH TO GITHUB PACKAGES — mirrors the NPM publish
