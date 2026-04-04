@@ -67,13 +67,22 @@ export function handleWebhookVerification(verifyToken: string) {
     const challenge = req.query['hub.challenge'] as string;
 
     if (mode === 'subscribe' && token === verifyToken) {
+      // Strictly validate the challenge shape before echoing it. Meta sends
+      // an opaque token of alphanumerics, dashes and underscores — anything
+      // else is a tampered request and must not be echoed, preventing any
+      // reflected XSS via the challenge parameter.
+      if (typeof challenge !== 'string' || !/^[A-Za-z0-9_\-]{1,256}$/.test(challenge)) {
+        console.warn('Webhook verification failed: invalid challenge shape');
+        res.sendStatus(400);
+        return;
+      }
       console.log('Webhook verified successfully');
-      // Force plain text so the echoed challenge cannot be interpreted as
-      // HTML/JavaScript by a browser (prevents reflected XSS on the echo).
+      // Force plain text as a defence in depth so the validated challenge
+      // still cannot be interpreted as HTML/JavaScript by a browser.
       res
         .status(200)
         .type('text/plain')
-        .send(String(challenge ?? ''));
+        .send(challenge);
     } else {
       console.warn('Webhook verification failed: invalid token');
       res.sendStatus(403);
