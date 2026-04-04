@@ -160,7 +160,49 @@ def main():
     report["qdrant"] = qdrant
 
     if qdrant["status"] != "ok":
-        report["issues"].append("Qdrant not running. Start with: docker run -d -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant")
+        if args.auto_fix:
+            # Try restarting existing container first, then create new one
+            import subprocess as _sp
+            restarted = False
+            try:
+                check = _sp.run(["docker", "ps", "-a", "--filter", "name=^qdrant$", "--format", "{{.Names}}"],
+                                capture_output=True, text=True, timeout=10)
+                if "qdrant" in check.stdout.strip():
+                    if not args.json_output:
+                        print("⏳ Restarting existing Qdrant container...")
+                    start = _sp.run(["docker", "start", "qdrant"], capture_output=True, text=True, timeout=30)
+                    if start.returncode == 0:
+                        import time as _time; _time.sleep(3)
+                        qdrant = check_qdrant()
+                        report["qdrant"] = qdrant
+                        if qdrant["status"] == "ok":
+                            restarted = True
+                            report["actions_taken"].append("Restarted existing Qdrant container")
+            except Exception:
+                pass
+            if not restarted:
+                if not args.json_output:
+                    print("⏳ Starting new Qdrant container...")
+                try:
+                    run_result = _sp.run(
+                        ["docker", "run", "-d", "--name", "qdrant", "-p", "6333:6333",
+                         "-v", "qdrant_storage:/qdrant/storage", "qdrant/qdrant"],
+                        capture_output=True, text=True, timeout=30
+                    )
+                    if run_result.returncode == 0:
+                        import time as _time; _time.sleep(3)
+                        qdrant = check_qdrant()
+                        report["qdrant"] = qdrant
+                        if qdrant["status"] == "ok":
+                            report["actions_taken"].append("Started new Qdrant container")
+                        else:
+                            report["issues"].append("Qdrant container started but not responding yet")
+                    else:
+                        report["issues"].append(f"Failed to start Qdrant: {run_result.stderr.strip()}")
+                except Exception as e:
+                    report["issues"].append(f"Failed to start Qdrant: {e}")
+        else:
+            report["issues"].append("Qdrant not running. Start with: docker start qdrant (or docker run -d --name qdrant -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant)")
 
     # Step 2: Check Ollama
     ollama = check_ollama()
