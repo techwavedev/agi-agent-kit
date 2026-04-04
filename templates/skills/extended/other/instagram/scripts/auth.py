@@ -84,7 +84,9 @@ def wait_for_oauth_code() -> Optional[str]:
     """Inicia servidor local e espera pelo código de autorização."""
     server = HTTPServer(("localhost", OAUTH_REDIRECT_PORT), OAuthCallbackHandler)
     server.timeout = 120  # 2 minutos
-    print(f"Aguardando autorização em http://localhost:{OAUTH_REDIRECT_PORT}/callback ...")
+    # Do not print the redirect URI directly: CodeQL treats the imported
+    # OAUTH_REDIRECT_PORT as sensitive config. A static prompt is enough.
+    print("Aguardando autorização no callback OAuth local...")
     print("(Timeout: 2 minutos)\n")
 
     while OAuthCallbackHandler.authorization_code is None:
@@ -285,10 +287,9 @@ async def setup() -> None:
         f"response_type=code"
     )
 
-    print(f"\nAbrindo browser para autorização...")
-    # Mask client_id in auth URL to avoid logging credentials
-    masked_url = auth_url.replace(app_id, app_id[:4] + "...masked") if app_id else auth_url
-    print(f"URL: {masked_url}\n")
+    print("\nAbrindo browser para autorização...")
+    # Do not print the auth URL: it contains the client_id and scope set,
+    # which CodeQL treats as sensitive credentials. The browser still opens it.
     webbrowser.open(auth_url)
 
     # Esperar callback

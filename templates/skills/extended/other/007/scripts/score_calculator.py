@@ -24,6 +24,14 @@ import sys
 import time
 from pathlib import Path
 
+# Credential-shaped substrings must never hit stdout in the scoring report.
+_SECRET_RE = re.compile(r"[A-Za-z0-9_\-]{32,}")
+
+
+def _redact_report(text: str) -> str:
+    """Scrub any token-shaped substring from a report before printing."""
+    return _SECRET_RE.sub("[REDACTED]", text)
+
 # ---------------------------------------------------------------------------
 # Imports from the 007 config hub (same directory)
 # ---------------------------------------------------------------------------
@@ -634,9 +642,9 @@ def run_score(
     )
 
     if output_format == "json":
-        print(json.dumps(report, indent=2, ensure_ascii=False))
+        print(_redact_report(json.dumps(report, indent=2, ensure_ascii=False)))
     else:
-        print(format_text_report(
+        print(_redact_report(format_text_report(
             target=target_str,
             domain_scores=domain_scores,
             final_score=final_score,
@@ -644,7 +652,7 @@ def run_score(
             scanner_summaries=scanner_summaries,
             total_findings=total_findings,
             elapsed=elapsed,
-        ))
+        )))
 
     return report
 

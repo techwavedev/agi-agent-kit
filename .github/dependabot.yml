@@ -1,24 +1,83 @@
 version: 2
+
+# Dependabot configuration for the AGI Agent Kit.
+#
+# - Security updates (CVE-triggered) are always enabled by default for every
+#   ecosystem below. They open immediately regardless of the weekly cadence.
+# - Version updates run weekly and are grouped to minimise PR churn.
+# - Nested CLI bundles (e.g. the ui-ux-pro-max installer shipped inside
+#   templates/) are scanned directly so their lockfiles get covered.
+# - Malware scanning on dependencies is performed by GitHub's Advisory
+#   Database + Secret Scanning (configured in the repository settings).
 updates:
+  # ── Root npm package (the CLI shipped to users) ──
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
     groups:
       production-dependencies:
+        dependency-type: "production"
+        patterns:
+          - "*"
+      development-dependencies:
+        dependency-type: "development"
         patterns:
           - "*"
 
+  # ── Nested CLI: ui-ux-pro-max installer ──
+  - package-ecosystem: "npm"
+    directory: "/templates/skills/extended/frontend/ui-ux-pro-max/cli"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+      - "area:ui-ux-pro-max"
+    groups:
+      all-deps:
+        patterns:
+          - "*"
+
+  # ── Python (framework execution scripts + template scripts) ──
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
     groups:
       production-dependencies:
         patterns:
           - "*"
 
+  # ── GitHub Actions (CI workflows) ──
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    labels:
+      - "dependencies"
+      - "security"
+      - "area:ci"
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  # ── Docker images used in workflows / devcontainers ──
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "security"
+    open-pull-requests-limit: 5

@@ -68,7 +68,12 @@ export function handleWebhookVerification(verifyToken: string) {
 
     if (mode === 'subscribe' && token === verifyToken) {
       console.log('Webhook verified successfully');
-      res.status(200).send(challenge);
+      // Force plain text so the echoed challenge cannot be interpreted as
+      // HTML/JavaScript by a browser (prevents reflected XSS on the echo).
+      res
+        .status(200)
+        .type('text/plain')
+        .send(String(challenge ?? ''));
     } else {
       console.warn('Webhook verification failed: invalid token');
       res.sendStatus(403);
