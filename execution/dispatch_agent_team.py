@@ -282,6 +282,8 @@ def main():
                         default="native", help="Claude dispatch mode (default: native)")
     parser.add_argument("--project", default="agi-agent-kit",
                         help="Project name for Qdrant tagging (used with --claude)")
+    parser.add_argument("--local-route", action="store_true",
+                        help="Pre-classify subtasks via task_router.py and tag local-eligible ones")
     args = parser.parse_args()
 
     # Parse payload
@@ -315,6 +317,25 @@ def main():
 
         # Create worktrees for all sub-agents
         worktree_info = setup_parallel_worktrees(root, subagents)
+
+    # Pre-classify subtasks for local routing if requested
+    if args.local_route:
+        task_router = root / "execution" / "task_router.py"
+        if task_router.exists():
+            task_desc = payload.get("commit_msg", payload.get("task", ""))
+            try:
+                route_result = subprocess.run(
+                    [sys.executable, str(task_router), "classify", "--task", task_desc],
+                    capture_output=True, text=True, timeout=10, cwd=str(root)
+                )
+                if route_result.returncode == 0:
+                    classification = json.loads(route_result.stdout)
+                    payload["_routing"] = classification
+                    if classification.get("route") == "local_required":
+                        payload["_local_only"] = True
+                        payload["_routing_reason"] = classification.get("reason", "")
+            except Exception:
+                pass
 
     manifest = build_manifest(args.team, payload, subagents, root,
                               parallel=args.parallel, worktree_info=worktree_info)
