@@ -3,10 +3,11 @@
 import hashlib
 import hmac
 import os
+import re
 from functools import wraps
 from typing import Any
 
-from flask import Request, abort, request
+from flask import Response, abort, request
 
 
 def validate_hmac_signature(app_secret: str | None = None):
@@ -44,16 +45,25 @@ def validate_hmac_signature(app_secret: str | None = None):
 def verify_webhook(verify_token: str | None = None):
     """
     Handle webhook verification (GET request from Meta).
-    Returns the challenge to confirm the webhook endpoint.
+
+    Echoes the challenge back as ``text/plain`` so the reflected value cannot
+    be interpreted as HTML/JavaScript by a browser (prevents reflected XSS).
+    Meta only inspects the body contents, so the content-type override is
+    protocol-safe.
     """
     token = verify_token or os.environ["VERIFY_TOKEN"]
 
     mode = request.args.get("hub.mode")
     req_token = request.args.get("hub.verify_token")
-    challenge = request.args.get("hub.challenge")
+    challenge = request.args.get("hub.challenge", "")
 
     if mode == "subscribe" and req_token == token:
-        return challenge, 200
+        # Strictly validate the challenge shape: Meta sends an opaque token
+        # made of alphanumerics, dashes and underscores. Anything else is a
+        # tampered request — reject it rather than echoing.
+        if not re.fullmatch(r"[A-Za-z0-9_\-]{1,256}", challenge):
+            abort(400, "Invalid challenge")
+        return Response(challenge, status=200, mimetype="text/plain")
     else:
         abort(403, "Verification failed")
 

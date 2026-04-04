@@ -27,6 +27,14 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Credential-shaped substrings must never hit stdout or disk in the audit report.
+_SECRET_RE = re.compile(r"[A-Za-z0-9_\-]{32,}")
+
+
+def _redact_report(text: str) -> str:
+    """Scrub any token-shaped substring from a report before printing or persisting."""
+    return _SECRET_RE.sub("[REDACTED]", text)
+
 # ---------------------------------------------------------------------------
 # Imports from the 007 config hub (same directory)
 # ---------------------------------------------------------------------------
@@ -1193,7 +1201,7 @@ def run_audit(
     report_path = REPORTS_DIR / report_filename
 
     try:
-        report_path.write_text(md_report, encoding="utf-8")
+        report_path.write_text(_redact_report(md_report), encoding="utf-8")
         logger.info("Markdown report saved to %s", report_path)
     except OSError as exc:
         logger.warning("Could not save report: %s", exc)
@@ -1235,11 +1243,11 @@ def run_audit(
     # Output
     # ------------------------------------------------------------------
     if output_format == "json":
-        print(json.dumps(full_report, indent=2, ensure_ascii=False))
+        print(_redact_report(json.dumps(full_report, indent=2, ensure_ascii=False)))
     elif output_format == "markdown":
-        print(md_report)
+        print(_redact_report(md_report))
     else:
-        print(_generate_text_summary(target_str, phases_data, elapsed, phases_list))
+        print(_redact_report(_generate_text_summary(target_str, phases_data, elapsed, phases_list)))
         print(f"  Full report saved to: {report_path}")
         print("")
 

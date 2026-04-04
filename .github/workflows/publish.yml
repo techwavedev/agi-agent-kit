@@ -122,8 +122,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24"
           registry-url: "https://registry.npmjs.org"
+
+      - name: Verify npm version (OIDC requires >=11.5.1)
+        run: |
+          node --version
+          npm --version
 
       - name: Verify version matches release tag
         run: |
@@ -135,10 +140,8 @@ jobs:
           fi
           echo "✅ Version match: $PACKAGE_VERSION"
 
-      - name: Publish to NPM with provenance
+      - name: Publish to NPM with provenance (OIDC trust)
         run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # ─────────────────────────────────────────────────────────────
   # PUBLISH TO GITHUB PACKAGES — mirrors the NPM publish
@@ -156,7 +159,7 @@ jobs:
       - name: Setup Node.js for GitHub Packages
         uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24"
           registry-url: "https://npm.pkg.github.com"
 
       - name: Verify version matches release tag
@@ -169,7 +172,21 @@ jobs:
           fi
           echo "✅ Version match: $PACKAGE_VERSION"
 
+      - name: Check if version already published to GitHub Packages
+        id: gh_pkg_check
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          if npm view "@techwavedev/agi-agent-kit@${PACKAGE_VERSION}" version --registry=https://npm.pkg.github.com 2>/dev/null; then
+            echo "already_published=true" >> $GITHUB_OUTPUT
+            echo "⚠️  Version ${PACKAGE_VERSION} already published to GitHub Packages. Skipping."
+          else
+            echo "already_published=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish to GitHub Packages
+        if: steps.gh_pkg_check.outputs.already_published != 'true'
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
