@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **CodeQL alerts — resolved all 23 open findings on `techwavedev/agi-agent-kit`.**
+  - `py/command-line-injection` in [execution/fastapi_tool_bridge.py](execution/fastapi_tool_bridge.py) — replaced the `shell=True` subprocess call with a strict allowlist and argv-list invocation (no shell).
+  - `py/reflective-xss` and `js/reflected-xss` in the WhatsApp Cloud API webhook boilerplate — webhook challenge is now echoed with an explicit `text/plain` content-type so it cannot be interpreted as HTML/JS.
+  - `py/flask-debug` — Flask debug mode is now opt-in via `FLASK_DEBUG` env var (default: off).
+  - `py/insecure-protocol` in `claude-monitor/api_bench.py` — TLS context now enforces `TLSv1.2` minimum.
+  - `js/shell-command-injection-from-environment` in `ui-ux-pro-max/cli/src/utils/extract.ts` — shell-based copy fallback replaced with `execFile` + argv array.
+  - `js/incomplete-sanitization` in `ui-ux-pro-max/cli/src/utils/template.ts` — YAML frontmatter escaping now escapes backslashes before quotes.
+  - `js/functionality-from-untrusted-source` in `algorithmic-art/templates/viewer.html` — p5.js CDN include pinned with Subresource Integrity (`sha384-…`) and `crossorigin="anonymous"`.
+  - `py/clear-text-logging-sensitive-data` (×13) and `py/clear-text-storage-sensitive-data` (×1) across the `007`, `whatsapp-cloud-api`, and `instagram` skill templates — refactored to never bind bearer tokens to named locals that flow to `print`, added regex-based `_redact()` scrubbers at every print/write sink, masked phone numbers as PII before logging, and removed full-response dumps that echoed the Authorization header.
+- **Dependabot hardened** — `.github/dependabot.yml` now covers the nested `ui-ux-pro-max/cli` package and Docker images, splits production vs dev npm groups, labels all PRs with `security`, and keeps the existing weekly cadence for pip + github-actions. Security (CVE-triggered) updates remain always-on by default.
+
 ## [1.7.2] - 2026-04-04
 
 ### Fixed

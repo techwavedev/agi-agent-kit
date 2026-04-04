@@ -12,10 +12,19 @@ Usage:
 
 import os
 import json
+import shutil
 import subprocess
 from fastapi import FastAPI, HTTPException, Header, Depends
 from pydantic import BaseModel
 from typing import Optional, Dict
+
+# Strict allowlist of commands the bridge may execute. Everything else is rejected.
+# Each entry maps a logical command name -> absolute binary path resolved at import.
+_ALLOWED_COMMANDS = {
+    name: shutil.which(name)
+    for name in ("echo", "ls", "pwd", "whoami", "date")
+}
+_ALLOWED_COMMANDS = {k: v for k, v in _ALLOWED_COMMANDS.items() if v}
 
 # Attempt to import Langfuse for Observability tracking
 try:
@@ -63,12 +72,28 @@ def safe_execute_tool(tool_name: str, args: dict) -> ExecuteResponse:
             
         print(f"Bridge intercept: executing {tool_name} with {args}")
         
-        # Example: Mocking a shell executor bridge securely
+        # Safe shell executor bridge: uses a strict allowlist + argv list (no shell).
+        # The sandbox supplies a structured request: {"command": "<name>", "args": [...]}.
+        # Unknown commands or any attempt to pass a raw string are rejected.
         if tool_name == "execute_terminal":
-            cmd = args.get("command", "echo 'No command'")
-            # This is extremely dangerous. In production, we'd use a strict allowlist
-            # But this proves the architecture of bridging host from sandbox
-            res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
+            command_name = args.get("command")
+            command_args = args.get("args", [])
+            if not isinstance(command_name, str) or command_name not in _ALLOWED_COMMANDS:
+                raise ValueError(
+                    f"Command '{command_name}' is not in the allowlist. "
+                    f"Permitted: {sorted(_ALLOWED_COMMANDS)}"
+                )
+            if not isinstance(command_args, list) or not all(isinstance(a, str) for a in command_args):
+                raise ValueError("'args' must be a list of strings.")
+            argv = [_ALLOWED_COMMANDS[command_name], *command_args]
+            # shell=False (the default) + argv list prevents command-line injection.
+            res = subprocess.run(  # noqa: S603 - argv is fully validated against an allowlist
+                argv,
+                shell=False,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
             return ExecuteResponse(
                 status="success" if res.returncode == 0 else "error",
                 output={"returncode": res.returncode},
