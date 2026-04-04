@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-03-14 16:05
+> **Auto-generated Documentation** — Last updated: 2026-04-04 15:54
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -15,9 +15,12 @@ This document provides comprehensive documentation on available skills, how to u
 
 - [What Are Skills?](#what-are-skills)
 - [Available Skills](#available-skills)
+  - [Cowork Export](#cowork-export)
   - [Documentation](#documentation)
+  - [Notebooklm](#notebooklm)
   - [Pdf Reader](#pdf-reader)
   - [Qdrant Memory](#qdrant-memory)
+  - [Supply Chain Monitor](#supply-chain-monitor)
   - [Upstream Sync](#upstream-sync)
   - [Webcrawler](#webcrawler)
 - [Using Skills](#using-skills)
@@ -44,6 +47,27 @@ skill-name/
 
 ## Available Skills
 
+### Cowork Export
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `cowork-export` |
+| **Location** | `skills/cowork-export/` |
+| **Type** | Standalone |
+
+**Description:** "Export current session context as a portable briefing document for Claude on claude.ai (Cowork). Use when the user wants to delegate tasks to Claude web, schedule work in Cowork, or hand off context to a remote Claude instance. Triggers on: 'export to cowork', 'cowork briefing', 'send to claude.ai', 'schedule in cowork', 'remote agent context'."
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/export_context.py` | *[See script for details]* |
+
+**References:**
+- `references/cowork-patterns.md`
+
+---
+
 ### Documentation
 
 | Property | Value |
@@ -66,6 +90,37 @@ skill-name/
 
 **References:**
 - `references/best_practices.md`
+
+---
+
+### Notebooklm
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `notebooklm` |
+| **Location** | `skills/notebooklm/` |
+| **Type** | Standalone |
+
+**Description:** "Use this skill to query your Google NotebookLM notebooks directly from Claude Code for source-grounded, citation-backed answers from Gemini. Browser automation, library management, persistent auth...."
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/ask_question.py` | *[See script for details]* |
+| `scripts/auth_manager.py` | *[See script for details]* |
+| `scripts/browser_session.py` | *[See script for details]* |
+| `scripts/browser_utils.py` | *[See script for details]* |
+| `scripts/cleanup_manager.py` | *[See script for details]* |
+| `scripts/config.py` | *[See script for details]* |
+| `scripts/notebook_manager.py` | *[See script for details]* |
+| `scripts/run.py` | *[See script for details]* |
+| `scripts/setup_environment.py` | *[See script for details]* |
+
+**References:**
+- `references/api_reference.md`
+- `references/troubleshooting.md`
+- `references/usage_patterns.md`
 
 ---
 
@@ -119,6 +174,29 @@ skill-name/
 - `references/collection_schemas.md`
 - `references/complete_guide.md`
 - `references/embedding_models.md`
+
+---
+
+### Supply Chain Monitor
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `supply-chain-monitor` |
+| **Location** | `skills/supply-chain-monitor/` |
+| **Type** | Standalone |
+
+**Description:** >
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/extract_packages.py` | *[See script for details]* |
+| `scripts/scrape_thn.py` | *[See script for details]* |
+| `scripts/update_blocklist.py` | *[See script for details]* |
+
+**References:**
+- `references/thn_selectors.md`
 
 ---
 

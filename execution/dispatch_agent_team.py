@@ -22,6 +22,10 @@ Arguments:
     --parallel    Run sub-agents in parallel using git worktree isolation
     --partitions  JSON mapping agent IDs to file globs they'll modify (optional)
     --dry-run     Print the manifest without storing to memory (optional)
+    --claude      Force Claude Code-native output via claude_dispatch.py
+    --no-claude   Force standard manifest even if Claude Code env is detected
+    --claude-mode Output mode for claude_dispatch: native, fallback, schedule
+    --project     Project name for Qdrant tagging (default: agi-agent-kit)
 
 Exit Codes:
     0 - Success, manifest printed to stdout
@@ -270,6 +274,16 @@ def main():
     parser.add_argument("--partitions",
                         help="JSON mapping agent IDs to file globs (validates no overlap)")
     parser.add_argument("--dry-run", action="store_true", help="Print manifest without storing to memory")
+    parser.add_argument("--claude", action="store_true",
+                        help="Output Claude Code-native Agent tool instructions via claude_dispatch.py")
+    parser.add_argument("--no-claude", action="store_true",
+                        help="Force standard manifest output even if Claude Code is detected")
+    parser.add_argument("--claude-mode", choices=["native", "fallback", "schedule"],
+                        default="native", help="Claude dispatch mode (default: native)")
+    parser.add_argument("--project", default="agi-agent-kit",
+                        help="Project name for Qdrant tagging (used with --claude)")
+    parser.add_argument("--local-route", action="store_true",
+                        help="Pre-classify subtasks via task_router.py and tag local-eligible ones")
     args = parser.parse_args()
 
     # Parse payload
@@ -304,9 +318,70 @@ def main():
         # Create worktrees for all sub-agents
         worktree_info = setup_parallel_worktrees(root, subagents)
 
+    # Pre-classify subtasks for local routing if requested
+    if args.local_route:
+        task_router = root / "execution" / "task_router.py"
+        if task_router.exists():
+            task_desc = payload.get("commit_msg", payload.get("task", ""))
+            try:
+                route_result = subprocess.run(
+                    [sys.executable, str(task_router), "classify", "--task", task_desc],
+                    capture_output=True, text=True, timeout=10, cwd=str(root)
+                )
+                if route_result.returncode == 0:
+                    classification = json.loads(route_result.stdout)
+                    payload["_routing"] = classification
+                    if classification.get("route") == "local_required":
+                        payload["_local_only"] = True
+                        payload["_routing_reason"] = classification.get("reason", "")
+            except Exception:
+                pass
+
     manifest = build_manifest(args.team, payload, subagents, root,
                               parallel=args.parallel, worktree_info=worktree_info)
     store_to_memory(root, manifest, args.dry_run)
+
+    # Claude Code-native dispatch: auto-detect or explicit --claude flag
+    use_claude = args.claude
+    if not use_claude and not args.no_claude:
+        # Auto-detect Claude Code environment
+        if os.environ.get("CLAUDE_CODE") or os.environ.get("CLAUDE_SESSION_ID"):
+            use_claude = True
+
+    if use_claude:
+        claude_script = root / "execution" / "claude_dispatch.py"
+        if claude_script.exists():
+            # Write manifest to temp file and pipe through claude_dispatch.py
+            import tempfile
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+                json.dump(manifest, f)
+                tmp_path = f.name
+            try:
+                cmd = [
+                    sys.executable, str(claude_script),
+                    "--manifest", tmp_path,
+                    "--mode", args.claude_mode,
+                    "--project", args.project,
+                ]
+                if args.dry_run:
+                    cmd.append("--dry-run")
+                result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(root))
+                if result.returncode == 0:
+                    print(result.stdout)
+                else:
+                    # Fall back to standard manifest on error
+                    print(json.dumps({
+                        "warning": "claude_dispatch.py failed, falling back to standard manifest",
+                        "stderr": result.stderr.strip()
+                    }), file=sys.stderr)
+                    print(json.dumps(manifest, indent=2))
+            finally:
+                os.unlink(tmp_path)
+            sys.exit(0)
+        else:
+            print(json.dumps({
+                "warning": "claude_dispatch.py not found, outputting standard manifest"
+            }), file=sys.stderr)
 
     print(json.dumps(manifest, indent=2))
     sys.exit(0)

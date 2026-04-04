@@ -27,6 +27,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
@@ -159,7 +160,49 @@ def main():
     report["qdrant"] = qdrant
 
     if qdrant["status"] != "ok":
-        report["issues"].append("Qdrant not running. Start with: docker run -d -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant")
+        if args.auto_fix:
+            # Try restarting existing container first, then create new one
+            import subprocess as _sp
+            restarted = False
+            try:
+                check = _sp.run(["docker", "ps", "-a", "--filter", "name=^qdrant$", "--format", "{{.Names}}"],
+                                capture_output=True, text=True, timeout=10)
+                if "qdrant" in check.stdout.strip():
+                    if not args.json_output:
+                        print("⏳ Restarting existing Qdrant container...")
+                    start = _sp.run(["docker", "start", "qdrant"], capture_output=True, text=True, timeout=30)
+                    if start.returncode == 0:
+                        import time as _time; _time.sleep(3)
+                        qdrant = check_qdrant()
+                        report["qdrant"] = qdrant
+                        if qdrant["status"] == "ok":
+                            restarted = True
+                            report["actions_taken"].append("Restarted existing Qdrant container")
+            except Exception:
+                pass
+            if not restarted:
+                if not args.json_output:
+                    print("⏳ Starting new Qdrant container...")
+                try:
+                    run_result = _sp.run(
+                        ["docker", "run", "-d", "--name", "qdrant", "-p", "6333:6333",
+                         "-v", "qdrant_storage:/qdrant/storage", "qdrant/qdrant"],
+                        capture_output=True, text=True, timeout=30
+                    )
+                    if run_result.returncode == 0:
+                        import time as _time; _time.sleep(3)
+                        qdrant = check_qdrant()
+                        report["qdrant"] = qdrant
+                        if qdrant["status"] == "ok":
+                            report["actions_taken"].append("Started new Qdrant container")
+                        else:
+                            report["issues"].append("Qdrant container started but not responding yet")
+                    else:
+                        report["issues"].append(f"Failed to start Qdrant: {run_result.stderr.strip()}")
+                except Exception as e:
+                    report["issues"].append(f"Failed to start Qdrant: {e}")
+        else:
+            report["issues"].append("Qdrant not running. Start with: docker start qdrant (or docker run -d --name qdrant -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant)")
 
     # Step 2: Check Ollama
     ollama = check_ollama()
@@ -207,6 +250,21 @@ def main():
             else:
                 report["issues"].append("Collections missing. Run: python3 execution/session_init.py")
 
+    # Step 3.5: Check Langfuse observability (optional, for local dev)
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from langfuse_tracing import check_langfuse
+        langfuse = check_langfuse()
+        report["langfuse"] = langfuse
+        if langfuse["status"] == "ok":
+            report["actions_taken"].append("Langfuse tracing active")
+        elif langfuse["status"] == "not_configured":
+            report["langfuse"]["note"] = "Optional: set LANGFUSE_* in .env for observability"
+        elif langfuse["status"] == "unreachable":
+            report["langfuse"]["note"] = "Langfuse server not running (optional)"
+    except Exception:
+        report["langfuse"] = {"status": "skipped"}
+
     # Step 4: Register with Control Tower (best-effort)
     try:
         from control_tower import register_agent
@@ -217,6 +275,19 @@ def main():
         report["actions_taken"].append(f"Registered with Control Tower as {agent_name}")
     except Exception:
         report["control_tower"] = {"status": "skipped"}
+
+    # Step 5: Write session boot marker (for PreToolUse enforcement)
+    try:
+        tmp_dir = PROJECT_DIR / ".tmp"
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        boot_marker = tmp_dir / "session_booted.json"
+        boot_marker.write_text(json.dumps({
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "agent": os.environ.get("AGENT_NAME", "claude"),
+            "memory_ready": True,  # Will be updated below
+        }, indent=2))
+    except Exception:
+        pass  # Non-blocking
 
     # Final readiness
     qdrant = report["qdrant"]

@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-04-04
+
+### Security
+
+- Removed LiteLLM/Trivy (TeamPCP compromise). Added blocked-package enforcement and `supply-chain-monitor` skill.
+
+### Added
+
+- **Langfuse Model Proxy** (`execution/langfuse_model_proxy.py`) — Traced LLM call wrapper for Anthropic models. Resolves model aliases (`haiku`, `sonnet`, `opus`), records each call as a Langfuse generation with token counts, cost, and latency. Provides `call_llm`, `estimate_cost`, and `call_llm_with_validation` (retry loop with assertion feedback). Langfuse tracing failure never blocks the API call. CLI: `call` and `cost` subcommands.
+- **Langfuse Dashboard** (`execution/langfuse_dashboard.py`) — Observability CLI for querying Langfuse traces. Commands: `overview`, `compare` (before/after windows), `traces` (name filter), `errors`, `slow` (latency threshold). HTTP Basic auth; normalises Langfuse latency units automatically.
+- **Harness Engine Directive** (`directives/harness_engine.md`) — Design reference for the full-stack agent execution harness. Documents 8 pillars: Langfuse observability, state management, human-in-the-loop fan-out via Pulsar, model tier strategy, sandboxed execution, context compression, validation loops, and multi-agent fan-out.
+- **Harness Engine** (`execution/harness_engine.py`) — Main orchestrator implementing the `init → planning → executing → validating → complete` state machine. `HarnessEngine.run()` auto-plans via Sonnet, dispatches steps to bash/python/llm/memory/delegate executors, validates outputs with binary assertions, retries with exponential backoff, scores the session in Langfuse, and stores a summary in Qdrant. `fan_out()` executes multiple independent tasks with isolated per-task context. State persisted to `.tmp/harness_state.json` for session resume. All dependencies (Langfuse, harness_context, harness_validator, langfuse_model_proxy) degrade gracefully to no-ops when unavailable.
+
+- **Agent Harness Context Manager** (`execution/harness_context.py`) — Retrieves relevant Qdrant memory chunks, compresses them to a token budget, and packages task + context for delegation to cheaper sub-agent models. Provides `prepare_subagent_context`, `compress_context`, `build_delegation_prompt`, `fan_out_tasks`, and `store_subagent_result`. CLI: `prepare` (single task) and `fan-out` (multi-task). Per-chunk token ceiling, near-duplicate deduplication, and graceful Qdrant-unreachable fallback.
+- **Langfuse Harness** (`execution/langfuse_harness.py`) — State-file-based cross-process span manager for Claude Code hooks. `init_session_trace()` creates a session-level Langfuse trace persisted in `.tmp/langfuse_session.json`; `open_span()` / `close_span()` open and end child spans per tool call, correlating PreToolUse and PostToolUse processes via deterministic MD5 span keys (`.tmp/langfuse_spans/`); `child_span()` lets execution scripts nest finer-grained spans without depending on the hook lifecycle; `score_trace()` attaches numeric scores; `end_session()` finalises the trace, flushes the client, and removes all state files. Atomic writes (temp + rename) and optional `filelock` prevent race conditions. Full no-op behaviour when `LANGFUSE_ENABLED != true`. CLI: `test`, `status`, `cleanup`.
+- **Claude Code-Native Dispatch Adapter** (`execution/claude_dispatch.py`) — Added adapter that translates agent team manifests into Claude Code Agent tool calls with worktree isolation and cross-agent Qdrant context sharing.
+- **Claude-Aware Dispatch Flags** (`execution/dispatch_agent_team.py`) — Added `--claude`, `--no-claude`, `--claude-mode`, and `--project` flags with auto-detection of Claude Code environment.
+- **Claude-Aware Team Template** (`directives/teams/claude_aware_template.md`) — Added directive template for defining agent teams that leverage Claude Code-native dispatch.
+- **Claude Dispatch SOP** (`directives/claude_dispatch.md`) — Added standard operating procedure for using the Claude Code-native dispatch adapter.
+- **Local Micro Agent** (`execution/local_micro_agent.py`) — Local Ollama model wrapper with model registry (gemma4:e4b fast tier, glm-4.7-flash medium tier), automatic fallback chain, structured JSON output with token metrics, and `health`/`list-models` subcommands. Routes small deterministic tasks to cost-free local inference.
+- **Task Router** (`execution/task_router.py`) — Security-first intelligent task classifier and router. Auto-detects security-sensitive tasks (secrets, tokens, .env, credentials) and forces local-only execution — secrets never leave the machine. Classifies tasks as `local`, `local_required`, or `cloud` based on complexity patterns. Subcommands: `classify`, `route` (execute local or delegate cloud), `split` (decompose compound tasks into independently-routable subtasks), `batch`, `stats`. Tracks routing decisions in `.tmp/task_router_stats.json`.
+- **NotebookLM Skill** (`skills/notebooklm/`) — Query Google NotebookLM notebooks directly from Claude Code for source-grounded, citation-backed answers from Gemini. Browser automation, notebook library management, persistent auth. Adapted for AGI framework with memory-first protocol and cross-agent collaboration.
+- **Local Router Hook** (`.claude/hooks/local_router_hook.py`) — PreToolUse hook that auto-intercepts Bash commands and classifies them via `task_router.py`. Security-sensitive tasks (secrets, tokens, .env) get a `[SECURITY ROUTER]` warning. Small deterministic tasks get pre-computed local results injected as context. Never blocks — soft enforcement via context injection.
+- **Claude Native Config** (`execution/claude_native_config.py`) — Configuration manager for Claude Code native features. Enables agent teams (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`), configures model overrides, generates `settings.local.json`. Subcommands: `status`, `env`, `enable-teams`, `set-model-overrides`, `generate-local-config`.
+- **Dependency Tracker** (`execution/dependency_tracker.py`) — Scans all project dependencies (npm/pip) for known vulnerabilities and supply chain risks. Maintains a curated CVE database (axios, express, lodash, jsonwebtoken, requests, urllib3, etc.). Subcommands: `scan`, `check`, `summary`, `export` (SBOM-lite). Flags unpinned dependencies as warnings.
+- **Local Route Flag** (`execution/dispatch_agent_team.py`) — Added `--local-route` flag that pre-classifies subtasks via `task_router.py` and tags security-sensitive ones as `_local_only` in the payload.
+
+### Security
+
+- **axios** — Updated from `~1.7.9` to `^1.8.2` in whatsapp-cloud-api boilerplate (CVE-2025-27152: SSRF/credential leakage).
+- **express** — Updated from `^4.18.0`/`^4.21.0`/`^4.21.1` to `^4.21.2` across telegram, whatsapp-cloud-api, and loki-mode boilerplates (CVE-2024-29041: open redirect).
+- **requests** — Updated from `>=2.31.0` to `>=2.32.0` in telegram python boilerplate (CVE-2024-35195: cert verification bypass).
+- **Qdrant container fix** (`execution/session_boot.py`) — Fixed `--auto-fix` to restart existing named `qdrant` container instead of creating new unnamed ones. Prevents orphaned containers and data loss.
+
+### Documentation
+
+- **`docs/execution/claude_dispatch.md`** — New. Full reference for the Claude Code-native dispatch adapter, including API, CLI flags, environment detection, and worktree isolation.
+- **`docs/execution/dispatch_agent_team.md`** — Updated. Added Claude Code-native dispatch flags (`--claude`, `--no-claude`, `--claude-mode`, `--project`) and auto-detection behavior.
+- **`docs/execution/local_micro_agent.md`** — New. Local Ollama model wrapper reference: model registry, fallback chain, CLI flags, health check.
+- **`docs/execution/task_router.md`** — New. Security-first task router reference: classification rules, routing table, split/batch commands, stats tracking.
+- **`docs/execution/dependency_tracker.md`** — New. Dependency vulnerability scanner reference: scan/check/summary/export commands, known CVE database, SBOM-lite export.
+- **`docs/execution/langfuse_harness.md`** — New. Full API reference for all public functions, state file schemas, CLI commands, env vars, and design notes.
+- **`docs/execution/langfuse_dashboard.md`** — Updated. Corrected argument defaults to match code (`--before 60`, `--after 30`, `--threshold 2000`); expanded command descriptions with output column details.
+- **`docs/directives/harness_engine.md`** — Updated. Added `langfuse_harness.py` to Key Scripts table.
+
 ## [1.7.0] - 2026-03-22
 
 ### Added

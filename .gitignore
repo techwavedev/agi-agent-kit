@@ -17,7 +17,11 @@ __pycache__/
 venv/
 .venv/
 
+# Generated example lock files in skill boilerplates (regenerated on use)
+templates/skills/extended/**/examples/**/package-lock.json
+
 # Private / Internal
+docker-compose.langfuse.yml
 .agent/
 .claude/
 # Allow context-mode hooks and shared settings

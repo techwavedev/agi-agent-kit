@@ -299,18 +299,6 @@ jobs:
             -t ${{ github.repository }}:${{ matrix.environment }}-latest \
             .
 
-      - name: Scan Docker image
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ github.repository }}:${{ matrix.environment }}-${{ github.sha }}
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload scan results
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: 'trivy-results.sarif'
-
       - name: Push to registry
         if: github.event_name != 'pull_request'
         run: |
@@ -1025,20 +1013,6 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
-      
-      - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: 'trivy-results.sarif'
       
       - name: Run Snyk security scan
         uses: snyk/actions/node@master

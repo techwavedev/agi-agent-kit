@@ -60,7 +60,14 @@ from embedding_utils import check_embedding_service, get_embedding_dimension
 from semantic_cache import check_cache, store_response, clear_cache
 from memory_retrieval import retrieve_context, store_memory, list_memories, build_filter
 
-# Optional Langfuse Observability for token tracking
+# Langfuse Observability — use framework's shared client
+try:
+    from langfuse_tracing import observe_function, get_client as _get_langfuse
+    _LANGFUSE_AVAILABLE = True
+except ImportError:
+    _LANGFUSE_AVAILABLE = False
+
+# Fallback: try langfuse.decorators directly (backward compat)
 try:
     from langfuse.decorators import observe
 except ImportError:
@@ -75,6 +82,15 @@ try:
     _BM25_AVAILABLE = True
 except ImportError:
     _BM25_AVAILABLE = False
+
+def _flush_langfuse():
+    """Flush Langfuse events if available. Safe no-op otherwise."""
+    if _LANGFUSE_AVAILABLE:
+        try:
+            from langfuse_tracing import flush
+            flush()
+        except Exception:
+            pass
 
 # Configuration
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
@@ -306,31 +322,56 @@ Examples:
                 metadata["project"] = args.project
             if args.tags:
                 metadata["tags"] = args.tags
-            result = store_memory(args.content, args.type, metadata)
+            # Trace the store operation
+            if _LANGFUSE_AVAILABLE:
+                _traced_store = observe_function("memory_store", op_type="span")(store_memory)
+                result = _traced_store(args.content, args.type, metadata)
+            else:
+                result = store_memory(args.content, args.type, metadata)
             print(json.dumps(result, indent=2))
+            _flush_langfuse()
             sys.exit(0)
 
         elif args.command == "retrieve":
             filters = build_filter(
                 type_filter=getattr(args, "type", None), project=args.project
             )
-            result = retrieve_context(
-                args.query,
-                filters={"must": filters["must"]} if filters else None,
-                top_k=args.top_k,
-                score_threshold=args.threshold,
-                vector_weight=args.vector_weight,
-                text_weight=args.text_weight
-            )
+            # Trace the retrieve operation
+            if _LANGFUSE_AVAILABLE:
+                _traced_retrieve = observe_function("memory_retrieve", op_type="retrieval")(retrieve_context)
+                result = _traced_retrieve(
+                    args.query,
+                    filters={"must": filters["must"]} if filters else None,
+                    top_k=args.top_k,
+                    score_threshold=args.threshold,
+                    vector_weight=args.vector_weight,
+                    text_weight=args.text_weight
+                )
+            else:
+                result = retrieve_context(
+                    args.query,
+                    filters={"must": filters["must"]} if filters else None,
+                    top_k=args.top_k,
+                    score_threshold=args.threshold,
+                    vector_weight=args.vector_weight,
+                    text_weight=args.text_weight
+                )
             print(json.dumps(result, indent=2))
+            _flush_langfuse()
             sys.exit(0 if result.get("total_chunks", 0) > 0 else 1)
 
         elif args.command == "cache-store":
             metadata = {"model": args.model}
             if args.project:
                 metadata["project"] = args.project
-            result = store_response(args.query, args.response, metadata)
+            # Trace the cache-store operation
+            if _LANGFUSE_AVAILABLE:
+                _traced_cache = observe_function("cache_store", op_type="span")(store_response)
+                result = _traced_cache(args.query, args.response, metadata)
+            else:
+                result = store_response(args.query, args.response, metadata)
             print(json.dumps(result, indent=2))
+            _flush_langfuse()
             sys.exit(0)
 
         elif args.command == "list":

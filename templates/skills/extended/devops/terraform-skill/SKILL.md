@@ -118,7 +118,7 @@ var.database_instance_class # Not just "instance_class"
 | Your Situation | Recommended Approach | Tools | Cost |
 |----------------|---------------------|-------|------|
 | **Quick syntax check** | Static analysis | `terraform validate`, `fmt` | Free |
-| **Pre-commit validation** | Static + lint | `validate`, `tflint`, `trivy`, `checkov` | Free |
+| **Pre-commit validation** | Static + lint | `validate`, `tflint`, `checkov` | Free |
 | **Terraform 1.6+, simple logic** | Native test framework | Built-in `terraform test` | Free-Low |
 | **Pre-1.6, or Go expertise** | Integration testing | Terratest | Low-Med |
 | **Security/compliance focus** | Policy as code | OPA, Sentinel | Free |
@@ -373,7 +373,6 @@ my-module/
 
 ```bash
 # Static security scanning
-trivy config .
 checkov -d .
 ```
 
@@ -392,7 +391,7 @@ checkov -d .
 - Use least-privilege security groups
 
 **For detailed security guidance, see:**
-- **Security & Compliance Guide** - Trivy/Checkov integration, secrets management, state file security, compliance testing
+- **Security & Compliance Guide** - Checkov integration, secrets management, state file security, compliance testing
 
 ## Version Management
 
@@ -502,7 +501,7 @@ This skill uses **progressive disclosure** - essential information is in this ma
 - **Testing Frameworks** - In-depth guide to static analysis, native tests, and Terratest
 - **Module Patterns** - Module structure, variable/output best practices, ✅ DO vs ❌ DON'T patterns
 - **CI/CD Workflows** - GitHub Actions, GitLab CI templates, cost optimization, automated cleanup
-- **Security & Compliance** - Trivy/Checkov integration, secrets management, compliance testing
+- **Security & Compliance** - Checkov integration, secrets management, compliance testing
 - **Quick Reference** - Command cheat sheets, decision flowcharts, troubleshooting guide
 
 **How to use:** When you need detailed information on a topic, reference the appropriate guide. Claude will load it on demand to provide comprehensive guidance.
