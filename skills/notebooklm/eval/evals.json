@@ -1,0 +1,23 @@
+{
+  "skill": "notebooklm",
+  "version": "1.0.0",
+  "evaluations": [
+    {
+      "name": "skill-md-structure",
+      "description": "SKILL.md meets Skills 2.0 structural requirements",
+      "input_file": "../SKILL.md",
+      "assertions": [
+        { "type": "has_yaml_frontmatter", "value": true },
+        { "type": "max_lines", "value": 200 },
+        { "type": "min_lines", "value": 30 },
+        { "type": "no_consecutive_blank_lines", "value": true },
+        { "type": "contains", "value": "scripts/run.py" },
+        { "type": "contains", "value": "auth_manager.py status" },
+        { "type": "contains", "value": "Follow-Up" },
+        { "type": "contains", "value": "references/" },
+        { "type": "contains", "value": "AGI-INTEGRATION" },
+        { "type": "not_contains", "value": "python scripts/auth_manager.py setup" }
+      ]
+    }
+  ]
+}

@@ -35,6 +35,15 @@ python3 execution/dispatch_agent_team.py \
   --partitions '{"agent-1": ["src/api/**"], "agent-2": ["tests/**"]}'
 ```
 
+### Claude Code-native dispatch
+
+```bash
+python3 execution/dispatch_agent_team.py \
+  --team documentation_team \
+  --payload '{"changed_files": ["execution/foo.py"], "commit_msg": "feat: add foo"}' \
+  --claude --claude-mode native
+```
+
 ## Arguments
 
 | Flag | Required | Description |
@@ -44,6 +53,10 @@ python3 execution/dispatch_agent_team.py \
 | `--parallel` | No | Run sub-agents in parallel using git worktree isolation |
 | `--partitions` | No | JSON mapping agent IDs to file globs (validates no overlap before dispatch) |
 | `--dry-run` | No | Print manifest without storing to Qdrant |
+| `--claude` | No | Force Claude Code-native output via `claude_dispatch.py` |
+| `--no-claude` | No | Force standard manifest even if Claude Code env is detected |
+| `--claude-mode` | No | Claude dispatch mode: `native` (default), `fallback`, `schedule` |
+| `--project` | No | Project name for Qdrant tagging (default: `agi-agent-kit`; used with `--claude`) |
 
 ## Exit Codes
 
@@ -61,6 +74,10 @@ python3 execution/dispatch_agent_team.py \
 **Sequential**: Sub-agents run in order. Each can produce a `handoff_state` object for the next agent. The orchestrator stores handoff state to Qdrant and passes it forward.
 
 **Parallel (worktree)**: Each sub-agent gets its own git worktree (isolated directory + branch). All agents run simultaneously. After completion, `worktree_isolator.py merge-all` merges branches back sequentially.
+
+## Claude Code Integration
+
+When `--claude` is passed (or when `CLAUDE_CODE`/`CLAUDE_SESSION_ID` environment variables are detected), the script pipes the manifest through `claude_dispatch.py` for native Agent tool output. Use `--no-claude` to suppress auto-detection. If `claude_dispatch.py` fails, the script falls back to standard manifest output.
 
 ## Dependencies
 
