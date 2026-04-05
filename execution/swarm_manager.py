@@ -79,8 +79,9 @@ def main():
 
     print(f"🚀 Master Task Received: '{args.task}'")
     
-    # 0. MEMORY-FIRST PROTOCOL (Qdrant Cache)
+    # 0. MEMORY-FIRST PROTOCOL (Qdrant Cache & RAG Context)
     print("🔍 Checking Qdrant Hybrid Memory cache...")
+    augmented_task = args.task
     try:
         mem_output = run_command(["python3", "execution/memory_manager.py", "auto", "--query", args.task])
         if "{" in mem_output:
@@ -100,14 +101,21 @@ def main():
                     f.write("## Synthesis (Retrieved from Qdrant Memory)\n")
                     f.write(mem_data["cached_response"])
                 sys.exit(0)
-                
+            
+            # RAG-PATH: Context injection for token saving
+            context_chunks = mem_data.get("context_chunks", [])
+            if context_chunks:
+                 print(f"📖 Qdrant retrieved {len(context_chunks)} semantic knowledge chunks. Injecting RAG context to save tokens...")
+                 context_body = "\n\n".join([f"Source: {c.get('project','')} | Type: {c.get('type','')}\n{c.get('content','')}" for c in context_chunks])
+                 augmented_task = f"{args.task}\n\n[QDRANT RETRIEVED CONTEXT START]\n{context_body}\n[QDRANT RETRIEVED CONTEXT END]\nPlease use this context to solve the task without requiring direct file reads if possible."
+
     except Exception as e:
         print(f"⚠️ Memory lookup failed ({e}), continuing without cache.")
 
     print(f"🧩 Dynamically splitting Master Task...")
     
     # 1. Ask task_router to geometrically split the compound task
-    split_output = run_command(["python3", "execution/task_router.py", "split", "--task", args.task])
+    split_output = run_command(["python3", "execution/task_router.py", "split", "--task", augmented_task])
     
     try:
         # Find the JSON block in the split output (in case there are other logs)
