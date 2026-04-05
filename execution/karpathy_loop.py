@@ -283,9 +283,33 @@ Example workflow:
     history = []
 
     for iteration in range(1, args.max_iterations + 1):
-        # Wait for agent to modify the target file
-        # In practice, this script is called by the agent after each modification
-        # For now, we run eval on current state
+        # AUTONOMOUS RALPH LOOP INTEGRATION
+        # Instead of manual intervention, forcefully ask the backend engine to patch the target file
+        if iteration > 1:
+            failures_str = "\n".join([f"Test ({f['test']}) Failed: {f['assertion']} - detail: {f['detail']}" for f in get_failing_assertions(current)])
+            
+            with open(target_file, "r") as f:
+                content = f.read()
+                
+            prompt = (
+                f"You are inside an autonomous Karpathy self-improvement loop for {skill_dir.name}.\n"
+                f"The previous iteration of this file failed the following binary assertions:\n{failures_str}\n\n"
+                f"Here is the current content of the file:\n{content}\n\n"
+                f"Rewrite and fix the entire file content so it passes the assertions. Return ONLY the raw file content in plain text with NO markdown code blocks surrounding it."
+            )
+            
+            print(f"  🤖 Sending Autonomous 'Ralph' Feedback Loop to local engine for patching...")
+            patch_result = subprocess.run(
+                ["python3", "execution/local_micro_agent.py", "--task", prompt, "--raw"],
+                capture_output=True, text=True
+            )
+            
+            new_content = patch_result.stdout.strip()
+            if new_content and len(new_content) > 10:
+                with open(target_file, "w") as f:
+                    f.write(new_content)
+        
+        # Now run the evaluation on the potentially newly-modified state
 
         current = get_pass_rate(evals_path)
         current_rate = current["pass_rate"]
