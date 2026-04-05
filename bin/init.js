@@ -1001,6 +1001,20 @@ function createSymlinks(targetPath, options = {}) {
     }
   }
 
+  // Global Stub for Claude Code (Issue #35)
+  if (options.global) {
+    const homeDir = os.homedir() || process.env.HOME || process.env.USERPROFILE || "";
+    const claudeDir = path.join(homeDir, ".claude");
+    try {
+      fs.mkdirSync(claudeDir, { recursive: true });
+      const stubContent = `# AGI Agent Kit (Global)\n\n> Loading global framework instructions...\n\n<RULE[AGENTS.md]>\n<!-- @include ~/.agent/AGENTS.md -->\n</RULE[AGENTS.md]>\n`;
+      fs.writeFileSync(path.join(claudeDir, "CLAUDE.md"), stubContent);
+      log.success("Created global stub: ~/.claude/CLAUDE.md");
+    } catch (err) {
+      log.warn(`Failed to create ~/.claude/CLAUDE.md: ${err.message}`);
+    }
+  }
+
   // Platform-specific skill directory symlinks
   // Maps each platform's expected skills path to our canonical skills/ dir
   const skillsDir = path.join(targetPath, "skills");
