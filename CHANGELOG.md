@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.4] - 2026-04-05
+
 ### Added
 
 - **Workflow Engine** (`execution/workflow_engine.py`) — Guided multi-skill playbook executor for the 4 playbooks defined in `data/workflows.json` (`ship-saas-mvp`, `security-audit-web-app`, `build-ai-agent-system`, `qa-browser-automation`). Commands: `list`, `start <id>`, `next`, `status`, `complete [--notes]`, `skip [--reason]`, `abort`. Progress is persisted to `.tmp/playbook_state.json`. Detects and warns about missing recommended skills. Full `--json` output mode for programmatic use.
+- **Phase-Reset Architecture** (`directives/phase_reset_architecture.md`) — Context isolation boundaries for multi-step playbooks to prevent LLM token drift. Integrates with Workflow Engine via `phase_boundary: true` in `workflows.json`.
+- **Global Install Mode** (`bin/init.js`) — Added `--global` flag bridging framework commands dynamically via `execution/resolve_paths.py` from `~/.agent/`, while bootstrapping local `~/.claude/CLAUDE.md` pointers.
+- **Router / Architect** — Added `/agi` slash command, `execution/route_request.py`, and `execution/compose_team.py` for on-the-fly dynamic team compositing based on intent.
+- **Skill Trigger Evaluations** (`execution/run_skill_trigger_eval.py`, `execution/aggregate_skill_benchmark.py`) — Tests skill trigger determinism using Claude sandbox queries (`claude -p`). Integrates into `karpathy_loop.py` to gate Git commits unless the `pass_rate` and `trigger_rate` jointly improve.
 
 ### Security
 
