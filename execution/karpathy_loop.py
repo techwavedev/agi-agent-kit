@@ -67,6 +67,29 @@ def get_pass_rate(evals_path: Path) -> dict:
     except (subprocess.TimeoutExpired, json.JSONDecodeError, Exception) as e:
         return {"pass_rate": 0.0, "status": "error", "error": str(e)}
 
+def get_trigger_rate(skill_path: Path, queries_path: Path) -> dict:
+    """Run aggregate trigger eval and return results."""
+    if not queries_path or not queries_path.exists():
+        return {"mean": 100.0, "status": "skipped"}
+    
+    script_dir = Path(__file__).resolve().parent
+    bench_script = script_dir / "aggregate_skill_benchmark.py"
+
+    try:
+        result = subprocess.run(
+            [sys.executable, str(bench_script), "--skill", str(skill_path), "--queries", str(queries_path), "--n", "3"],
+            capture_output=True, text=True, timeout=120
+        )
+        data = json.loads(result.stdout)
+        return {
+            "mean": data.get("mean", 0.0) * 100.0,  # Convert fraction to percentage
+            "stddev": data.get("stddev", 0.0),
+            "status": "ok"
+        }
+    except Exception as e:
+        return {"mean": 0.0, "status": "error", "error": str(e)}
+
+
 
 def git_is_clean(cwd: Path) -> bool:
     """Check if git working directory is clean."""
@@ -171,6 +194,7 @@ Example workflow:
     parser.add_argument("--dry-run", action="store_true", help="Run evals without git operations")
     parser.add_argument("--status-only", action="store_true",
                         help="Just show current eval status, don't loop")
+    parser.add_argument("--trigger-queries", help="Path to JSON file with test queries for trigger evaluation")
 
     args = parser.parse_args()
 
@@ -213,13 +237,20 @@ Example workflow:
     print(f"  Evals: {evals_path}")
     print(f"{'='*60}\n")
 
+    queries_path = Path(args.trigger_queries).resolve() if args.trigger_queries else None
+    
     baseline = get_pass_rate(evals_path)
     best_pass_rate = baseline["pass_rate"]
+    
+    trigger_baseline_res = get_trigger_rate(skill_dir, queries_path) if queries_path else None
+    best_trigger_rate = trigger_baseline_res["mean"] if trigger_baseline_res else 100.0
 
     print(f"  📊 Baseline pass rate: {best_pass_rate}% "
           f"({baseline.get('total_passed', 0)}/{baseline.get('total_assertions', 0)})")
+    if queries_path:
+        print(f"  🎯 Baseline trigger rate: {best_trigger_rate}%")
 
-    if baseline["pass_rate"] == 100.0:
+    if baseline["pass_rate"] == 100.0 and best_trigger_rate == 100.0:
         print(f"\n  ✅ Perfect score! Nothing to improve.")
         print(json.dumps({"status": "perfect", "pass_rate": 100.0}))
         sys.exit(0)
@@ -258,6 +289,9 @@ Example workflow:
 
         current = get_pass_rate(evals_path)
         current_rate = current["pass_rate"]
+        
+        current_trigger_res = get_trigger_rate(skill_dir, queries_path) if queries_path else None
+        current_trigger_rate = current_trigger_res["mean"] if current_trigger_res else 100.0
 
         entry = {
             "iteration": iteration,
@@ -265,10 +299,26 @@ Example workflow:
             "pass_rate_before": best_pass_rate,
             "pass_rate_after": current_rate,
         }
+        if queries_path:
+            entry["trigger_rate_before"] = best_trigger_rate
+            entry["trigger_rate_after"] = current_trigger_rate
 
         improvement = current_rate - best_pass_rate
+        trigger_improvement = current_trigger_rate - best_trigger_rate if queries_path else 0.0
 
-        if current_rate > best_pass_rate and improvement >= args.min_improvement:
+        # Determine if it's an improvement
+        is_memorable_improvement = False
+        if not queries_path:
+            if current_rate > best_pass_rate and improvement >= args.min_improvement:
+                is_memorable_improvement = True
+        else:
+            # Multi-objective: pass_rate AND trigger_rate must not regress (with small jitter buffer for trigger),
+            # and AT LEAST ONE must improve.
+            if (current_rate >= best_pass_rate) and (current_trigger_rate >= best_trigger_rate - 5.0):
+                if (current_rate > best_pass_rate) or (current_trigger_rate > best_trigger_rate):
+                    is_memorable_improvement = True
+
+        if is_memorable_improvement:
             # Improvement! Commit.
             entry["action"] = "commit"
             entry["improvement"] = round(improvement, 1)
@@ -276,6 +326,8 @@ Example workflow:
             if not args.dry_run:
                 msg = (f"karpathy-loop: {skill_dir.name} "
                        f"{best_pass_rate}% → {current_rate}% (+{improvement:.1f}%)")
+                if queries_path:
+                    msg += f" | Trigger: {best_trigger_rate}% → {current_trigger_rate}%"
                 committed = git_commit(msg, [target_file], git_root)
                 entry["git_committed"] = committed
             else:
@@ -283,6 +335,7 @@ Example workflow:
                 entry["dry_run"] = True
 
             best_pass_rate = current_rate
+            best_trigger_rate = current_trigger_rate
             print(f"  #{iteration:02d} ✅ {current_rate}% (+{improvement:.1f}%) → committed")
 
         else:
