@@ -514,6 +514,146 @@ def scenario_11_output_gates(root: Path, verbose: bool, dry_run: bool) -> dict:
     }
 
 
+def scenario_12_state_json(root: Path, verbose: bool, dry_run: bool) -> dict:
+    """
+    Scenario 12: state.json Emission
+    Pattern: state-observability
+    Validates: dispatch_agent_team.py writes .tmp/team-runs/<run_id>/state.json at dispatch time
+               and team_state.py can read, list, and update state correctly.
+    """
+    import shutil
+
+    scenario_id = "scenario_12_state_json"
+    steps = []
+
+    # Step 1: Dispatch documentation_team (real write, not dry-run)
+    payload = json.dumps({
+        "changed_files": ["execution/dispatch_agent_team.py"],
+        "commit_msg": "test: state.json emission",
+        "change_type": "test"
+    })
+
+    dispatch_args = ["--team", "documentation_team", "--payload", payload, "--no-claude"]
+    result = run_script(root, "dispatch_agent_team.py", dispatch_args, verbose)
+    steps.append({"step": "dispatch documentation_team", "exit_code": result["exit_code"]})
+
+    manifest = result.get("output", {})
+    run_id = manifest.get("run_id", "")
+
+    # Step 2: state.json must exist at the expected path
+    state_path = root / ".tmp" / "team-runs" / run_id / "state.json"
+    state_exists = state_path.exists() if run_id else False
+    steps.append({"step": "state.json exists", "path": str(state_path.relative_to(root)) if run_id else "N/A", "pass": state_exists})
+
+    # Step 3: Validate schema
+    schema_ok = False
+    state_data = {}
+    if state_exists:
+        try:
+            state_data = json.loads(state_path.read_text())
+            required = {"run_id", "team", "status", "sub_agents", "started_at", "updated_at", "total_steps"}
+            missing = required - set(state_data.keys())
+            schema_ok = (
+                len(missing) == 0 and
+                state_data.get("status") == "pending" and
+                isinstance(state_data.get("sub_agents"), list) and
+                state_data.get("run_id") == run_id and
+                state_data.get("team") == "documentation_team"
+            )
+            steps.append({
+                "step": "validate schema",
+                "missing_keys": list(missing),
+                "initial_status": state_data.get("status"),
+                "pass": schema_ok
+            })
+        except Exception as e:
+            steps.append({"step": "validate schema", "error": str(e), "pass": False})
+    else:
+        steps.append({"step": "validate schema", "pass": False, "reason": "file missing"})
+
+    # Step 4: manifest state_file key matches
+    manifest_state_file = manifest.get("state_file", "")
+    manifest_key_ok = (
+        run_id in manifest_state_file and
+        "team-runs" in manifest_state_file
+    ) if run_id else False
+    steps.append({"step": "manifest state_file key", "value": manifest_state_file, "pass": manifest_key_ok})
+
+    # Step 5: team_state.py read returns matching data
+    read_ok = False
+    if run_id:
+        read_result = run_script(root, "team_state.py", ["read", "--run-id", run_id], verbose)
+        read_state = read_result.get("output", {})
+        read_ok = (
+            read_result["exit_code"] == 0 and
+            read_state.get("run_id") == run_id and
+            read_state.get("team") == "documentation_team"
+        )
+    steps.append({"step": "team_state read", "pass": read_ok})
+
+    # Step 6: team_state.py list-active includes the run
+    list_ok = False
+    if run_id:
+        list_result = run_script(root, "team_state.py", ["list-active"], verbose)
+        active_runs = list_result.get("output")
+        if isinstance(active_runs, list):
+            list_ok = any(r.get("run_id") == run_id for r in active_runs)
+        elif list_result["exit_code"] == 0 and isinstance(list_result.get("output"), dict):
+            # Possibly raw list wrapped in dict — check raw output
+            try:
+                raw = list_result.get("output", {})
+                list_ok = any(r.get("run_id") == run_id for r in (raw if isinstance(raw, list) else []))
+            except Exception:
+                pass
+    steps.append({"step": "team_state list-active", "pass": list_ok})
+
+    # Step 7: team_state.py update transitions state
+    update_ok = False
+    if run_id and state_data.get("sub_agents"):
+        first_agent = state_data["sub_agents"][0]["id"]
+        upd = run_script(root, "team_state.py", [
+            "update", "--run-id", run_id,
+            "--status", "running",
+            "--step", "0",
+            "--agent-id", first_agent,
+            "--agent-status", "running",
+        ], verbose)
+        if upd["exit_code"] == 0:
+            # Re-read to verify
+            verify = run_script(root, "team_state.py", ["read", "--run-id", run_id], verbose)
+            vs = verify.get("output", {})
+            first_sa = next((a for a in vs.get("sub_agents", []) if a["id"] == first_agent), None)
+            update_ok = (
+                vs.get("status") == "running" and
+                first_sa is not None and
+                first_sa.get("status") == "running"
+            )
+    steps.append({"step": "team_state update", "pass": update_ok})
+
+    # Cleanup: remove run directory so test doesn't pollute .tmp/
+    if run_id and (root / ".tmp" / "team-runs" / run_id).exists():
+        try:
+            shutil.rmtree(root / ".tmp" / "team-runs" / run_id)
+        except OSError:
+            pass
+
+    passed = (
+        result["exit_code"] == 0 and
+        state_exists and
+        schema_ok and
+        manifest_key_ok and
+        read_ok and
+        list_ok and
+        update_ok
+    )
+    return {
+        "scenario": scenario_id,
+        "pattern": "state-observability",
+        "status": "pass" if passed else "fail",
+        "steps": steps
+    }
+
+
 # ─── RUNNER ───────────────────────────────────────────────────────────────────
 
 SCENARIOS = {
@@ -524,6 +664,7 @@ SCENARIOS = {
     5: scenario_5_failure_recovery,
     6: scenario_6_dynamic_handoff,
     11: scenario_11_output_gates,
+    12: scenario_12_state_json,
 }
 
 

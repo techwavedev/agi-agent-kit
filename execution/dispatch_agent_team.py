@@ -45,6 +45,22 @@ import os
 from pathlib import Path
 from datetime import datetime, timezone
 
+# Optional: import team_state helper; we import lazily so the rest of the
+# script works even if the helper has a syntax error during development.
+def _load_team_state():
+    """Lazily import team_state so we can fall back gracefully."""
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "team_state",
+            Path(__file__).parent / "team_state.py",
+        )
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+    except Exception:
+        return None
+
 
 # Add the script's directory to sys.path so we can import local modules
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -230,6 +246,11 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path,
     run_id = str(uuid.uuid4())[:8]
     execution_mode = "parallel-worktree" if parallel else "sequential"
 
+    state_update_cmd = (
+        f"python3 execution/team_state.py update --run-id {run_id} "
+        f"--agent-id <AGENT_ID> --agent-status <STATUS>"
+    )
+
     if parallel:
         instructions = (
             f"You are the Orchestrator. Each sub-agent has its own isolated git worktree. "
@@ -237,35 +258,57 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path,
             f"in a separate directory on a separate branch. "
             f"Pass the original payload JSON as context plus the worktree_path for each agent. "
             f"Each sub-agent MUST work ONLY within its assigned worktree directory. "
-            f"After each sub-agent reports done, if it carries a 'validation_gate', you MUST "
+            f"BEFORE dispatching each sub-agent, mark it running: "
+            f"`python3 execution/team_state.py update --run-id {run_id} "
+            f"--status running --agent-id <ID> --agent-status running`. "
+            f"AFTER each sub-agent reports done, if it carries a 'validation_gate', you MUST "
             f"execute `validation_gate.command` via Bash IN ITS WORKTREE PATH and parse stdout. "
             f"Only a literal 'VALIDATION:PASS' line authorizes the merge of that sub-agent's branch. "
             f"On 'VALIDATION:FAIL:<path>', follow validation_gate.on_fail (retry once, then user prompt). "
+            f"On sub-agent completion run: "
+            f"`python3 execution/team_state.py update --run-id {run_id} "
+            f"--agent-id <ID> --agent-status completed`. "
             f"When ALL sub-agents complete, run: "
             f"`python3 execution/worktree_isolator.py merge-all --run-id {run_id}` "
             f"to merge all branches back sequentially. Then run: "
             f"`python3 execution/worktree_isolator.py status --run-id {run_id}` to verify. "
             f"Finally, cleanup with: "
             f"`python3 execution/worktree_isolator.py merge-all --run-id {run_id}` followed by cleanup. "
+            f"When the entire team run finishes mark it done: "
+            f"`python3 execution/team_state.py update --run-id {run_id} --status completed`. "
             f"Store final results to memory with tag '{team_id}'."
         )
     else:
         instructions = (
             f"You are the Orchestrator. Invoke each sub-agent in order based on their specialized skills. "
             f"Pass the original payload JSON as context. "
+            f"BEFORE invoking each sub-agent, update the run state: "
+            f"`python3 execution/team_state.py update --run-id {run_id} "
+            f"--status running --step <INDEX> --agent-id <ID> --agent-status running`. "
             f"AFTER each sub-agent returns, if its manifest entry carries a 'validation_gate', you MUST "
             f"execute `validation_gate.command` via the Bash tool and read the stdout. Do NOT rely on the "
             f"sub-agent's self-reported status. Only a literal 'VALIDATION:PASS' line authorizes advancing "
             f"to the next sub-agent. On 'VALIDATION:FAIL:<path>', follow validation_gate.on_fail: retry the "
             f"sub-agent once, then — on a second failure — present the three-option prompt (Retry / Skip / Abort) "
             f"and wait for user choice. Never fabricate a PASS. "
+            f"After each sub-agent completes (pass or skip), mark it done: "
+            f"`python3 execution/team_state.py update --run-id {run_id} "
+            f"--agent-id <ID> --agent-status completed`. "
             f"If a sub-agent works on a divided task, it MUST return a 'handoff_state' object containing its "
             f"state, 'next_steps' for the following agent, and 'validation_requirements' for what must be tested. "
+            f"Record the handoff in state.json: "
+            f"`python3 execution/team_state.py update --run-id {run_id} "
+            f"--handoff '<JSON_STRING>'`. "
             f"YOU MUST actively verify this plan, store the state as raw JSON to Qdrant memory via "
             f"`python3 execution/memory_manager.py store` tagged with '{run_id}' against conflicts, AND pass it "
             f"directly to the next sequential or testing sub-agent so they execute the required validation and "
-            f"next steps precisely. Store final results to memory with tag '{team_id}'."
+            f"next steps precisely. "
+            f"When the entire team run finishes mark it done: "
+            f"`python3 execution/team_state.py update --run-id {run_id} --status completed`. "
+            f"Store final results to memory with tag '{team_id}'."
         )
+
+    state_file_path = f".tmp/team-runs/{run_id}/state.json"
 
     manifest = {
         "team": team_id,
@@ -275,6 +318,8 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path,
         "sub_agents": [load_subagent_directive(root, sa, payload, run_id) for sa in subagents],
         "execution_mode": execution_mode,
         "instructions": instructions,
+        "state_file": state_file_path,
+        "state_update_cmd": state_update_cmd,
         "memory_query": f"python3 execution/memory_manager.py auto --query \"{team_id} {payload.get('commit_msg', '')}\"",
         "memory_store": (
             f"python3 execution/memory_manager.py store "
@@ -317,7 +362,7 @@ def store_to_memory(root: Path, manifest: dict, dry_run: bool) -> bool:
     if not memory_script.exists():
         print(json.dumps({
             "warning": "memory_manager.py not found — skipping memory store. Run session_boot.py first."
-        }))
+        }), file=sys.stderr)
         return True
 
     import subprocess
@@ -337,8 +382,37 @@ def store_to_memory(root: Path, manifest: dict, dry_run: bool) -> bool:
         print(json.dumps({
             "warning": "Memory store failed — continuing anyway",
             "detail": result.stderr
-        }))
+        }), file=sys.stderr)
     return True
+
+
+def emit_state_json(root: Path, manifest: dict, dry_run: bool) -> str:
+    """
+    Write the initial state.json for this run using team_state.py.
+
+    Returns the path of the written file (relative to root), or an empty
+    string if the write was skipped/failed.
+    """
+    if dry_run:
+        return ""
+
+    ts_mod = _load_team_state()
+    if ts_mod is None:
+        return ""
+
+    run_id = manifest["run_id"]
+    team = manifest["team"]
+    sub_agents = manifest.get("sub_agents", [])
+    payload = manifest.get("payload", {})
+
+    try:
+        ts_mod.write_initial_state(root, run_id, team, sub_agents, payload)
+        return f".tmp/team-runs/{run_id}/state.json"
+    except Exception as e:
+        print(json.dumps({
+            "warning": f"Could not write state.json: {e}"
+        }), file=sys.stderr)
+        return ""
 
 
 def setup_parallel_worktrees(root, subagents, run_id=None):
@@ -458,6 +532,11 @@ def main():
     manifest = build_manifest(args.team, payload, subagents, root,
                               parallel=args.parallel, worktree_info=worktree_info)
     store_to_memory(root, manifest, args.dry_run)
+
+    # Emit per-run state.json for dashboard / cross-agent observability
+    emitted_path = emit_state_json(root, manifest, args.dry_run)
+    if emitted_path and not args.dry_run:
+        manifest["state_file"] = emitted_path
 
     # Claude Code-native dispatch: auto-detect or explicit --claude flag
     use_claude = args.claude
