@@ -1,7 +1,7 @@
 ---
 name: gitlab-ci-patterns
-description: "Build GitLab CI/CD pipelines with multi-stage workflows, caching, and distributed runners for scalable automation. Use when implementing GitLab CI/CD, optimizing pipeline performance, or setting up..."
-risk: unknown
+description: "Comprehensive GitLab CI/CD pipeline patterns for automated testing, building, and deployment."
+risk: critical
 source: community
 date_added: "2026-02-27"
 ---
@@ -201,11 +201,11 @@ include:
   - template: Security/Dependency-Scanning.gitlab-ci.yml
   - template: Security/Container-Scanning.gitlab-ci.yml
 
-snyk-scan:
+trivy-scan:
   stage: test
-  image: snyk/snyk:node
+  image: aquasec/trivy:latest
   script:
-    - snyk test --severity-threshold=high
+    - trivy image --exit-code 1 --severity HIGH,CRITICAL $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   allow_failure: true
 ```
 

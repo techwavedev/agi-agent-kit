@@ -1,7 +1,7 @@
 ---
 name: data-storytelling
-description: "Transform data into compelling narratives using visualization, context, and persuasive structure. Use when presenting analytics to stakeholders, creating data reports, or building executive present..."
-risk: unknown
+description: "Transform raw data into compelling narratives that drive decisions and inspire action."
+risk: safe
 source: community
 date_added: "2026-02-27"
 ---

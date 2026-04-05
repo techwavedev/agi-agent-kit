@@ -102,14 +102,8 @@ function renderFrontmatter(frontmatter: Record<string, string> | null): string {
   const lines = ['---'];
   for (const [key, value] of Object.entries(frontmatter)) {
     // Quote values that contain special characters
-    if (value.includes(':') || value.includes('"') || value.includes('\n') || value.includes('\\')) {
-      // Escape backslashes FIRST, then double-quotes. Escaping in the wrong
-      // order leaves dangling backslashes that break YAML parsers and allow
-      // sanitization bypasses (CodeQL js/incomplete-sanitization).
-      const escaped = value
-        .replace(/\\/g, '\\\\')
-        .replace(/"/g, '\\"');
-      lines.push(`${key}: "${escaped}"`);
+    if (value.includes(':') || value.includes('"') || value.includes('\n')) {
+      lines.push(`${key}: "${value.replace(/"/g, '\\"')}"`);
     } else {
       lines.push(`${key}: ${value}`);
     }

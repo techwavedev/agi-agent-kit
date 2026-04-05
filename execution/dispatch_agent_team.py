@@ -46,23 +46,28 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 
-def find_project_root():
-    """Walk up from CWD to find the project root (has AGENTS.md or package.json)."""
-    current = Path.cwd()
-    for parent in [current] + list(current.parents):
-        if (parent / "AGENTS.md").exists() or (parent / "package.json").exists():
-            return parent
-    return current
+# Add the script's directory to sys.path so we can import local modules
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    from resolve_paths import resolve_file, get_project_root
+except ImportError:
+    # Minimal fallback for standalone use or tests
+    def resolve_file(rel_path):
+        return Path.cwd() / rel_path
+    def get_project_root():
+        return Path.cwd()
 
 
-def load_team_directive(root: Path, team_id: str) -> str:
-    """Load the team directive markdown file."""
-    directive_path = root / "directives" / "teams" / f"{team_id}.md"
+def load_team_directive(root_not_used: Path, team_id: str) -> str:
+    """Load the team directive markdown file using dual-path resolution (project first, then global)."""
+    rel_path = os.path.join("directives", "teams", f"{team_id}.md")
+    directive_path = resolve_file(rel_path)
+    
     if not directive_path.exists():
         print(json.dumps({
             "status": "error",
             "message": f"Team directive not found: {directive_path}",
-            "hint": f"Create directives/teams/{team_id}.md or check the team ID"
+            "hint": f"Create {rel_path} or check the team ID"
         }), file=sys.stderr)
         sys.exit(2)
     return directive_path.read_text(encoding="utf-8")
