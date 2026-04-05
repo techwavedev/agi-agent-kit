@@ -63,6 +63,8 @@ def rank_capabilities(request: str, teams: list, skills: list) -> list:
     return ranked[:3] # Return top 3
 
 
+import subprocess
+
 def main():
     parser = argparse.ArgumentParser(description="Unified free-text request router")
     parser.add_argument("--request", required=True, help="User's prompt or request string")
@@ -74,6 +76,25 @@ def main():
     
     top_candidates = rank_capabilities(args.request, teams, skills)
     
+    # Check if we should fall back to synthesized teams (Issue #38)
+    best_score = top_candidates[0]["score"] if top_candidates else 0
+    if best_score < 7:  # Threshold for "high confidence"
+        composer_path = Path(__file__).resolve().parent / "compose_team.py"
+        if composer_path.exists():
+            result = subprocess.run(
+                [sys.executable, str(composer_path), "--request", args.request],
+                capture_output=True, text=True
+            )
+            if result.returncode == 0:
+                composed = json.loads(result.stdout)
+                top_candidates.insert(0, {
+                    "id": composed["team_id"],
+                    "description": composed["rationale"],
+                    "type": "composed_team",
+                    "score": 10,
+                    "manifest": composed
+                })
+
     if args.json:
         print(json.dumps({"request": args.request, "plan": top_candidates}, indent=2))
     else:

@@ -39,6 +39,7 @@ REQUIRED_FILES = [
     ".env.example",
     ".gitignore",
     "data/workflows.json",
+    "knowledge/core.md",
 ]
 
 REQUIRED_DIRS = [
@@ -52,6 +53,7 @@ REQUIRED_DIRS = [
     "skill-creator/scripts",
     "data",
     "docs",
+    "knowledge",
 ]
 
 REQUIRED_SCRIPTS = [

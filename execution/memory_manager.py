@@ -20,6 +20,9 @@ Usage:
     # Health check (Qdrant + Ollama)
     python3 execution/memory_manager.py health
 
+    # Sync knowledge/*.md files to Qdrant (idempotent)
+    python3 execution/memory_manager.py knowledge-sync --project myapp
+
 Environment Variables:
     EMBEDDING_PROVIDER  - "ollama" (default), "openai", or "bedrock"
     OLLAMA_URL          - Ollama server URL (default: http://localhost:11434)
@@ -38,6 +41,7 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
@@ -56,7 +60,7 @@ SKILL_SCRIPTS_DIR = next((p for p in _candidates if os.path.exists(p)), _candida
 
 sys.path.insert(0, SKILL_SCRIPTS_DIR)
 
-from embedding_utils import check_embedding_service, get_embedding_dimension
+from embedding_utils import check_embedding_service, get_embedding, get_embedding_dimension
 from semantic_cache import check_cache, store_response, clear_cache
 from memory_retrieval import retrieve_context, store_memory, list_memories, build_filter
 
@@ -213,6 +217,154 @@ def auto_query(
     return result
 
 
+def _parse_markdown_sections(text: str, filename: str) -> list:
+    """
+    Split a markdown file into sections by H2 headings.
+    Returns list of dicts: {section, content, filename}.
+    Falls back to a single chunk if no H2 headings are found.
+    """
+    sections = []
+    current_heading = filename.replace(".md", "").replace("-", " ").title()
+    current_lines = []
+
+    for line in text.splitlines():
+        if line.startswith("## "):
+            # Save previous section if it has content
+            body = "\n".join(current_lines).strip()
+            if body:
+                sections.append({"section": current_heading, "content": body, "filename": filename})
+            current_heading = line[3:].strip()
+            current_lines = []
+        else:
+            current_lines.append(line)
+
+    # Save last section
+    body = "\n".join(current_lines).strip()
+    if body:
+        sections.append({"section": current_heading, "content": body, "filename": filename})
+
+    return sections
+
+
+def knowledge_sync(knowledge_dir: str, project: str, reset: bool = False) -> dict:
+    """
+    Sync knowledge/*.md files (excluding core.md) to Qdrant as type=knowledge.
+
+    Uses deterministic UUIDs (project:filename:section) so re-runs are idempotent
+    (Qdrant upsert behaviour — no duplicates).
+
+    Args:
+        knowledge_dir: Path to the knowledge/ directory.
+        project:       Project name tag stored with each chunk.
+        reset:         If True, delete existing knowledge chunks for this project first.
+
+    Returns:
+        dict with status, synced count, and any errors.
+    """
+    import hashlib
+    import uuid as _uuid
+
+    knowledge_path = Path(knowledge_dir)
+    if not knowledge_path.exists():
+        return {"status": "error", "message": f"Knowledge directory not found: {knowledge_dir}"}
+
+    md_files = sorted(f for f in knowledge_path.glob("*.md") if f.name != "core.md")
+    if not md_files:
+        return {"status": "ok", "synced": 0, "message": "No non-core knowledge files found."}
+
+    # Optional: delete existing knowledge points for this project before re-sync
+    if reset:
+        try:
+            delete_filter = {
+                "filter": {
+                    "must": [
+                        {"key": "type", "match": {"value": "knowledge"}},
+                        {"key": "project", "match": {"value": project}},
+                    ]
+                }
+            }
+            req = Request(
+                f"{QDRANT_URL}/collections/agent_memory/points/delete",
+                data=json.dumps(delete_filter).encode(),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urlopen(req, timeout=30):
+                pass
+        except Exception as e:
+            return {"status": "error", "message": f"Reset failed: {e}"}
+
+    synced = 0
+    errors = []
+    points = []
+
+    for md_file in md_files:
+        text = md_file.read_text(encoding="utf-8")
+        sections = _parse_markdown_sections(text, md_file.name)
+
+        for chunk in sections:
+            # Deterministic UUID from project + filename + section (SHA-256 → UUID5 namespace)
+            uid_src = f"{project}:{chunk['filename']}:{chunk['section']}"
+            sha = hashlib.sha256(uid_src.encode()).hexdigest()[:32]
+            det_uuid = str(_uuid.UUID(sha))
+
+            # Embed
+            try:
+                embedding = get_embedding(chunk["content"])
+            except Exception as e:
+                errors.append({"file": chunk["filename"], "section": chunk["section"], "error": str(e)})
+                continue
+
+            points.append({
+                "id": det_uuid,
+                "vector": embedding,
+                "payload": {
+                    "content": chunk["content"],
+                    "type": "knowledge",
+                    "project": project,
+                    "source_file": chunk["filename"],
+                    "section": chunk["section"],
+                    "token_count": len(chunk["content"].split()),
+                },
+            })
+
+    if not points:
+        return {"status": "ok", "synced": 0, "errors": errors, "message": "Nothing to sync."}
+
+    # Batch upsert
+    try:
+        upsert_body = json.dumps({"points": points}).encode()
+        req = Request(
+            f"{QDRANT_URL}/collections/agent_memory/points?wait=true",
+            data=upsert_body,
+            headers={"Content-Type": "application/json"},
+            method="PUT",
+        )
+        with urlopen(req, timeout=60) as response:
+            result = json.loads(response.read().decode())
+            if result.get("status") != "ok" and result.get("result", {}).get("status") != "acknowledged":
+                return {"status": "error", "message": f"Qdrant upsert failed: {result}", "errors": errors}
+        synced = len(points)
+    except Exception as e:
+        return {"status": "error", "message": f"Qdrant upsert error: {e}", "errors": errors}
+
+    # Rebuild BM25 index if available
+    if _BM25_AVAILABLE:
+        try:
+            with BM25Index() as bm25:
+                bm25.sync_from_qdrant()
+        except Exception:
+            pass
+
+    return {
+        "status": "ok",
+        "synced": synced,
+        "files": [f.name for f in md_files],
+        "errors": errors,
+        "message": f"Synced {synced} knowledge chunks from {len(md_files)} file(s) to Qdrant.",
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Unified memory manager for AI agents",
@@ -300,6 +452,23 @@ Examples:
     # BM25 sync command
     subparsers.add_parser(
         "bm25-sync", help="Rebuild BM25 keyword index from Qdrant (for hybrid search)"
+    )
+
+    # Knowledge sync command
+    ks_parser = subparsers.add_parser(
+        "knowledge-sync",
+        help="Sync knowledge/*.md files to Qdrant for semantic retrieval at dispatch time",
+    )
+    ks_parser.add_argument("--project", required=True, help="Project name tag (used to scope chunks)")
+    ks_parser.add_argument(
+        "--dir",
+        default=None,
+        help="Path to knowledge directory (default: knowledge/ relative to project root)",
+    )
+    ks_parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="Delete existing knowledge chunks for this project before syncing",
     )
 
     args = parser.parse_args()
@@ -405,6 +574,17 @@ Examples:
                 result = bm25.sync_from_qdrant()
             print(json.dumps(result, indent=2))
             sys.exit(0 if result["status"] == "synced" else 2)
+
+        elif args.command == "knowledge-sync":
+            # Resolve knowledge directory
+            if args.dir:
+                kb_dir = Path(args.dir)
+            else:
+                # Default: project_root/knowledge/
+                kb_dir = Path(current_dir).parent / "knowledge"
+            result = knowledge_sync(str(kb_dir), args.project, reset=args.reset)
+            print(json.dumps(result, indent=2))
+            sys.exit(0 if result["status"] == "ok" else 3)
 
     except URLError as e:
         print(

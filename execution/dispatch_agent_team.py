@@ -116,6 +116,75 @@ def extract_subagents(directive_text: str) -> list:
     return subagents
 
 
+def load_knowledge_context(root: Path, task_summary: str = "", project: str = "") -> dict:
+    """
+    Hybrid knowledge injection:
+    1. Always loads knowledge/core.md (≤500 tokens baseline).
+    2. Attempts to retrieve semantically relevant chunks from Qdrant (type=knowledge).
+    3. Falls back to loading all knowledge/*.md files when Qdrant is unreachable.
+
+    Returns a dict to be embedded in the manifest under 'knowledge_context'.
+    """
+    kb_dir = root / "knowledge"
+    result: dict = {"source": "none", "core": None, "retrieved": [], "fallback_files": {}}
+
+    # --- Layer 1: always-loaded core ---
+    core_path = kb_dir / "core.md"
+    if core_path.exists():
+        result["core"] = core_path.read_text(encoding="utf-8")
+
+    if not kb_dir.exists():
+        result["source"] = "none"
+        return result
+
+    # --- Layer 2: Qdrant semantic retrieval ---
+    memory_script = root / "execution" / "memory_manager.py"
+    if task_summary and memory_script.exists():
+        try:
+            query_filters = ["--type", "knowledge"]
+            if project:
+                query_filters += ["--project", project]
+            proc = subprocess.run(
+                [
+                    sys.executable, str(memory_script), "retrieve",
+                    "--query", task_summary,
+                    "--top-k", "3",
+                    "--threshold", "0.45",
+                ] + query_filters,
+                capture_output=True,
+                text=True,
+                timeout=15,
+                cwd=str(root),
+            )
+            if proc.returncode == 0:
+                data = json.loads(proc.stdout)
+                chunks = data.get("chunks", [])
+                if chunks:
+                    result["retrieved"] = chunks
+                    result["source"] = "qdrant"
+                    return result
+        except Exception:
+            pass  # Fall through to markdown fallback
+
+    # --- Layer 3: markdown fallback (Qdrant unreachable or no results) ---
+    fallback = {}
+    for md_file in sorted(kb_dir.glob("*.md")):
+        if md_file.name == "core.md":
+            continue  # already loaded as core
+        try:
+            fallback[md_file.name] = md_file.read_text(encoding="utf-8")
+        except Exception:
+            pass
+
+    if fallback:
+        result["fallback_files"] = fallback
+        result["source"] = "fallback_markdown"
+    elif result["core"]:
+        result["source"] = "core_only"
+
+    return result
+
+
 def parse_output_gate(directive_text: str) -> list:
     """
     Parse the optional `## Output Gate` section from a sub-agent directive.
@@ -251,6 +320,10 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path,
         f"--agent-id <AGENT_ID> --agent-status <STATUS>"
     )
 
+    # Derive task summary and project for knowledge injection
+    task_summary = payload.get("task", payload.get("commit_msg", team_id))
+    project = payload.get("project", "")
+
     if parallel:
         instructions = (
             f"You are the Orchestrator. Each sub-agent has its own isolated git worktree. "
@@ -325,7 +398,8 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path,
             f"python3 execution/memory_manager.py store "
             f"--content \"{team_id} dispatched run {run_id}\" "
             f"--type decision --tags {team_id} agent-team"
-        )
+        ),
+        "knowledge_context": load_knowledge_context(root, task_summary, project),
     }
 
     if parallel and worktree_info:
