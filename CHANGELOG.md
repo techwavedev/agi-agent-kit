@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Workflow Engine** (`execution/workflow_engine.py`) — Guided multi-skill playbook executor for the 4 playbooks defined in `data/workflows.json` (`ship-saas-mvp`, `security-audit-web-app`, `build-ai-agent-system`, `qa-browser-automation`). Commands: `list`, `start <id>`, `next`, `status`, `complete [--notes]`, `skip [--reason]`, `abort`. Progress is persisted to `.tmp/playbook_state.json`. Detects and warns about missing recommended skills. Full `--json` output mode for programmatic use.
+
 ### Security
 
 - **CodeQL alerts — resolved all 23 open findings on `techwavedev/agi-agent-kit`.**
