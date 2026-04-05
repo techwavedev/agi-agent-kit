@@ -100,7 +100,8 @@
           "title": "Define use case and reliability targets",
           "goal": "Choose a narrow use case and measurable quality goals.",
           "recommendedSkills": ["ai-agents-architect", "brainstorming"],
-          "notes": "Set latency, quality, and failure-rate thresholds before implementation."
+          "notes": "Set latency, quality, and failure-rate thresholds before implementation. Write artifacts to .tmp/phase-1-targets.md",
+          "phase_boundary": true
         },
         {
           "title": "Design architecture and retrieval",
@@ -110,13 +111,15 @@
             "qdrant-memory",
             "prompt-engineering-patterns"
           ],
-          "notes": "Keep retrieval quality measurable and version prompt/tool contracts."
+          "notes": "Keep retrieval quality measurable and version prompt/tool contracts. Write specs to .tmp/phase-2-specs.md",
+          "phase_boundary": true
         },
         {
           "title": "Implement orchestration",
           "goal": "Implement the orchestration loop and production safeguards.",
           "recommendedSkills": ["mcp-builder", "parallel-agents"],
-          "notes": "Start with constrained tool permissions and explicit fallback behavior."
+          "notes": "Start with constrained tool permissions and explicit fallback behavior. Commit code before continuing.",
+          "phase_boundary": true
         },
         {
           "title": "Evaluate and iterate",
