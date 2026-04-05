@@ -49,31 +49,27 @@ def run_subtask(subtask):
     }
 
 def synthesize_results(master_task, completed_tasks):
-    """Uses the local micro agent to compile a final synthesized report."""
-    print(f"\n🧠 Synthesizing results from {len(completed_tasks)} Experts...")
+    """Passes the raw reports to the Cloud Orchestrator (the IDE Agent) for synthesis."""
+    print(f"\n🧠 Preparing synthesis payload from {len(completed_tasks)} Experts...")
     
-    # Bundle the completed outputs into a prompt
+    # Bundle the completed outputs into a format the IDE Agent can read
     context_blocks = []
     for ct in completed_tasks:
         context_blocks.append(f"--- EXPERT {ct['step']} ({ct['route'].upper()}) ---\nTask: {ct['task']}\nOutput: {ct['result']}\n")
     
     context_str = "\n".join(context_blocks)
     
-    synthesis_prompt = (
-        f"You are the MoE Swarm Router. You dispatched the following master task: '{master_task}'. "
-        f"Here are the uncoordinated outputs from your parallel expert sub-agents:\n\n"
+    synthesis_payload = (
+        f"==== ORCHESTRATOR SYNTHESIS REQUIRED ====\n"
+        f"The Swarm has completed its parallel execution. Please read the following expert outputs "
+        f"and provide the final synthesis to the user.\n\n"
+        f"Master Task: '{master_task}'\n\n"
         f"{context_str}\n"
-        f"Please synthesize these separate outputs into a single, cohesive, unified response. "
-        f"Do not invent new information; just combine the expert results logically."
+        f"=========================================\n"
     )
     
-    # Call the local micro agent
-    final_output = run_command([
-        "python3", "execution/local_micro_agent.py",
-        "--task", synthesis_prompt
-    ])
-    
-    return final_output
+    # Output is consumed by the active AI Agent reading the terminal!
+    return synthesis_payload
 
 def main():
     parser = argparse.ArgumentParser(description="Swarm Manager - MoE Dispatch Router")
@@ -81,7 +77,34 @@ def main():
     parser.add_argument("--max-workers", type=int, default=5, help="Max parallel expert agents")
     args = parser.parse_args()
 
-    print(f"🚀 Splitting Master Task: '{args.task}'")
+    print(f"🚀 Master Task Received: '{args.task}'")
+    
+    # 0. MEMORY-FIRST PROTOCOL (Qdrant Cache)
+    print("🔍 Checking Qdrant Hybrid Memory cache...")
+    try:
+        mem_output = run_command(["python3", "execution/memory_manager.py", "auto", "--query", args.task])
+        if "{" in mem_output:
+            mem_data = json.loads(mem_output[mem_output.find("{"):])
+            
+            # FAST-PATH: Exact cache hit
+            if mem_data.get("cache_hit") and mem_data.get("cached_response"):
+                print("⚡ QDRANT CACHE HIT: Master task was already solved! Bypassing Swarm.")
+                print("\n" + "="*60)
+                print("🐝 CACHED SWARM SYNTHESIS")
+                print("="*60)
+                print(mem_data["cached_response"])
+                
+                with open(".tmp/swarm_synthesis.md", "w") as f:
+                    f.write("# MoE Swarm Execution Report (CACHED)\n\n")
+                    f.write(f"**Master Task:** `{args.task}`\n\n")
+                    f.write("## Synthesis (Retrieved from Qdrant Memory)\n")
+                    f.write(mem_data["cached_response"])
+                sys.exit(0)
+                
+    except Exception as e:
+        print(f"⚠️ Memory lookup failed ({e}), continuing without cache.")
+
+    print(f"🧩 Dynamically splitting Master Task...")
     
     # 1. Ask task_router to geometrically split the compound task
     split_output = run_command(["python3", "execution/task_router.py", "split", "--task", args.task])
