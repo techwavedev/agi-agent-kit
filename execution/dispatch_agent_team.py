@@ -55,6 +55,8 @@ def _load_team_state():
             "team_state",
             Path(__file__).parent / "team_state.py",
         )
+        if spec is None or spec.loader is None:
+            return None
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
         return mod
@@ -74,7 +76,7 @@ except ImportError:
         return Path.cwd()
 
 
-def load_team_directive(root_not_used: Path, team_id: str) -> str:
+def load_team_directive(team_id: str) -> str:
     """Load the team directive markdown file using dual-path resolution (project first, then global)."""
     rel_path = os.path.join("directives", "teams", f"{team_id}.md")
     directive_path = resolve_file(rel_path)
@@ -563,8 +565,8 @@ def main():
         }), file=sys.stderr)
         sys.exit(3)
 
-    root = find_project_root()
-    directive_text = load_team_directive(root, args.team)
+    root = get_project_root()
+    directive_text = load_team_directive(args.team)
     subagents = extract_subagents(directive_text)
 
     if not subagents:
