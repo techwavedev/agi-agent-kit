@@ -106,3 +106,11 @@ python3 execution/security_scan.py code \
 - **shell=True in scripts:** Check if input is hardcoded string vs user-supplied. Hardcoded = `moderate`, user input = `critical`
 - **Template code (templates/):** Extra scrutiny — this ships to users who may not audit it
 - **False positives:** Agent should read surrounding context (±10 lines) before confirming a finding
+
+---
+
+## Output Gate
+
+- .tmp/security/code_security.json
+
+If the gate reports `VALIDATION:FAIL:.tmp/security/code_security.json`, the orchestrator retries the sub-agent once. On a second failure it escalates to the user (Retry / Skip / Abort). The LLM does not decide success — the bash exit code does.

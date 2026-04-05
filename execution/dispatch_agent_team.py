@@ -95,18 +95,121 @@ def extract_subagents(directive_text: str) -> list:
     return subagents
 
 
-def load_subagent_directive(root: Path, subagent_id: str) -> dict:
-    """Load sub-agent directive if it exists; return metadata."""
+def parse_output_gate(directive_text: str) -> list:
+    """
+    Parse the optional `## Output Gate` section from a sub-agent directive.
+
+    A sub-agent may declare files it MUST produce. Format:
+
+        ## Output Gate
+
+        - path/to/file_one.md
+        - path/to/{{run_id}}/report.json
+
+    Lines starting with `-` or `*` inside the section are collected as paths.
+    Paths may contain `{{payload.key}}` or `{{run_id}}` placeholders which the
+    dispatcher substitutes at manifest build time.
+
+    Returns an ordered list of declared output file paths (possibly empty).
+    """
+    outputs = []
+    in_section = False
+    for line in directive_text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("## "):
+            in_section = stripped.lower().startswith("## output gate")
+            continue
+        if not in_section:
+            continue
+        if stripped.startswith("- ") or stripped.startswith("* "):
+            path = stripped[2:].strip().strip("`")
+            if path:
+                outputs.append(path)
+    return outputs
+
+
+def substitute_gate_placeholders(path: str, payload: dict, run_id: str) -> str:
+    """Resolve `{{run_id}}` and `{{payload.key}}` placeholders in a gate path."""
+    resolved = path.replace("{{run_id}}", run_id)
+    # Very small templating: {{payload.key}} with flat string keys only.
+    while "{{payload." in resolved:
+        start = resolved.find("{{payload.")
+        end = resolved.find("}}", start)
+        if end == -1:
+            break
+        key = resolved[start + len("{{payload.") : end]
+        value = payload.get(key, "")
+        if not isinstance(value, str):
+            value = str(value)
+        resolved = resolved[:start] + value + resolved[end + 2 :]
+    return resolved
+
+
+def build_validation_gate(output_files: list) -> dict:
+    """
+    Build a bash-gate spec for a list of required output files.
+
+    Returns a dict with:
+      - output_files: the resolved paths
+      - command: a single bash command that prints VALIDATION:PASS or
+                 VALIDATION:FAIL:<path> and exits non-zero on failure
+      - on_fail: the three-option user prompt the orchestrator must present
+                 after one retry
+
+    The orchestrator reads the bash stdout (NOT its own memory) to decide
+    whether to advance. Hallucination-proof by design — inspired by
+    opensquad's pipeline bash gates.
+    """
+    if not output_files:
+        return {}
+
+    # Shell-quote each path safely by wrapping in double quotes and
+    # escaping embedded double quotes. Paths are author-controlled in the
+    # directive, so we keep this simple.
+    quoted = [f'"{p.replace(chr(34), chr(92) + chr(34))}"' for p in output_files]
+    # Each check either echoes PASS for that file or echoes FAIL and exits 1.
+    clauses = " && ".join(
+        f'(test -s {q} || {{ echo "VALIDATION:FAIL:{output_files[i]}"; exit 1; }})'
+        for i, q in enumerate(quoted)
+    )
+    command = f"set -e; {clauses} && echo 'VALIDATION:PASS'"
+
+    return {
+        "output_files": output_files,
+        "command": command,
+        "on_fail": {
+            "retry": "Re-invoke the sub-agent once with the same payload.",
+            "escalate": (
+                "If the second attempt still reports VALIDATION:FAIL, present "
+                "the user with three options: (1) Retry step, (2) Skip step "
+                "and continue, (3) Abort team run. Wait for user choice."
+            ),
+        },
+    }
+
+
+def load_subagent_directive(root: Path, subagent_id: str,
+                            payload: "dict | None" = None, run_id: str = "") -> dict:
+    """Load sub-agent directive if it exists; return metadata + validation gate."""
     # Normalize: doc-writer → doc_writer
     normalized = subagent_id.replace("-", "_")
     directive_path = root / "directives" / "subagents" / f"{normalized}.md"
 
     if directive_path.exists():
-        return {
+        text = directive_path.read_text(encoding="utf-8")
+        raw_outputs = parse_output_gate(text)
+        resolved = [
+            substitute_gate_placeholders(p, payload or {}, run_id)
+            for p in raw_outputs
+        ]
+        entry = {
             "id": subagent_id,
             "directive_path": str(directive_path.relative_to(root)),
-            "directive_exists": True
+            "directive_exists": True,
         }
+        if resolved:
+            entry["validation_gate"] = build_validation_gate(resolved)
+        return entry
     else:
         return {
             "id": subagent_id,
@@ -129,6 +232,10 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path,
             f"in a separate directory on a separate branch. "
             f"Pass the original payload JSON as context plus the worktree_path for each agent. "
             f"Each sub-agent MUST work ONLY within its assigned worktree directory. "
+            f"After each sub-agent reports done, if it carries a 'validation_gate', you MUST "
+            f"execute `validation_gate.command` via Bash IN ITS WORKTREE PATH and parse stdout. "
+            f"Only a literal 'VALIDATION:PASS' line authorizes the merge of that sub-agent's branch. "
+            f"On 'VALIDATION:FAIL:<path>', follow validation_gate.on_fail (retry once, then user prompt). "
             f"When ALL sub-agents complete, run: "
             f"`python3 execution/worktree_isolator.py merge-all --run-id {run_id}` "
             f"to merge all branches back sequentially. Then run: "
@@ -140,13 +247,19 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path,
     else:
         instructions = (
             f"You are the Orchestrator. Invoke each sub-agent in order based on their specialized skills. "
-            f"Pass the original payload JSON as context. If a sub-agent works on a divided task, it MUST "
-            f"return a 'handoff_state' object containing its state, 'next_steps' for the following agent, "
-            f"and 'validation_requirements' for what must be tested. YOU MUST actively verify this plan, "
-            f"store the state as raw JSON to Qdrant memory via `python3 execution/memory_manager.py store` "
-            f"tagged with '{run_id}' against conflicts, AND pass it directly to the next sequential "
-            f"or testing sub-agent so they execute the required validation and next steps precisely. "
-            f"Store final results to memory with tag '{team_id}'."
+            f"Pass the original payload JSON as context. "
+            f"AFTER each sub-agent returns, if its manifest entry carries a 'validation_gate', you MUST "
+            f"execute `validation_gate.command` via the Bash tool and read the stdout. Do NOT rely on the "
+            f"sub-agent's self-reported status. Only a literal 'VALIDATION:PASS' line authorizes advancing "
+            f"to the next sub-agent. On 'VALIDATION:FAIL:<path>', follow validation_gate.on_fail: retry the "
+            f"sub-agent once, then — on a second failure — present the three-option prompt (Retry / Skip / Abort) "
+            f"and wait for user choice. Never fabricate a PASS. "
+            f"If a sub-agent works on a divided task, it MUST return a 'handoff_state' object containing its "
+            f"state, 'next_steps' for the following agent, and 'validation_requirements' for what must be tested. "
+            f"YOU MUST actively verify this plan, store the state as raw JSON to Qdrant memory via "
+            f"`python3 execution/memory_manager.py store` tagged with '{run_id}' against conflicts, AND pass it "
+            f"directly to the next sequential or testing sub-agent so they execute the required validation and "
+            f"next steps precisely. Store final results to memory with tag '{team_id}'."
         )
 
     manifest = {
@@ -154,7 +267,7 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path,
         "run_id": run_id,
         "dispatched_at": datetime.now(timezone.utc).isoformat(),
         "payload": payload,
-        "sub_agents": [load_subagent_directive(root, sa) for sa in subagents],
+        "sub_agents": [load_subagent_directive(root, sa, payload, run_id) for sa in subagents],
         "execution_mode": execution_mode,
         "instructions": instructions,
         "memory_query": f"python3 execution/memory_manager.py auto --query \"{team_id} {payload.get('commit_msg', '')}\"",

@@ -89,3 +89,11 @@ python3 execution/security_scan.py secrets \
 - **Test fixtures with fake keys:** If a key starts with `test_`, `fake_`, `mock_`, or `example_`, flag as `info` not `critical`
 - **Git history:** Only scan current working tree (historical secrets need `git filter-branch`, out of scope)
 - **Minified JS:** Skip files >500KB single-line (likely vendor bundles)
+
+---
+
+## Output Gate
+
+- .tmp/security/secret_scan.json
+
+If the gate reports `VALIDATION:FAIL:.tmp/security/secret_scan.json`, the orchestrator retries the sub-agent once. On a second failure it escalates to the user (Retry / Skip / Abort). The LLM does not decide success — the bash exit code does.

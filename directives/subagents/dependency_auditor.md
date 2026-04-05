@@ -84,3 +84,11 @@ python3 execution/security_scan.py dependencies \
 - **npm audit unavailable (offline):** BLOCK — never skip dependency audit silently
 - **Pre-existing CVEs:** If a CVE was present in the previous release tag too, flag as `pre_existing: true` and warn (don't block)
 - **Dev dependencies only:** CVEs in devDependencies are warnings, not blocks (they don't ship to users)
+
+---
+
+## Output Gate
+
+- .tmp/security/dependency_audit.json
+
+If the gate reports `VALIDATION:FAIL:.tmp/security/dependency_audit.json`, the orchestrator retries the sub-agent once. On a second failure it escalates to the user (Retry / Skip / Abort). The LLM does not decide success — the bash exit code does.

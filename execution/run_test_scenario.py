@@ -2,6 +2,7 @@
 """
 Script: run_test_scenario.py
 Purpose: Run one or all test scenarios that validate sub-agent and team agent
+         (including output gate validation)
          functionality in the AGI framework.
 
 Usage:
@@ -15,8 +16,8 @@ Usage:
     python3 execution/run_test_scenario.py --all --verbose
 
 Arguments:
-    --scenario  Scenario number to run (1-6)
-    --all       Run all 6 scenarios
+    --scenario  Scenario number to run (1-11)
+    --all       Run all scenarios
     --verbose   Show detailed output for each step
     --dry-run   Validate setup without dispatching agents
 
@@ -85,7 +86,10 @@ def validate_setup(root: Path) -> dict:
         checks[f"team:{team}"] = path.exists()
 
     # Sub-agent directives
-    for sa in ["doc_writer", "doc_reviewer", "changelog_updater", "spec_reviewer", "quality_reviewer", "asset_compiler", "cloud_deployer"]:
+    for sa in ["doc_writer", "doc_reviewer", "changelog_updater", "spec_reviewer",
+              "quality_reviewer", "asset_compiler", "cloud_deployer",
+              "secret_scanner", "dependency_auditor", "code_security_reviewer",
+              "test_generator", "test_verifier"]:
         path = root / "directives" / "subagents" / f"{sa}.md"
         checks[f"subagent:{sa}"] = path.exists()
 
@@ -410,6 +414,106 @@ def scenario_6_dynamic_handoff(root: Path, verbose: bool, dry_run: bool) -> dict
     }
 
 
+def scenario_11_output_gates(root: Path, verbose: bool, dry_run: bool) -> dict:
+    """
+    Scenario 11: Output Gates
+    Pattern: output-gate
+    Validates: Sub-agents with ## Output Gate sections emit validation_gate entries
+               in the dispatch manifest with executable bash commands.
+    """
+    scenario_id = "scenario_11_output_gates"
+    steps = []
+
+    # Step 1: Dispatch documentation_team (changelog-updater declares a gate)
+    payload = json.dumps({
+        "changed_files": ["execution/dispatch_agent_team.py"],
+        "commit_msg": "test: output gate validation",
+        "change_type": "test"
+    })
+
+    dispatch_args = ["--team", "documentation_team", "--payload", payload]
+    if dry_run:
+        dispatch_args.append("--dry-run")
+
+    result = run_script(root, "dispatch_agent_team.py", dispatch_args, verbose)
+    steps.append({"step": "dispatch documentation_team", **result})
+
+    manifest = result["output"]
+    sub_agents = manifest.get("sub_agents", [])
+
+    # Step 2: At least one sub-agent must have a validation_gate
+    gated = [sa for sa in sub_agents if "validation_gate" in sa]
+    has_gated = len(gated) > 0
+    steps.append({
+        "step": "check for gated sub-agents",
+        "gated_count": len(gated),
+        "gated_ids": [sa.get("id") for sa in gated],
+        "pass": has_gated
+    })
+
+    # Step 3: Validate gate structure for each gated sub-agent
+    gates_valid = True
+    for sa in gated:
+        gate = sa["validation_gate"]
+        required_keys = ["command", "output_files", "on_fail"]
+        missing = [k for k in required_keys if k not in gate]
+        valid = len(missing) == 0
+        if not valid:
+            gates_valid = False
+        steps.append({
+            "step": f"validate gate structure for {sa.get('id')}",
+            "missing_keys": missing,
+            "pass": valid
+        })
+
+    # Step 4: Execute the bash gate command — must print VALIDATION:PASS or VALIDATION:FAIL
+    gate_exec_ok = False
+    if gated:
+        cmd = gated[0]["validation_gate"]["command"]
+        try:
+            gate_result = subprocess.run(
+                ["bash", "-c", cmd],
+                capture_output=True, text=True, timeout=10
+            )
+            stdout = gate_result.stdout.strip()
+            gate_exec_ok = "VALIDATION:PASS" in stdout or "VALIDATION:FAIL" in stdout
+            steps.append({
+                "step": "execute bash gate command",
+                "command": cmd[:120],
+                "stdout": stdout[:200],
+                "exit_code": gate_result.returncode,
+                "pass": gate_exec_ok
+            })
+        except Exception as e:
+            steps.append({
+                "step": "execute bash gate command",
+                "error": str(e),
+                "pass": False
+            })
+
+    # Step 5: Validate orchestrator instructions mention validation_gate
+    instructions = manifest.get("instructions", "")
+    instructions_ok = "validation_gate" in instructions.lower() or "VALIDATION:PASS" in instructions
+    steps.append({
+        "step": "validate orchestrator instructions reference gates",
+        "pass": instructions_ok
+    })
+
+    passed = (
+        result["exit_code"] == 0 and
+        has_gated and
+        gates_valid and
+        gate_exec_ok and
+        instructions_ok
+    )
+    return {
+        "scenario": scenario_id,
+        "pattern": "output-gate",
+        "status": "pass" if passed else "fail",
+        "steps": steps
+    }
+
+
 # ─── RUNNER ───────────────────────────────────────────────────────────────────
 
 SCENARIOS = {
@@ -419,13 +523,16 @@ SCENARIOS = {
     4: scenario_4_full_pipeline,
     5: scenario_5_failure_recovery,
     6: scenario_6_dynamic_handoff,
+    11: scenario_11_output_gates,
 }
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--scenario", type=int, choices=range(1, 7), help="Scenario number (1-6)")
-    parser.add_argument("--all", action="store_true", help="Run all 6 scenarios")
+    valid_scenarios = sorted(SCENARIOS.keys())
+    parser.add_argument("--scenario", type=int, choices=valid_scenarios,
+                        help=f"Scenario number ({', '.join(map(str, valid_scenarios))})")
+    parser.add_argument("--all", action="store_true", help=f"Run all {len(valid_scenarios)} scenarios")
     parser.add_argument("--verbose", action="store_true", help="Show detailed step output")
     parser.add_argument("--dry-run", action="store_true", help="Validate setup without dispatching")
     args = parser.parse_args()

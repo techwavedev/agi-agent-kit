@@ -73,6 +73,16 @@ Append a new, well-formatted entry to `CHANGELOG.md` describing the current chan
 
 ---
 
+## Output Gate
+
+The dispatcher emits a post-run bash gate that the orchestrator MUST execute before advancing. This sub-agent's output gate requires the following file to exist and be non-empty:
+
+- CHANGELOG.md
+
+If the gate reports `VALIDATION:FAIL:CHANGELOG.md`, the orchestrator retries the sub-agent once. On a second failure it escalates to the user (Retry / Skip / Abort). The LLM does not decide success — the bash exit code does.
+
+---
+
 ## Edge Cases
 
 - **`CHANGELOG.md` does not exist:** Create it with standard header and `[Unreleased]` section

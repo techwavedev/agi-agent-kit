@@ -857,6 +857,59 @@ function copySkills(targetPath, pack, templatesPath) {
   }
 }
 
+// Post-install deduplication validator
+// Scans installed skills for duplicate name: fields and auto-fixes them
+function deduplicateSkills(targetPath) {
+  const skillsDir = path.join(targetPath, "skills");
+  if (!fs.existsSync(skillsDir)) return;
+
+  const nameMap = {}; // name -> [{ dir, skillMdPath }]
+
+  const entries = fs.readdirSync(skillsDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory());
+
+  for (const entry of entries) {
+    const skillMdPath = path.join(skillsDir, entry.name, "SKILL.md");
+    if (!fs.existsSync(skillMdPath)) continue;
+
+    const content = fs.readFileSync(skillMdPath, "utf8");
+    const nameMatch = content.match(/^name:\s*['"]?([^'"\n]+)['"]?\s*$/m);
+    if (!nameMatch) continue;
+
+    const name = nameMatch[1].trim();
+    if (!nameMap[name]) nameMap[name] = [];
+    nameMap[name].push({ dir: entry.name, path: skillMdPath });
+  }
+
+  let fixed = 0;
+  for (const [name, entries] of Object.entries(nameMap)) {
+    if (entries.length <= 1) continue;
+
+    // Keep the first one, fix the rest by renaming their name: to match folder
+    log.warn(`Skill name conflict: "${name}" declared by ${entries.length} skills`);
+    for (let i = 1; i < entries.length; i++) {
+      const entry = entries[i];
+      if (entry.dir === name) {
+        // This folder matches the name — it's the canonical one, swap with index 0
+        continue;
+      }
+      // Rename the duplicate's name: field to match its folder
+      const content = fs.readFileSync(entry.path, "utf8");
+      const updated = content.replace(
+        /^(name:\s*)['"]?[^'"\n]+['"]?\s*$/m,
+        `$1${entry.dir}`,
+      );
+      fs.writeFileSync(entry.path, updated, "utf8");
+      log.success(`  Auto-fixed: ${entry.dir}/SKILL.md name → "${entry.dir}" (was "${name}")`);
+      fixed++;
+    }
+  }
+
+  if (fixed > 0) {
+    log.success(`Resolved ${fixed} skill name conflict(s)`);
+  }
+}
+
 // Copy base files
 function copyBaseFiles(targetPath, templatesPath, options) {
   log.header("Copying base files...");
@@ -1387,6 +1440,9 @@ async function init(options) {
 
   // Copy skills
   copySkills(options.path, pack, templatesPath);
+
+  // Post-install: detect and fix duplicate skill names (prevents Gemini CLI conflicts)
+  deduplicateSkills(options.path);
 
   // Create symlinks
   if (options.symlinks) {
