@@ -287,8 +287,56 @@ def hybrid_query(
         }
 
     if mode == "keyword" or (not vector_results and bm25_results):
+        # Build active filter for BM25-only validation (same as merge path)
+        bm25_filter = None
+        if keyword_filters or must_not_filters or raw_filters:
+            bm25_filter = {"must": [], "must_not": []}
+            if keyword_filters:
+                for field, value in keyword_filters.items():
+                    bm25_filter["must"].append({"key": field, "match": {"value": value}})
+            if must_not_filters:
+                for field, value in must_not_filters.items():
+                    bm25_filter["must_not"].append({"key": field, "match": {"value": value}})
+            if raw_filters:
+                if "must" in raw_filters:
+                    bm25_filter["must"].extend(raw_filters["must"])
+                if "must_not" in raw_filters:
+                    bm25_filter["must_not"].extend(raw_filters["must_not"])
+            bm25_filter = {k: v for k, v in bm25_filter.items() if v}
+
         formatted = []
-        for r in bm25_results[:top_k]:
+        for r in bm25_results[:top_k * 3]:  # Check more candidates since some will be filtered
+            # Validate against Qdrant filters
+            if bm25_filter:
+                try:
+                    check_payload = {
+                        "ids": [r["doc_id"]],
+                        "with_payload": ["project", "wing", "room", "type", "tags", "valid_until"]
+                    }
+                    check_req = Request(
+                        f"{QDRANT_URL}/collections/{COLLECTION}/points",
+                        data=json.dumps(check_payload).encode(),
+                        headers={"Content-Type": "application/json"},
+                        method="POST"
+                    )
+                    with urlopen(check_req, timeout=5) as resp:
+                        pt_result = json.loads(resp.read().decode())
+                    points = pt_result.get("result", [])
+                    if not points:
+                        continue
+                    pt_payload = points[0].get("payload", {})
+                    skip = False
+                    for cond in bm25_filter.get("must", []):
+                        key = cond.get("key")
+                        match_val = cond.get("match", {}).get("value")
+                        if match_val is not None and pt_payload.get(key) != match_val:
+                            skip = True
+                            break
+                    if skip:
+                        continue
+                except Exception:
+                    continue
+
             formatted.append({
                 "doc_id": r["doc_id"],
                 "score": r["text_score"],
@@ -298,6 +346,9 @@ def hybrid_query(
                 "tags": r.get("tags", []),
                 "search_source": "bm25"
             })
+            if len(formatted) >= top_k:
+                break
+
         return {
             "query": text_query,
             "results": formatted,
@@ -321,16 +372,72 @@ def hybrid_query(
             "timestamp": r.get("timestamp"),
             "vector_score": r["vector_score"],
             "text_score": 0.0,
-            "search_sources": ["vector"]
+            "search_sources": ["vector"],
+            "wing": r.get("wing"),
+            "room": r.get("room"),
+            "original_text": r.get("original_text"),
+            "valid_until": r.get("valid_until"),
         }
 
     # Add/merge BM25 results
+    # For BM25-only results (not already in vector hits), validate against Qdrant
+    # filters since BM25 (SQLite FTS5) doesn't enforce Qdrant payload scope.
+    active_filter = None
+    if keyword_filters or must_not_filters or raw_filters:
+        active_filter = {"must": [], "must_not": []}
+        if keyword_filters:
+            for field, value in keyword_filters.items():
+                active_filter["must"].append({"key": field, "match": {"value": value}})
+        if must_not_filters:
+            for field, value in must_not_filters.items():
+                active_filter["must_not"].append({"key": field, "match": {"value": value}})
+        if raw_filters:
+            if "must" in raw_filters:
+                active_filter["must"].extend(raw_filters["must"])
+            if "must_not" in raw_filters:
+                active_filter["must_not"].extend(raw_filters["must_not"])
+        # Clean empty keys
+        active_filter = {k: v for k, v in active_filter.items() if v}
+
     for r in bm25_results:
         doc_id = r["doc_id"]
         if doc_id in merged:
             merged[doc_id]["text_score"] = r["text_score"]
             merged[doc_id]["search_sources"].append("bm25")
         else:
+            # BM25-only hit: validate it matches Qdrant filters before including
+            if active_filter:
+                try:
+                    check_payload = {
+                        "ids": [doc_id],
+                        "with_payload": ["project", "wing", "room", "type", "tags", "valid_until"]
+                    }
+                    check_req = Request(
+                        f"{QDRANT_URL}/collections/{COLLECTION}/points",
+                        data=json.dumps(check_payload).encode(),
+                        headers={"Content-Type": "application/json"},
+                        method="POST"
+                    )
+                    with urlopen(check_req, timeout=5) as resp:
+                        pt_result = json.loads(resp.read().decode())
+                    points = pt_result.get("result", [])
+                    if not points:
+                        continue  # Point doesn't exist in Qdrant
+                    pt_payload = points[0].get("payload", {})
+                    
+                    # Check must conditions
+                    skip = False
+                    for cond in active_filter.get("must", []):
+                        key = cond.get("key")
+                        match_val = cond.get("match", {}).get("value")
+                        if match_val is not None and pt_payload.get(key) != match_val:
+                            skip = True
+                            break
+                    if skip:
+                        continue
+                except Exception:
+                    continue  # On error, skip the BM25-only result
+
             merged[doc_id] = {
                 "doc_id": doc_id,
                 "content": r["content"],
