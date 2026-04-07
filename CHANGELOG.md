@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.5] - 2026-04-07
+
+### Added
+
+- **MemPalace Architecture Integration**: Adopted AAAK Symbolic Compression (via `Dialect` class) and Spatial Hierarchy (Wings/Rooms) for Qdrant storage.
+- **Temporal Memory Ledger**: Added native temporal expiration utilizing Qdrant's `must_not` range clauses (`--expire-days`).
+- **AI-Driven Contradiction Resolution**: Pre-store semantic conflict check using `local_micro_agent.py` to auto-deprecate old facts.
+- **Out-of-the-Box Cloud Fallback**: Automatically delegates fast deterministic tasks to `gemini-1.5-flash`, `gpt-4o-mini`, or `claude-3-haiku` by detecting API keys in `.env` if local hardware (Ollama) is unavailable.
+- **Zero-Loss Payload Preservation**: Retaining raw verbatim text within Qdrant payloads alongside AAAK compression to ensure source fidelity.
+
+### Fixed
+- **Hybrid Search Filter Piping**: Updated SQLite/Vector hybrid logic to directly pipe raw Qdrant schema conditionals instead of string matching.
+- **Legacy Qdrant Sweeper**: Added `sweep_legacy_memory.py` to formally purge un-scoped points from local Vector mappings.
+
 ## [1.7.4] - 2026-04-05
 
 ### Added
