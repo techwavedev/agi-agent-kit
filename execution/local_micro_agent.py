@@ -270,8 +270,8 @@ def run_inference(model: str, prompt: str, temperature: float = 0.0,
     cloud_available = [c["name"] for c in CLOUD_FALLBACK_REGISTRY if env_vars.get(c["env"])]
     if model in cloud_available:
         return run_cloud_inference(model, prompt, temperature, max_tokens, json_mode, system_prompt)
-        
-    """Run inference against Ollama and return structured result."""
+
+    # Run inference against Ollama
     payload = {
         "model": model,
         "prompt": prompt,

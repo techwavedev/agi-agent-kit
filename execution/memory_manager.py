@@ -42,6 +42,7 @@ import json
 import os
 import sys
 from pathlib import Path
+import time
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
@@ -529,7 +530,6 @@ Examples:
             if args.tags:
                 metadata["tags"] = args.tags
             if getattr(args, "expire_days", None):
-                import time
                 metadata["valid_until"] = int(time.time() + (args.expire_days * 86400))
 
             content = args.content
@@ -555,7 +555,6 @@ Examples:
                     
                     if old_context["total_chunks"] > 0:
                         from local_micro_agent import run_with_fallback
-                        from urllib.request import Request, urlopen
 
                         facts = []
                         valid_points = []

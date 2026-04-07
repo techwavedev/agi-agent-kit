@@ -18,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Zero-Loss Payload Preservation**: Retaining raw verbatim text within Qdrant payloads alongside AAAK compression to ensure source fidelity.
 
 ### Fixed
+- **Payload Passthrough Bug**: `hybrid_search.py` and `memory_retrieval.py` were silently stripping `wing`, `room`, `original_text`, and `valid_until` from Qdrant payloads — making spatial metadata and zero-loss recovery invisible to all consumers.
+- **Retrieve Threshold Mismatch**: `retrieve` command defaulted to `score_threshold: 0.7` while `auto` used `0.45`, causing `retrieve` to silently return empty results for valid queries.
+- **UnboundLocalError on `json`**: Duplicate `import json` inside contradiction resolver scope shadowed the global import, crashing all `store` and `retrieve` CLI operations.
+- **UnboundLocalError on `retrieve_context`**: Local re-import of `retrieve_context` inside contradiction block masked the global import, crashing the retrieve subcommand.
+- **Invalid `exclude_expired` kwarg**: Nonexistent parameter passed to `retrieve_context()` in the contradiction resolver, crashing `--resolve-contradictions`.
+- **Orphaned docstring in `local_micro_agent.py`**: Dead string literal left inside `run_inference()` after cloud routing was prepended.
+- **Duplicate inner imports**: Stale `import time` and `from urllib.request import Request, urlopen` inside function bodies shadowing top-level imports in `memory_manager.py`.
 - **Hybrid Search Filter Piping**: Updated SQLite/Vector hybrid logic to directly pipe raw Qdrant schema conditionals instead of string matching.
 - **Legacy Qdrant Sweeper**: Added `sweep_legacy_memory.py` to formally purge un-scoped points from local Vector mappings.
 
