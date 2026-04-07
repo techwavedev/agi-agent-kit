@@ -151,6 +151,7 @@ def retrieve_context(
             total_tokens += token_estimate
             
             chunks.append({
+                "point_id": hit.get("doc_id"),
                 "content": content,
                 "score": hit.get("score", 0),  # Hybrid score
                 "vector_score": hit.get("vector_score", 0),

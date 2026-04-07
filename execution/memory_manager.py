@@ -541,11 +541,64 @@ Examples:
                 except Exception:
                     pass
                     
-            if getattr(args, "resolve_contradictions", False):
-                # Pseudo-logic hook: in a full implementation local_micro_agent.py evaluates old vs new fact
-                # Here we just trace that we initiated the check within the ledger
+            if getattr(args, "resolve_contradictions", False) and getattr(args, "wing", None) and getattr(args, "room", None):
                 if _LANGFUSE_AVAILABLE:
-                    observe_function("ledger_contradiction_check", op_type="span")(lambda: "Checked")()
+                    observe_function("ledger_contradiction_check", op_type="span")(lambda: "Initiated")()
+                try:
+                    # 1. Fetch top existing facts for this wing/room
+                    from memory_retrieval import retrieve_context
+                    filters = {"must": [
+                        {"key": "wing", "match": {"value": args.wing}},
+                        {"key": "room", "match": {"value": args.room}}
+                    ]}
+                    # Search text can be empty to just get recent for this room
+                    old_context = retrieve_context("", filters=filters, top_k=3, exclude_expired=True)
+                    
+                    if old_context["total_chunks"] > 0:
+                        from local_micro_agent import run_with_fallback
+                        import json
+                        import time
+                        from urllib.request import Request, urlopen
+
+                        facts = []
+                        valid_points = []
+                        for i, chunk in enumerate(old_context["chunks"]):
+                            if chunk.get("point_id"):
+                                facts.append(f"[{i}] {chunk['content']}")
+                                valid_points.append(chunk["point_id"])
+                        
+                        if facts:
+                            prompt_context = "Existing Facts:\n" + "\n".join(facts)
+                            task = (
+                                f"Does this new fact strictly contradict any of the Existing Facts? "
+                                f"New fact: '{args.content}'\n"
+                                "If yes, reply ONLY with the exact index number in brackets (e.g. '[0]'). "
+                                "If no contradiction, reply 'none'."
+                            )
+                            
+                            res = run_with_fallback(task, prompt_context, None, 0.0, 50, False)
+                            if res["status"] == "success":
+                                resp_text = res["response"]
+                                if "[" in resp_text and "]" in resp_text:
+                                    idx_str = resp_text.split("[")[1].split("]")[0]
+                                    if idx_str.isdigit() and int(idx_str) < len(valid_points):
+                                        target_id = valid_points[int(idx_str)]
+                                        # Issue deprecation update to Qdrant
+                                        from memory_retrieval import QDRANT_URL, COLLECTION
+                                        update_payload = {
+                                            "payload": {"valid_until": int(time.time())},
+                                            "points": [target_id]
+                                        }
+                                        req = Request(
+                                            f"{QDRANT_URL}/collections/{COLLECTION}/points/payload",
+                                            data=json.dumps(update_payload).encode(),
+                                            headers={"Content-Type": "application/json"},
+                                            method="POST"
+                                        )
+                                        with urlopen(req, timeout=10):
+                                            pass
+                except Exception as e:
+                    print(f"WARN: Contradiction check failed: {e}", file=sys.stderr)
 
             # Trace the store operation
             if _LANGFUSE_AVAILABLE:
