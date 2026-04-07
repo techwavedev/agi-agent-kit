@@ -280,18 +280,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
+    - name: Run Snyk vulnerability scanner
+      uses: aquasecurity/snyk-action@master
       with:
         scan-type: 'fs'
         scan-ref: '.'
         format: 'sarif'
-        output: 'trivy-results.sarif'
+        output: 'snyk-results.sarif'
 
-    - name: Upload Trivy results to GitHub Security
+    - name: Upload Snyk results to GitHub Security
       uses: github/codeql-action/upload-sarif@v2
       with:
-        sarif_file: 'trivy-results.sarif'
+        sarif_file: 'snyk-results.sarif'
 
     - name: Run Snyk Security Scan
       uses: snyk/actions/node@master

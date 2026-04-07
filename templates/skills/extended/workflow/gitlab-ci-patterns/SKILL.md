@@ -201,11 +201,11 @@ include:
   - template: Security/Dependency-Scanning.gitlab-ci.yml
   - template: Security/Container-Scanning.gitlab-ci.yml
 
-trivy-scan:
+snyk-scan:
   stage: test
-  image: aquasec/trivy:latest
+  image: aquasec/snyk:latest
   script:
-    - trivy image --exit-code 1 --severity HIGH,CRITICAL $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - snyk image --exit-code 1 --severity HIGH,CRITICAL $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   allow_failure: true
 ```
 

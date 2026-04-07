@@ -238,7 +238,7 @@ jobs:
       - name: Unit tests
         run: make test
       - name: Security scan
-        run: trivy image myapp:${{ github.sha }}
+        run: snyk image myapp:${{ github.sha }}
 
   deploy-staging:
     needs: test
