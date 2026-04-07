@@ -42,6 +42,7 @@ import sys
 import uuid
 from datetime import datetime
 from typing import Optional, Dict, Any, List
+from datetime import datetime, timezone
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 
@@ -90,7 +91,7 @@ def retrieve_context(
     score_threshold: float = 0.7,
     vector_weight: float = None,  # Use default from hybrid_search if None
     text_weight: float = None     # Use default from hybrid_search if None
-) -> List[Dict[str, Any]]:
+) -> Dict[str, Any]:
     """
     Retrieve relevant context from long-term memory using HYBRID SEARCH.
     
@@ -197,7 +198,7 @@ def store_memory(
     payload = {
         "content": content,
         "type": memory_type,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "token_count": len(content.split()),
         **(metadata or {})
     }
@@ -245,9 +246,11 @@ def store_memory(
     if _BM25_AVAILABLE and HYBRID_SEARCH:
         try:
             with BM25Index() as bm25:
+                # If AAAK-compressed, index the original text for keyword matching
+                bm25_content = (metadata or {}).get("original_text", content)
                 bm25_result = bm25.index_document(
                     doc_id=point_id,
-                    content=content,
+                    content=bm25_content,
                     metadata={
                         "type": memory_type,
                         "project": (metadata or {}).get("project", ""),
@@ -321,11 +324,9 @@ def list_memories(
     }
 
 
-def build_filter(type_filter: str = None, project: str = None, tags: List[str] = None, exclude_expired: bool = True) -> Dict:
+def build_filter(type_filter: str = None, project: str = None, tags: List[str] = None) -> Dict:
     """Build Qdrant filter from arguments."""
-    import time
     must = []
-    must_not = []
     
     if type_filter:
         must.append({"key": "type", "match": {"value": type_filter}})
@@ -333,14 +334,9 @@ def build_filter(type_filter: str = None, project: str = None, tags: List[str] =
         must.append({"key": "project", "match": {"value": project}})
     if tags:
         must.append({"key": "tags", "match": {"any": tags}})
-        
-    if exclude_expired:
-        # Exclude points where valid_until exists and is firmly in the past
-        must_not.append({"key": "valid_until", "range": {"lt": int(time.time())}})
     
     res = {}
     if must: res["must"] = must
-    if must_not: res["must_not"] = must_not
     return res if res else None
 
 

@@ -551,7 +551,7 @@ Examples:
                         {"key": "room", "match": {"value": args.room}}
                     ]}
                     # Search using the new content to find semantically similar existing facts
-                    old_context = retrieve_context(args.content, filters=filters, top_k=3)
+                    old_context = retrieve_context(args.content, filters=filters, top_k=3, score_threshold=0.5)
                     
                     if old_context["total_chunks"] > 0:
                         from local_micro_agent import run_with_fallback
@@ -568,22 +568,31 @@ Examples:
                             task = (
                                 f"Does this new fact strictly contradict any of the Existing Facts? "
                                 f"New fact: '{args.content}'\n"
-                                "If yes, reply ONLY with the exact index number in brackets (e.g. '[0]'). "
+                                "If yes, reply ONLY with the exact index number(s) in brackets (e.g. '[0]' or '[0, 2]'). "
                                 "If no contradiction, reply 'none'."
                             )
                             
                             res = run_with_fallback(task, prompt_context, None, 0.0, 50, False)
                             if res["status"] == "success":
                                 resp_text = res["response"]
-                                if "[" in resp_text and "]" in resp_text:
-                                    idx_str = resp_text.split("[")[1].split("]")[0]
-                                    if idx_str.isdigit() and int(idx_str) < len(valid_points):
-                                        target_id = valid_points[int(idx_str)]
+                                import re
+                                # Extract all numbers inside brackets
+                                matches = re.findall(r'\[([\d,\s]+)\]', resp_text)
+                                if matches:
+                                    # Split by comma and clean whitespace
+                                    idx_strings = [i.strip() for i in sum([m.split(',') for m in matches], []) if i.strip().isdigit()]
+                                    target_ids = []
+                                    for idx_str in idx_strings:
+                                        idx = int(idx_str)
+                                        if idx < len(valid_points):
+                                            target_ids.append(valid_points[idx])
+                                            
+                                    if target_ids:
                                         # Issue deprecation update to Qdrant
                                         from memory_retrieval import QDRANT_URL, COLLECTION
                                         update_payload = {
                                             "payload": {"valid_until": int(time.time())},
-                                            "points": [target_id]
+                                            "points": target_ids
                                         }
                                         req = Request(
                                             f"{QDRANT_URL}/collections/{COLLECTION}/points/payload",
@@ -666,8 +675,16 @@ Examples:
             filters = build_filter(
                 type_filter=getattr(args, "type", None), project=args.project
             )
+            list_filters = None
+            if filters:
+                list_filters = {}
+                if "must" in filters:
+                    list_filters["must"] = filters["must"]
+                if "must_not" in filters:
+                    list_filters["must_not"] = filters["must_not"]
+            
             result = list_memories(
-                filters={"must": filters["must"]} if filters else None, limit=args.limit
+                filters=list_filters, limit=args.limit
             )
             print(json.dumps(result, indent=2))
             sys.exit(0)

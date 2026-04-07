@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Payload Passthrough Bug**: `hybrid_search.py` and `memory_retrieval.py` were silently stripping `wing`, `room`, `original_text`, and `valid_until` from Qdrant payloads — making spatial metadata and zero-loss recovery invisible to all consumers.
+- **BM25 AAAK Compression Leak**: `memory_retrieval.py` was indexing compressed AAAK tokens into BM25 instead of the original raw text, making keyword search impossible.
+- **Datetime Format Collision (Python 3.12/3.14)**: Replaced deprecated `datetime.utcnow()` with timezone-aware `datetime.now(timezone.utc)` across all caching layers. This fixes silent query failures where `semantic_cache` filters failed to match Qdrant's RFC 3339 constraints.
+- **Missing Qdrant Payload Indexes**: Added `wing`, `room`, and `valid_until` optimized payload indexes to `init_collection.py`, improving vector scope search from O(N) linear scans to O(logN).
+- **Resolver Double Extinction**: Removed duplicate `exclude_expired` constraint from `build_filter`, fixing a dual-range conflict and ensuring deprecation logic relies solely on the primary `must_not` layer.
+- **Multiple ID Resolution**: Upgraded the generic `/auto` contradiction resolver in `memory_manager.py` to identify, parse, and deprecate *multiple* legacy IDs at once via `[0, 2]` syntax.
+- **Default Embedding Dimensions**: Corrected `init_collection` default dimension configuration from `1536` to `768`, stabilizing `nomic-embed-text` deployments out-of-the-box.
 - **Retrieve Threshold Mismatch**: `retrieve` command defaulted to `score_threshold: 0.7` while `auto` used `0.45`, causing `retrieve` to silently return empty results for valid queries.
 - **UnboundLocalError on `json`**: Duplicate `import json` inside contradiction resolver scope shadowed the global import, crashing all `store` and `retrieve` CLI operations.
 - **UnboundLocalError on `retrieve_context`**: Local re-import of `retrieve_context` inside contradiction block masked the global import, crashing the retrieve subcommand.
