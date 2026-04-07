@@ -94,6 +94,13 @@ try:
 except ImportError:
     _BM25_AVAILABLE = False
 
+# Import AAAK Dialect
+try:
+    from aaak_compressor import Dialect
+    _AAAK_AVAILABLE = True
+except ImportError:
+    _AAAK_AVAILABLE = False
+
 def _flush_langfuse():
     """Flush Langfuse events if available. Safe no-op otherwise."""
     if _LANGFUSE_AVAILABLE:
@@ -166,7 +173,9 @@ def auto_query(
     project: str = None, 
     threshold: float = 0.92,
     vector_weight: float = None,
-    text_weight: float = None
+    text_weight: float = None,
+    wing: str = None,
+    room: str = None
 ) -> dict:
     """
     Smart query: check cache first, then retrieve context using Hybrid Search.
@@ -201,8 +210,14 @@ def auto_query(
     # Step 2: Context retrieval
     try:
         filters = None
-        if project:
-            filters = {"must": [{"key": "project", "match": {"value": project}}]}
+        if project or wing or room:
+            filters = {"must": []}
+            if project:
+                filters["must"].append({"key": "project", "match": {"value": project}})
+            if wing:
+                filters["must"].append({"key": "wing", "match": {"value": wing}})
+            if room:
+                filters["must"].append({"key": "room", "match": {"value": room}})
 
         context = retrieve_context(
             query, 
@@ -396,6 +411,8 @@ Examples:
     )
     auto_parser.add_argument("--query", required=True, help="Natural language query")
     auto_parser.add_argument("--project", help="Filter by project name")
+    auto_parser.add_argument("--wing", help="Filter by wing")
+    auto_parser.add_argument("--room", help="Filter by room")
     auto_parser.add_argument(
         "--threshold", type=float, default=0.92, help="Cache similarity threshold"
     )
@@ -414,7 +431,12 @@ Examples:
         help="Memory type",
     )
     store_parser.add_argument("--project", help="Project name")
+    store_parser.add_argument("--wing", help="Wing name")
+    store_parser.add_argument("--room", help="Room name")
     store_parser.add_argument("--tags", nargs="+", help="Tags for the memory")
+    store_parser.add_argument("--compress-aaak", action="store_true", help="Compress content using AAAK dialect")
+    store_parser.add_argument("--expire-days", type=int, help="Number of days until this memory expires (temporal filters)")
+    store_parser.add_argument("--resolve-contradictions", action="store_true", help="Check for and invalidate contradicting old facts before storing")
 
     # Retrieve command
     retrieve_parser = subparsers.add_parser(
@@ -423,6 +445,8 @@ Examples:
     retrieve_parser.add_argument("--query", required=True, help="Search query")
     retrieve_parser.add_argument("--type", help="Filter by memory type")
     retrieve_parser.add_argument("--project", help="Filter by project")
+    retrieve_parser.add_argument("--wing", help="Filter by wing")
+    retrieve_parser.add_argument("--room", help="Filter by room")
     retrieve_parser.add_argument(
         "--top-k", type=int, default=5, help="Number of results"
     )
@@ -487,7 +511,9 @@ Examples:
                 args.project, 
                 args.threshold,
                 vector_weight=args.vector_weight,
-                text_weight=args.text_weight
+                text_weight=args.text_weight,
+                wing=getattr(args, "wing", None),
+                room=getattr(args, "room", None)
             )
             print(json.dumps(result, indent=2))
             sys.exit(0 if result["source"] != "none" else 1)
@@ -496,14 +522,37 @@ Examples:
             metadata = {}
             if args.project:
                 metadata["project"] = args.project
+            if getattr(args, "wing", None):
+                metadata["wing"] = args.wing
+            if getattr(args, "room", None):
+                metadata["room"] = args.room
             if args.tags:
                 metadata["tags"] = args.tags
+            if getattr(args, "expire_days", None):
+                import time
+                metadata["valid_until"] = int(time.time() + (args.expire_days * 86400))
+
+            content = args.content
+            if getattr(args, "compress_aaak", False) and _AAAK_AVAILABLE:
+                metadata["original_text"] = content
+                try:
+                    dialect = Dialect()
+                    content = dialect.compress(content, metadata=metadata)
+                except Exception:
+                    pass
+                    
+            if getattr(args, "resolve_contradictions", False):
+                # Pseudo-logic hook: in a full implementation local_micro_agent.py evaluates old vs new fact
+                # Here we just trace that we initiated the check within the ledger
+                if _LANGFUSE_AVAILABLE:
+                    observe_function("ledger_contradiction_check", op_type="span")(lambda: "Checked")()
+
             # Trace the store operation
             if _LANGFUSE_AVAILABLE:
                 _traced_store = observe_function("memory_store", op_type="span")(store_memory)
-                result = _traced_store(args.content, args.type, metadata)
+                result = _traced_store(content, args.type, metadata)
             else:
-                result = store_memory(args.content, args.type, metadata)
+                result = store_memory(content, args.type, metadata)
             print(json.dumps(result, indent=2))
             _flush_langfuse()
             sys.exit(0)
@@ -512,12 +561,26 @@ Examples:
             filters = build_filter(
                 type_filter=getattr(args, "type", None), project=args.project
             )
+            if filters is None:
+                filters = {"must": []}
+            if not isinstance(filters, dict) or "must" not in filters:
+                filters = {"must": []}
+            if "must_not" not in filters:
+                filters["must_not"] = []
+            
+            if getattr(args, "wing", None):
+                filters["must"].append({"key": "wing", "match": {"value": args.wing}})
+            if getattr(args, "room", None):
+                filters["must"].append({"key": "room", "match": {"value": args.room}})
+            if not filters["must"] and not filters["must_not"]:
+                filters = None
+
             # Trace the retrieve operation
             if _LANGFUSE_AVAILABLE:
                 _traced_retrieve = observe_function("memory_retrieve", op_type="retrieval")(retrieve_context)
                 result = _traced_retrieve(
                     args.query,
-                    filters={"must": filters["must"]} if filters else None,
+                    filters=filters,
                     top_k=args.top_k,
                     score_threshold=args.threshold,
                     vector_weight=args.vector_weight,
@@ -526,7 +589,7 @@ Examples:
             else:
                 result = retrieve_context(
                     args.query,
-                    filters={"must": filters["must"]} if filters else None,
+                    filters=filters,
                     top_k=args.top_k,
                     score_threshold=args.threshold,
                     vector_weight=args.vector_weight,

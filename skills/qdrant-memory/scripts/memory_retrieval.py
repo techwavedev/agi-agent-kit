@@ -327,9 +327,11 @@ def list_memories(
     }
 
 
-def build_filter(type_filter: str = None, project: str = None, tags: List[str] = None) -> Dict:
+def build_filter(type_filter: str = None, project: str = None, tags: List[str] = None, exclude_expired: bool = True) -> Dict:
     """Build Qdrant filter from arguments."""
+    import time
     must = []
+    must_not = []
     
     if type_filter:
         must.append({"key": "type", "match": {"value": type_filter}})
@@ -337,8 +339,15 @@ def build_filter(type_filter: str = None, project: str = None, tags: List[str] =
         must.append({"key": "project", "match": {"value": project}})
     if tags:
         must.append({"key": "tags", "match": {"any": tags}})
+        
+    if exclude_expired:
+        # Exclude points where valid_until exists and is firmly in the past
+        must_not.append({"key": "valid_until", "range": {"lt": int(time.time())}})
     
-    return {"must": must} if must else None
+    res = {}
+    if must: res["must"] = must
+    if must_not: res["must_not"] = must_not
+    return res if res else None
 
 
 def main():
@@ -380,7 +389,7 @@ def main():
             )
             result = retrieve_context(
                 args.query,
-                filters={"must": filters["must"]} if filters else None,
+                filters=filters,
                 top_k=args.top_k,
                 score_threshold=args.threshold
             )
@@ -404,7 +413,7 @@ def main():
                 project=args.project
             )
             result = list_memories(
-                filters={"must": filters["must"]} if filters else None,
+                filters=filters,
                 limit=args.limit
             )
             print(json.dumps(result, indent=2))
