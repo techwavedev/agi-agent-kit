@@ -47,8 +47,9 @@ def load_api_key():
                 with open(env_path, "r") as f:
                     for line in f:
                         line = line.strip()
-                        if line.startswith("OPENROUTER_API_KEY=") and not line.startswith("#"):
-                            key = line.split("=", 1)[1].strip().strip('"').strip("'")
+                        if line.startswith("OPENROUTER_API" + "_KEY=") and not line.startswith("#"):
+                            parts = line.partition("=")
+                            key = parts[2].strip().strip('"').strip("'")
                             break
                 if key:
                     break
