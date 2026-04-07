@@ -43,6 +43,26 @@ from pathlib import Path
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 
+CLOUD_FALLBACK_REGISTRY = [
+    {"name": "gemini-1.5-flash", "env": "GEMINI_API_KEY"},
+    {"name": "gpt-4o-mini", "env": "OPENAI_API_KEY"},
+    {"name": "claude-3-haiku-20240307", "env": "ANTHROPIC_API_KEY"}
+]
+
+def load_env_vars() -> dict:
+    env_vars = dict(os.environ)
+    if os.path.exists(".env"):
+        try:
+            with open(".env", "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and "=" in line and not line.startswith("#"):
+                        k, v = line.split("=", 1)
+                        env_vars[k.strip()] = v.strip("'").strip('"')
+        except Exception:
+            pass
+    return env_vars
+
 # Model registry: ordered by preference for different task types.
 # "tier" determines routing: fast (small tasks), medium (reasoning), heavy (complex).
 MODEL_REGISTRY = {
@@ -110,10 +130,13 @@ def select_model(preferred: str | None, task: str) -> str:
     Priority: explicit --model > task-based heuristic > first available in chain.
     """
     available = get_available_models()
-    if not available:
+    env_vars = load_env_vars()
+    cloud_available = [c["name"] for c in CLOUD_FALLBACK_REGISTRY if env_vars.get(c["env"])]
+    
+    if not available and not cloud_available:
         print(json.dumps({
             "status": "error",
-            "message": "No Ollama models available. Is Ollama running?"
+            "message": "No local Ollama models or Cloud API Keys (.env) available."
         }), file=sys.stderr)
         sys.exit(1)
 
@@ -125,9 +148,13 @@ def select_model(preferred: str | None, task: str) -> str:
         for m in available:
             if preferred in m or m.startswith(preferred):
                 return m
+        # Try cloud models if requested
+        if preferred in cloud_available:
+            return preferred
+            
         print(json.dumps({
             "status": "error",
-            "message": f"Model '{preferred}' not found. Available: {available}"
+            "message": f"Model '{preferred}' not found. Available Local: {available}. Available Cloud: {cloud_available}."
         }), file=sys.stderr)
         sys.exit(1)
 
@@ -150,18 +177,100 @@ def select_model(preferred: str | None, task: str) -> str:
             if model in available:
                 return model
 
-    # Last resort: first available non-embedding model
+    # Last resort local
     for m in available:
         info = MODEL_REGISTRY.get(m, {})
         if info.get("tier") != "embedding":
             return m
 
-    return available[0]
+    # Total fallback to cloud if no viable local model
+    if cloud_available:
+        return cloud_available[0]
 
+    return available[0] if available else None
+
+
+def run_cloud_inference(model: str, prompt: str, temperature: float = 0.0,
+                        max_tokens: int = 1024, json_mode: bool = False,
+                        system_prompt: str | None = None) -> dict:
+    """Run inference against a cloud provider completely seamlessly via standard libraries."""
+    env_vars = load_env_vars()
+    start = time.time()
+    try:
+        if model.startswith("gemini"):
+            api_key = env_vars.get("GEMINI_API_KEY")
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+            sys_text = f"{system_prompt}\n" if system_prompt else ""
+            payload = {
+                "contents": [{"parts": [{"text": sys_text + prompt}]}],
+                "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens}
+            }
+            if json_mode:
+                payload["generationConfig"]["responseMimeType"] = "application/json"
+                
+            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"}, method="POST")
+            with urllib.request.urlopen(req, timeout=120) as response:
+                result = json.loads(response.read().decode("utf-8"))
+                output = result.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "").strip()
+                
+        elif model.startswith("gpt"):
+            api_key = env_vars.get("OPENAI_API_KEY")
+            url = "https://api.openai.com/v1/chat/completions"
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
+            
+            payload = {"model": model, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
+            if json_mode:
+                payload["response_format"] = {"type": "json_object"}
+                
+            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}, method="POST")
+            with urllib.request.urlopen(req, timeout=120) as response:
+                result = json.loads(response.read().decode("utf-8"))
+                output = result.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                
+        elif model.startswith("claude"):
+            api_key = env_vars.get("ANTHROPIC_API_KEY")
+            url = "https://api.anthropic.com/v1/messages"
+            payload = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": max_tokens,
+                "temperature": temperature
+            }
+            if system_prompt:
+                payload["system"] = system_prompt
+                
+            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"x-api-key": api_key, "anthropic-version": "2023-06-01", "content-type": "application/json"}, method="POST")
+            with urllib.request.urlopen(req, timeout=120) as response:
+                result = json.loads(response.read().decode("utf-8"))
+                content_blocks = result.get("content", [])
+                output = content_blocks[0].get("text", "").strip() if content_blocks else ""
+                
+        elapsed = time.time() - start
+        return {
+            "status": "success",
+            "model": model,
+            "response": output,
+            "metrics": {
+                "elapsed_seconds": round(elapsed, 2),
+                "is_cloud": True
+            },
+            "cloud_tokens_saved": 0 # Used cloud provider directly
+        }
+    except Exception as e:
+        return {"status": "error", "model": model, "message": str(e)}
 
 def run_inference(model: str, prompt: str, temperature: float = 0.0,
                   max_tokens: int = 1024, json_mode: bool = False,
                   system_prompt: str | None = None) -> dict:
+    """Route inference securely to either local Ollama or Cloud API."""
+    env_vars = load_env_vars()
+    cloud_available = [c["name"] for c in CLOUD_FALLBACK_REGISTRY if env_vars.get(c["env"])]
+    if model in cloud_available:
+        return run_cloud_inference(model, prompt, temperature, max_tokens, json_mode, system_prompt)
+        
     """Run inference against Ollama and return structured result."""
     payload = {
         "model": model,
@@ -237,7 +346,7 @@ def run_with_fallback(task: str, context: str, preferred_model: str | None,
     if result["status"] == "success":
         return result
 
-    # Fallback: try other models
+    # Fallback: try other models locally first
     tried = {model}
     for fallback in FALLBACK_CHAIN:
         if fallback in tried:
@@ -247,6 +356,18 @@ def run_with_fallback(task: str, context: str, preferred_model: str | None,
             continue
         tried.add(fallback)
         result = run_inference(fallback, prompt, temperature, max_tokens, json_mode, system)
+        if result["status"] == "success":
+            result["fallback_from"] = model
+            return result
+
+    # Total Fallback: Escalate to cheapest cloud APIs if all local engines exhaust
+    env_vars = load_env_vars()
+    cloud_available = [c["name"] for c in CLOUD_FALLBACK_REGISTRY if env_vars.get(c["env"])]
+    for cloud_model in cloud_available:
+        if cloud_model in tried:
+            continue
+        tried.add(cloud_model)
+        result = run_cloud_inference(cloud_model, prompt, temperature, max_tokens, json_mode, system)
         if result["status"] == "success":
             result["fallback_from"] = model
             return result
