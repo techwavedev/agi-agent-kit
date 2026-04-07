@@ -91,6 +91,7 @@ def _vector_search(
     text_query: str,
     keyword_filters: Optional[Dict[str, str]] = None,
     must_not_filters: Optional[Dict[str, str]] = None,
+    raw_filters: Optional[Dict[str, Any]] = None,
     top_k: int = 10,
     score_threshold: float = 0.5,
     candidate_multiplier: int = 4
@@ -127,6 +128,14 @@ def _vector_search(
                 "key": field,
                 "match": {"value": value}
             })
+            
+    if raw_filters:
+        if "must" in raw_filters:
+            filter_conditions["must"].extend(raw_filters["must"])
+        if "must_not" in raw_filters:
+            filter_conditions["must_not"].extend(raw_filters["must_not"])
+        if "should" in raw_filters:
+            filter_conditions["should"] = raw_filters["should"]
 
     # Fetch more candidates than needed for better merge results
     fetch_limit = top_k * candidate_multiplier
@@ -201,6 +210,7 @@ def hybrid_query(
     text_query: str,
     keyword_filters: Optional[Dict[str, str]] = None,
     must_not_filters: Optional[Dict[str, str]] = None,
+    raw_filters: Optional[Dict[str, Any]] = None,
     top_k: int = 10,
     score_threshold: float = 0.5,
     vector_weight: float = DEFAULT_VECTOR_WEIGHT,
@@ -214,6 +224,7 @@ def hybrid_query(
         text_query: Natural language query
         keyword_filters: Qdrant payload field filters (MUST match)
         must_not_filters: Qdrant payload field filters (MUST NOT match)
+        raw_filters: Advanced raw Qdrant filters directly appended
         top_k: Number of results to return
         score_threshold: Minimum vector similarity score
         vector_weight: Weight for vector scores (0.0-1.0)
@@ -239,6 +250,7 @@ def hybrid_query(
                 text_query,
                 keyword_filters=keyword_filters,
                 must_not_filters=must_not_filters,
+                raw_filters=raw_filters,
                 top_k=top_k,
                 score_threshold=score_threshold
             )

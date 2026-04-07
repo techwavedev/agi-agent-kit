@@ -111,35 +111,23 @@ def retrieve_context(
     """
     # Extract keyword filters from complex Qdrant filter structure if possible
     # specific structure: {"must": [{"key": "project", "match": {"value": "foo"}}]}
-    keyword_filters = {}
-    if filters and "must" in filters:
-        for condition in filters["must"]:
-            if "key" in condition and "match" in condition and "value" in condition["match"]:
-                keyword_filters[condition["key"]] = condition["match"]["value"]
+    # Instead of decomposing complex filters back into dicts which break range/nested structures,
+    # we just pass the raw Qdrant filters directly into hybrid_search.
+    kwargs = {
+        "text_query": query,
+        "raw_filters": filters,
+        "top_k": top_k,
+        "score_threshold": score_threshold,
+        "mode": "hybrid" if HYBRID_SEARCH else "vector"
+    }
     
-    # Use the new hybrid_query function
+    if vector_weight is not None:
+        kwargs["vector_weight"] = vector_weight
+    if text_weight is not None:
+        kwargs["text_weight"] = text_weight
+        
     try:
-        # Default weights are handled by hybrid_query if passed as None? 
-        # hybrid_query signature has defaults. 
-        # We need to handle arguments carefully.
-        
-        # Checking hybrid_query signature in hybrid_search.py:
-        # def hybrid_query(text_query, keyword_filters, must_not_filters, top_k, score_threshold, vector_weight, text_weight, mode)
-        
-        # We'll use defaults if not provided
-        kwargs = {
-            "text_query": query,
-            "keyword_filters": keyword_filters,
-            "top_k": top_k,
-            "score_threshold": score_threshold,
-            "mode": "hybrid" if HYBRID_SEARCH else "vector"
-        }
-        
-        if vector_weight is not None:
-            kwargs["vector_weight"] = vector_weight
-        if text_weight is not None:
-            kwargs["text_weight"] = text_weight
-            
+
         result = hybrid_query(**kwargs)
             
         chunks = []
