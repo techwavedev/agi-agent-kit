@@ -1,7 +1,7 @@
 ---
 name: backtesting-frameworks
-description: "Build robust backtesting systems for trading strategies with proper handling of look-ahead bias, survivorship bias, and transaction costs. Use when developing trading algorithms, validating strateg..."
-risk: unknown
+description: "Build robust, production-grade backtesting systems that avoid common pitfalls and produce reliable strategy performance estimates."
+risk: safe
 source: community
 date_added: "2026-02-27"
 ---

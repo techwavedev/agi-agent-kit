@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Workflow Engine** (`execution/workflow_engine.py`) — Guided multi-skill playbook executor. Commands: `list`, `start <id>`, `next`, `status`, `complete [--notes]`, `skip [--reason]`, `abort`. Persists state to `.tmp/playbook_state.json`. Warns about missing recommended skills.
+
 ## [1.7.0] - 2026-03-22
 
 ### Added

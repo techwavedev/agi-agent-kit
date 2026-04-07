@@ -124,6 +124,20 @@ The agi framework adopts all best patterns from [obra/superpowers](https://githu
 
 ---
 
+## 🆚 How This Compares to MemPalace
+
+While traditional AI memory systems like MemPalace introduce clever textual compression techniques, they hit a fundamental scalability paradigm limit by treating memory like a localized SQLite filing cabinet. The **AGI Agent Kit** takes those theoretical leaps and deploys them onto an enterprise-grade infrastructure.
+
+| Capability                     | MemPalace (SQLite/Chroma)                      | AGI Swarm (Qdrant + BM25)                                 |
+| ------------------------------ | ---------------------------------------------- | --------------------------------------------------------- |
+| **Data Architecture**          | Strict Relational Graph (SQLite)               | Distributed Hybrid Vector Cloud (Qdrant)                  |
+| **Zero-Loss Compression**      | Requires secondary filesystem lookup ("Drawer")| Invisible JSON Payload ("Drawer" inside vector metadata)  |
+| **Time-Stamped Self-Healing**  | Manual hard-coded invalidations                | Native Qdrant Range Filters (`valid_until < NOW()`)       |
+| **Contradiction Resolution**   | Halts process, begs user                       | AI Ledger pre-store resolution via local LLM router       |
+| **Scale Limits**               | Local-only, single MCP server                  | Massive, Cross-Agent Multi-LLM Orchestration              |
+
+---
+
 ## 🧪 Real Benchmark: Subagents vs Agent Teams
 
 The framework supports two orchestration modes. Here are **real test results** from `execution/benchmark_modes.py` running on local infrastructure (Qdrant + Ollama `nomic-embed-text`, zero cloud API calls):

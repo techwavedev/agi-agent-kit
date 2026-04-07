@@ -36,7 +36,15 @@ from urllib.error import URLError, HTTPError
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 EMBEDDING_MODEL = "nomic-embed-text"
-PROJECT_DIR = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from resolve_paths import get_project_root
+except ImportError:
+    def get_project_root(): return Path.cwd()
+
+PROJECT_DIR = get_project_root()
 
 
 def check_qdrant() -> dict:

@@ -91,3 +91,11 @@ Return a structured summary:
 - **Keep files small**: If a document becomes too large or extended, break it into smaller files to avoid token-waste.
 - Match the existing doc style in the project
 - Never overwrite docs with less technical information, but *do* remove conversational filler.
+
+---
+
+## Output Gate
+
+- docs/
+
+If the gate reports `VALIDATION:FAIL:docs/`, the orchestrator retries the sub-agent once. On a second failure it escalates to the user (Retry / Skip / Abort). The LLM does not decide success — the bash exit code does.

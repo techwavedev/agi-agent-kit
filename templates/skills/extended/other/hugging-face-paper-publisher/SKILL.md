@@ -1,9 +1,15 @@
 ---
+source: "https://github.com/huggingface/skills/tree/main/skills/huggingface-paper-publisher"
 name: hugging-face-paper-publisher
 description: Publish and manage research papers on Hugging Face Hub. Supports creating paper pages, linking papers to models/datasets, claiming authorship, and generating professional markdown-based research articles.
+risk: unknown
 ---
 
 # Overview
+
+## When to Use
+
+Use this skill when a user wants to publish, link, index, or manage research papers on the Hugging Face Hub.
 This skill provides comprehensive tools for AI engineers and researchers to publish, manage, and link research papers on the Hugging Face Hub. It streamlines the workflow from paper creation to publication, including integration with arXiv, model/dataset linking, and authorship management.
 
 ## Integration with HF Ecosystem
@@ -17,6 +23,9 @@ This skill provides comprehensive tools for AI engineers and researchers to publ
 1.0.0
 
 # Dependencies
+The included script uses PEP 723 inline dependencies. Prefer `uv run` over
+manual environment setup.
+
 - huggingface_hub>=0.26.0
 - pyyaml>=6.0.3
 - requests>=2.32.5
@@ -55,9 +64,8 @@ This skill provides comprehensive tools for AI engineers and researchers to publ
 The skill includes Python scripts in `scripts/` for paper publishing operations.
 
 ### Prerequisites
-- Install dependencies: `uv add huggingface_hub pyyaml requests markdown python-dotenv`
+- Run scripts with `uv run` (dependencies are resolved from the script header)
 - Set `HF_TOKEN` environment variable with Write-access token
-- Activate virtual environment: `source .venv/bin/activate`
 
 > **All paths are relative to the directory containing this SKILL.md
 file.**
@@ -434,7 +442,7 @@ uv run scripts/paper_manager.py link \
 **Workflow 3: Update Model with Paper Reference**
 ```bash
 # 1. Get current README
-huggingface-cli download username/model-name README.md
+hf download username/model-name README.md
 
 # 2. Add paper link
 uv run scripts/paper_manager.py link \

@@ -112,8 +112,8 @@ def main():
     parser.add_argument(
         "--dimension",
         type=int,
-        default=1536,
-        help="Vector dimension (default: 1536)"
+        default=768,
+        help="Vector dimension (default: 768)"
     )
     parser.add_argument(
         "--distance",
@@ -152,7 +152,9 @@ def main():
             ("tags", "keyword"),
             ("model", "keyword"),
             ("token_count", "integer"),
-            ("score_threshold", "float")
+            ("wing", "keyword"),
+            ("room", "keyword"),
+            ("valid_until", "integer"),
         ]
         
         print("📑 Creating payload indexes...")

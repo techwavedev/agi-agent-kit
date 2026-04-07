@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AGI Team-Run Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #388bfd;
+      --green: #3fb950;
+      --yellow: #d29922;
+      --red: #f85149;
+      --purple: #bc8cff;
+      --radius: 6px;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header h1 { font-size: 16px; font-weight: 600; }
+    #refresh-indicator {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    #refresh-indicator.pulse { color: var(--accent); }
+
+    /* ── Filter bar ─────────────────────────────────────────── */
+    #filter-bar {
+      padding: 10px 24px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    #filter-bar label { color: var(--muted); font-size: 12px; }
+    #status-filter {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    #run-count { margin-left: auto; color: var(--muted); font-size: 12px; }
+
+    /* ── Main layout ─────────────────────────────────────────── */
+    main { padding: 16px 24px; }
+
+    #empty-state {
+      text-align: center;
+      padding: 60px 0;
+      color: var(--muted);
+    }
+    #empty-state p { margin-top: 8px; font-size: 13px; }
+
+    /* ── Run card ────────────────────────────────────────────── */
+    .run-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .run-card:hover { border-color: var(--accent); }
+
+    .run-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .run-header:hover { background: rgba(255,255,255,0.03); }
+
+    .run-team {
+      font-weight: 600;
+      font-size: 13px;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .run-id {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .run-mode {
+      font-size: 11px;
+      color: var(--purple);
+      padding: 2px 6px;
+      border: 1px solid var(--purple);
+      border-radius: 10px;
+    }
+    .run-time { font-size: 11px; color: var(--muted); }
+    .chevron { color: var(--muted); font-size: 12px; transition: transform 0.15s; }
+    .run-card.expanded .chevron { transform: rotate(90deg); }
+
+    /* Status badge */
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .badge-pending  { background: rgba(210,153,34,0.2);  color: var(--yellow); }
+    .badge-running  { background: rgba(56,139,253,0.2);  color: var(--accent); }
+    .badge-completed{ background: rgba(63,185,80,0.2);   color: var(--green);  }
+    .badge-failed   { background: rgba(248,81,73,0.2);   color: var(--red);    }
+
+    /* ── Run body (collapsible) ──────────────────────────────── */
+    .run-body {
+      border-top: 1px solid var(--border);
+      padding: 12px 14px;
+      display: none;
+    }
+    .run-card.expanded .run-body { display: block; }
+
+    /* Progress overview */
+    .progress-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .progress-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .progress-bar-wrap {
+      flex: 1;
+      background: var(--border);
+      border-radius: 4px;
+      height: 6px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--accent);
+      transition: width 0.4s ease;
+    }
+    .progress-bar-fill.done { background: var(--green); }
+    .progress-bar-fill.failed { background: var(--red); }
+    .progress-pct { font-size: 12px; color: var(--muted); min-width: 30px; text-align: right; }
+
+    /* Sub-agents table */
+    .agents-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+      font-size: 12px;
+    }
+    .agents-table th {
+      text-align: left;
+      color: var(--muted);
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+      padding: 4px 8px 6px;
+    }
+    .agents-table td {
+      padding: 5px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      vertical-align: middle;
+    }
+    .agents-table tr:last-child td { border-bottom: none; }
+
+    .agent-id { font-family: var(--mono); }
+    .agent-notes { color: var(--muted); font-style: italic; max-width: 260px;
+                   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Mini progress bar for agents */
+    .mini-bar-wrap {
+      width: 60px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .mini-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    /* Handoff section */
+    .handoff-section {
+      background: rgba(188,140,255,0.07);
+      border: 1px solid rgba(188,140,255,0.2);
+      border-radius: var(--radius);
+      padding: 8px 10px;
+      margin-top: 4px;
+    }
+    .handoff-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--purple);
+      margin-bottom: 4px;
+    }
+    .handoff-pre {
+      font-family: var(--mono);
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: var(--muted);
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    /* Step indicator */
+    .step-info {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .step-info strong { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+       stroke="currentColor" stroke-width="2" stroke-linecap="round"
+       stroke-linejoin="round" style="color:var(--accent)">
+    <circle cx="12" cy="12" r="10"/>
+    <polyline points="12 6 12 12 16 14"/>
+  </svg>
+  <h1>AGI Team-Run Dashboard</h1>
+  <span id="refresh-indicator">Refreshing…</span>
+</header>
+
+<div id="filter-bar">
+  <label for="status-filter">Filter:</label>
+  <select id="status-filter">
+    <option value="all">All runs</option>
+    <option value="active" selected>Active only</option>
+    <option value="pending">Pending</option>
+    <option value="running">Running</option>
+    <option value="completed">Completed</option>
+    <option value="failed">Failed</option>
+  </select>
+  <span id="run-count">0 runs</span>
+</div>
+
+<main id="runs-container">
+  <div id="empty-state">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="1.5" style="color:var(--muted)">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <path d="M3 9h18M9 21V9"/>
+    </svg>
+    <p>No runs found. Start a team dispatch to see activity here.</p>
+    <p style="margin-top:6px;font-size:12px;font-family:var(--mono)">
+      python3 execution/dispatch_agent_team.py --team documentation_team --payload '{}'
+    </p>
+  </div>
+</main>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const API_BASE = "";          // same-origin; server.py handles /api/*
+const REFRESH_MS = 2000;
+const DATE_FMT = new Intl.DateTimeFormat(undefined,
+  { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+// ── State ───────────────────────────────────────────────────────────────────
+let expandedRuns = new Set();  // run_ids the user has opened
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function fmtDate(iso) {
+  if (!iso) return "—";
+  try { return DATE_FMT.format(new Date(iso)); }
+  catch { return iso; }
+}
+
+function elapsed(startIso, endIso) {
+  if (!startIso) return "";
+  const start = new Date(startIso);
+  const end = endIso ? new Date(endIso) : new Date();
+  const secs = Math.round((end - start) / 1000);
+  if (secs < 60) return `${secs}s`;
+  const mins = Math.floor(secs / 60), rem = secs % 60;
+  return `${mins}m ${rem}s`;
+}
+
+function badgeHtml(status) {
+  return `<span class="badge badge-${status}">${status}</span>`;
+}
+
+function agentStatusColor(status) {
+  return { pending: "#555", running: "var(--accent)",
+           completed: "var(--green)", failed: "var(--red)" }[status] || "#555";
+}
+
+function progressPct(subAgents) {
+  if (!subAgents || !subAgents.length) return 0;
+  const done = subAgents.filter(a => a.status === "completed").length;
+  return Math.round((done / subAgents.length) * 100);
+}
+
+// ── Render a single run card ─────────────────────────────────────────────────
+function renderRun(run) {
+  const isExpanded = expandedRuns.has(run.run_id);
+  const pct = progressPct(run.sub_agents);
+  const isComplete = run.status === "completed";
+  const isFailed = run.status === "failed";
+  const barClass = isComplete ? "done" : isFailed ? "failed" : "";
+  const elap = elapsed(run.started_at, isComplete || isFailed ? run.updated_at : null);
+
+  // Sub-agents table rows
+  const agentRows = (run.sub_agents || []).map((a, i) => {
+    const color = agentStatusColor(a.status);
+    const fillPct = a.status === "completed" ? 100
+                  : a.status === "running"   ? 60
+                  : a.status === "failed"    ? 100 : 0;
+    const isCurrent = !isComplete && !isFailed && run.current_step === i;
+    return `
+      <tr${isCurrent ? ' style="background:rgba(56,139,253,0.06)"' : ''}>
+        <td style="color:var(--muted);font-size:11px;width:24px">${i + 1}</td>
+        <td class="agent-id">${a.id}</td>
+        <td>${badgeHtml(a.status)}</td>
+        <td>
+          <div class="mini-bar-wrap">
+            <div class="mini-bar-fill" style="width:${fillPct}%;background:${color}"></div>
+          </div>
+        </td>
+        <td class="agent-notes">${a.notes || ""}</td>
+        <td style="font-size:11px;color:var(--muted)">
+          ${a.started_at ? elapsed(a.started_at, a.completed_at) : ""}
+        </td>
+      </tr>`;
+  }).join("");
+
+  // Handoff section
+  let handoffHtml = "";
+  if (run.handoff) {
+    const handoffStr = typeof run.handoff === "string"
+      ? run.handoff : JSON.stringify(run.handoff, null, 2);
+    handoffHtml = `
+      <div class="handoff-section">
+        <div class="handoff-label">↗ Last Handoff</div>
+        <pre class="handoff-pre">${escHtml(handoffStr)}</pre>
+      </div>`;
+  }
+
+  const totalSteps = run.total_steps || (run.sub_agents || []).length;
+  const currentStepLabel = isComplete ? totalSteps
+    : (run.current_step !== undefined ? run.current_step + 1 : 1);
+
+  return `
+  <div class="run-card${isExpanded ? " expanded" : ""}" data-run-id="${run.run_id}">
+    <div class="run-header" onclick="toggleCard('${run.run_id}')">
+      <span class="chevron">▶</span>
+      <span class="run-team">${run.team}</span>
+      <span class="run-id">${run.run_id}</span>
+      ${run.execution_mode === "parallel-worktree"
+        ? `<span class="run-mode">parallel</span>` : ""}
+      ${badgeHtml(run.status)}
+      <span class="run-time">${elap ? `⏱ ${elap}` : fmtDate(run.started_at)}</span>
+    </div>
+    <div class="run-body">
+      <div class="step-info">
+        Step <strong>${currentStepLabel}</strong> of
+        <strong>${totalSteps}</strong> — started ${fmtDate(run.started_at)}
+      </div>
+
+      <div class="progress-row">
+        <span class="progress-label">Progress</span>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill ${barClass}" style="width:${pct}%"></div>
+        </div>
+        <span class="progress-pct">${pct}%</span>
+      </div>
+
+      <table class="agents-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Agent</th><th>Status</th><th>Progress</th>
+            <th>Notes</th><th>Elapsed</th>
+          </tr>
+        </thead>
+        <tbody>${agentRows}</tbody>
+      </table>
+
+      ${handoffHtml}
+    </div>
+  </div>`;
+}
+
+function escHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// ── Toggle card open/closed ──────────────────────────────────────────────────
+function toggleCard(runId) {
+  if (expandedRuns.has(runId)) {
+    expandedRuns.delete(runId);
+  } else {
+    expandedRuns.add(runId);
+  }
+  // Re-render the single card in place to avoid full refresh flicker
+  refresh();
+}
+
+// ── Filter helpers ───────────────────────────────────────────────────────────
+function filterRuns(runs) {
+  const val = document.getElementById("status-filter").value;
+  if (val === "all") return runs;
+  if (val === "active") return runs.filter(r => ["pending","running"].includes(r.status));
+  return runs.filter(r => r.status === val);
+}
+
+// ── Main refresh loop ────────────────────────────────────────────────────────
+async function refresh() {
+  const indicator = document.getElementById("refresh-indicator");
+  indicator.classList.add("pulse");
+  indicator.textContent = "↺ Refreshing…";
+
+  let runs = [];
+  try {
+    const res = await fetch(`${API_BASE}/api/runs`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    runs = await res.json();
+  } catch (err) {
+    indicator.textContent = `⚠ ${err.message}`;
+    indicator.classList.remove("pulse");
+    return;
+  }
+
+  const filtered = filterRuns(runs);
+  document.getElementById("run-count").textContent =
+    `${filtered.length} run${filtered.length !== 1 ? "s" : ""}`;
+
+  const container = document.getElementById("runs-container");
+  if (filtered.length === 0) {
+    container.innerHTML = document.getElementById("empty-state")?.outerHTML ||
+      `<div id="empty-state"><p>No runs found.</p></div>`;
+  } else {
+    container.innerHTML = filtered.map(renderRun).join("");
+  }
+
+  indicator.textContent = `Updated ${new Intl.DateTimeFormat(undefined, {
+    hour: "2-digit", minute: "2-digit", second: "2-digit"
+  }).format(new Date())}`;
+  indicator.classList.remove("pulse");
+}
+
+// ── Bootstrap ────────────────────────────────────────────────────────────────
+document.getElementById("status-filter").addEventListener("change", refresh);
+refresh();
+setInterval(refresh, REFRESH_MS);
+</script>
+</body>
+</html>

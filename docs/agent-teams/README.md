@@ -96,7 +96,23 @@ Chain all three teams for a complete release-quality flow:
 code_review_team → documentation_team → qa_team
 ```
 
-### 5. Failure Recovery
+### 5. Output Gates (Bash Validation)
+
+A sub-agent directive may declare an `## Output Gate` section listing files it MUST produce:
+
+```markdown
+## Output Gate
+
+- CHANGELOG.md
+- docs/execution/{{payload.target}}.md
+- .tmp/{{run_id}}/report.json
+```
+
+`dispatch_agent_team.py` parses this section, resolves `{{run_id}}` and `{{payload.<key>}}` placeholders, and attaches a `validation_gate` object to the sub-agent's manifest entry. The orchestrator MUST execute `validation_gate.command` via Bash after the sub-agent returns and read the stdout — only a literal `VALIDATION:PASS` line authorizes advancing to the next step. On `VALIDATION:FAIL:<path>`, the sub-agent is retried once; a second failure triggers a three-option user prompt (Retry / Skip / Abort).
+
+The point is deterministic validation: the LLM cannot fabricate success when `test -s` reports the file is missing or empty. This is opt-in — sub-agents without an `## Output Gate` section keep their current behavior.
+
+### 6. Failure Recovery
 
 When a sub-agent or team fails, the framework:
 1. Returns a structured JSON error with semantic exit code

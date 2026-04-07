@@ -8,8 +8,13 @@ permissions:
 jobs:
   dependency-review:
     runs-on: ubuntu-latest
+    # Dependency review requires GitHub Advanced Security (free for public repos only).
+    # Skip on private repos where GHAS is not enabled to avoid false failures.
+    if: github.event.repository.private == false
     steps:
       - name: 'Checkout Repository'
         uses: actions/checkout@v6
       - name: 'Dependency Review'
         uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: critical

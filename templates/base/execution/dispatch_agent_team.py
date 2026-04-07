@@ -25,6 +25,7 @@ Exit Codes:
 import argparse
 import json
 import sys
+import subprocess
 import uuid
 import os
 from pathlib import Path
@@ -80,6 +81,72 @@ def extract_subagents(directive_text: str) -> list:
     return subagents
 
 
+def load_knowledge_context(root: Path, task_summary: str = "", project: str = "") -> dict:
+    """
+    Hybrid knowledge injection:
+    1. Always loads knowledge/core.md (≤500 tokens baseline).
+    2. Attempts to retrieve semantically relevant chunks from Qdrant (type=knowledge).
+    3. Falls back to loading all knowledge/*.md files when Qdrant is unreachable.
+
+    Returns a dict to be embedded in the manifest under 'knowledge_context'.
+    """
+    kb_dir = root / "knowledge"
+    result: dict = {"source": "none", "core": None, "retrieved": [], "fallback_files": {}}
+
+    core_path = kb_dir / "core.md"
+    if core_path.exists():
+        result["core"] = core_path.read_text(encoding="utf-8")
+
+    if not kb_dir.exists():
+        result["source"] = "none"
+        return result
+
+    memory_script = root / "execution" / "memory_manager.py"
+    if task_summary and memory_script.exists():
+        try:
+            query_filters = ["--type", "knowledge"]
+            if project:
+                query_filters += ["--project", project]
+            proc = subprocess.run(
+                [
+                    sys.executable, str(memory_script), "retrieve",
+                    "--query", task_summary,
+                    "--top-k", "3",
+                    "--threshold", "0.45",
+                ] + query_filters,
+                capture_output=True,
+                text=True,
+                timeout=15,
+                cwd=str(root),
+            )
+            if proc.returncode == 0:
+                data = json.loads(proc.stdout)
+                chunks = data.get("chunks", [])
+                if chunks:
+                    result["retrieved"] = chunks
+                    result["source"] = "qdrant"
+                    return result
+        except Exception:
+            pass
+
+    fallback = {}
+    for md_file in sorted(kb_dir.glob("*.md")):
+        if md_file.name == "core.md":
+            continue
+        try:
+            fallback[md_file.name] = md_file.read_text(encoding="utf-8")
+        except Exception:
+            pass
+
+    if fallback:
+        result["fallback_files"] = fallback
+        result["source"] = "fallback_markdown"
+    elif result["core"]:
+        result["source"] = "core_only"
+
+    return result
+
+
 def load_subagent_directive(root: Path, subagent_id: str) -> dict:
     """Load sub-agent directive if it exists; return metadata."""
     # Normalize: doc-writer → doc_writer
@@ -104,6 +171,8 @@ def load_subagent_directive(root: Path, subagent_id: str) -> dict:
 def build_manifest(team_id: str, payload: dict, subagents: list, root: Path) -> dict:
     """Build the full dispatch manifest."""
     run_id = str(uuid.uuid4())[:8]
+    task_summary = payload.get("task", payload.get("commit_msg", team_id))
+    project = payload.get("project", "")
     return {
         "team": team_id,
         "run_id": run_id,
@@ -126,7 +195,8 @@ def build_manifest(team_id: str, payload: dict, subagents: list, root: Path) -> 
             f"python3 execution/memory_manager.py store "
             f"--content \"{team_id} dispatched run {run_id}\" "
             f"--type decision --tags {team_id} agent-team"
-        )
+        ),
+        "knowledge_context": load_knowledge_context(root, task_summary, project),
     }
 
 
