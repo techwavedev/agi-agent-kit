@@ -451,7 +451,7 @@ Examples:
         "--top-k", type=int, default=5, help="Number of results"
     )
     retrieve_parser.add_argument(
-        "--threshold", type=float, default=0.7, help="Score threshold"
+        "--threshold", type=float, default=0.45, help="Score threshold (default: 0.45)"
     )
     retrieve_parser.add_argument("--vector-weight", type=float, help="Hybrid search vector weight")
     retrieve_parser.add_argument("--text-weight", type=float, help="Hybrid search text weight")
@@ -546,18 +546,15 @@ Examples:
                     observe_function("ledger_contradiction_check", op_type="span")(lambda: "Initiated")()
                 try:
                     # 1. Fetch top existing facts for this wing/room
-                    from memory_retrieval import retrieve_context
                     filters = {"must": [
                         {"key": "wing", "match": {"value": args.wing}},
                         {"key": "room", "match": {"value": args.room}}
                     ]}
                     # Search text can be empty to just get recent for this room
-                    old_context = retrieve_context("", filters=filters, top_k=3, exclude_expired=True)
+                    old_context = retrieve_context("", filters=filters, top_k=3)
                     
                     if old_context["total_chunks"] > 0:
                         from local_micro_agent import run_with_fallback
-                        import json
-                        import time
                         from urllib.request import Request, urlopen
 
                         facts = []

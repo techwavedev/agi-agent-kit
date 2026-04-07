@@ -149,7 +149,12 @@ def retrieve_context(
                 "timestamp": hit.get("timestamp"),
                 "tags": hit.get("tags", []),
                 "token_estimate": token_estimate,
-                "search_sources": hit.get("search_sources", [])
+                "search_sources": hit.get("search_sources", []),
+                # Spatial + temporal + zero-loss fields
+                "wing": hit.get("wing"),
+                "room": hit.get("room"),
+                "original_text": hit.get("original_text"),
+                "valid_until": hit.get("valid_until"),
             })
         
         return {

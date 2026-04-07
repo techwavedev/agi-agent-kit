@@ -165,15 +165,22 @@ def _vector_search(
 
     results = []
     for hit in result.get("result", []):
-        results.append({
+        payload = hit.get("payload", {})
+        entry = {
             "doc_id": str(hit["id"]),
             "vector_score": hit["score"],
-            "content": hit["payload"].get("content", ""),
-            "type": hit["payload"].get("type"),
-            "project": hit["payload"].get("project"),
-            "tags": hit["payload"].get("tags", []),
-            "timestamp": hit["payload"].get("timestamp"),
-        })
+            "content": payload.get("content", ""),
+            "type": payload.get("type"),
+            "project": payload.get("project"),
+            "tags": payload.get("tags", []),
+            "timestamp": payload.get("timestamp"),
+            # Preserve all extra payload fields (wing, room, original_text, valid_until, signatures, etc.)
+            "wing": payload.get("wing"),
+            "room": payload.get("room"),
+            "original_text": payload.get("original_text"),
+            "valid_until": payload.get("valid_until"),
+        }
+        results.append(entry)
 
     return results
 
