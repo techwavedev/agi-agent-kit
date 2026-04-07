@@ -550,8 +550,8 @@ Examples:
                         {"key": "wing", "match": {"value": args.wing}},
                         {"key": "room", "match": {"value": args.room}}
                     ]}
-                    # Search text can be empty to just get recent for this room
-                    old_context = retrieve_context("", filters=filters, top_k=3)
+                    # Search using the new content to find semantically similar existing facts
+                    old_context = retrieve_context(args.content, filters=filters, top_k=3)
                     
                     if old_context["total_chunks"] > 0:
                         from local_micro_agent import run_with_fallback

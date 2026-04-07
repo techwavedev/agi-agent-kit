@@ -137,6 +137,13 @@ def _vector_search(
         if "should" in raw_filters:
             filter_conditions["should"] = raw_filters["should"]
 
+    # Auto-exclude expired/deprecated facts (valid_until <= now)
+    import time
+    filter_conditions["must_not"].append({
+        "key": "valid_until",
+        "range": {"lte": int(time.time())}
+    })
+
     # Fetch more candidates than needed for better merge results
     fetch_limit = top_k * candidate_multiplier
 
