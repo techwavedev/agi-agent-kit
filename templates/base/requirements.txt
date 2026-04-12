@@ -11,7 +11,7 @@
 # ---------------------
 # Core (Required)
 # ---------------------
-requests                    # HTTP client — used by most scripts
+requests>=2.32.3                    # HTTP client — used by most scripts
 beautifulsoup4              # HTML parsing — webcrawler, scraping
 html2text                   # HTML to Markdown conversion
 lxml                        # Fast XML/HTML parser for beautifulsoup4
@@ -41,7 +41,7 @@ gitpython                   # Git integration — change detection, changelog ge
 # ---------------------
 # Agent Identity & Trust
 # ---------------------
-cryptography                # Ed25519 signing — agent identity, write signing
+cryptography>=44.0.0                # Ed25519 signing — agent identity, write signing
 
 # ---------------------
 # Testing & Auditing
