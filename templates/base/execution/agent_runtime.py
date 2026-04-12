@@ -3,12 +3,12 @@
 Script: agent_runtime.py
 Purpose: Native Python multi-agent execution runtime. Replaces external CLIs by
          routing tasks directly to strictly local Ollama micro-agents OR delegating
-         complex tasks to the current Antigravity (cloud) session via in-context prompts.
+         complex tasks to the current active orchestrator session (Claude, Antigravity, Copilot, etc.) via in-context prompts.
 
 Architecture:
     - simple/security tasks → local_micro_agent.py (runs in background on Ollama)
     - complex reasoning tasks → generates `.tmp/active_subagent.md` and halts,
-      instructing Antigravity to step into the persona and solve it natively in the IDE.
+      instructing the active session to step into the persona and solve it natively in the IDE.
 
 Usage:
     # Spawn a single agent task
@@ -18,7 +18,7 @@ Usage:
     python3 execution/agent_runtime.py dispatch --manifest .tmp/team-runs/xyz/manifest.json
 
 Exit Codes:
-    0 - Completed (or delegated successfully to Antigravity)
+    0 - Completed (or delegated successfully to the active session)
     1 - Invalid arguments
     2 - Local micro-agent execution failed
     3 - Cloud delegation failed
@@ -100,19 +100,19 @@ def execute_local_agent(agent_id: str, task: str, context: str = "", worktree: s
         }
 
 
-def format_antigravity_delegation(agent_id: str, task: str, payload_str: str, 
+def format_active_session_delegation(agent_id: str, task: str, payload_str: str, 
                                   directive_content: str, worktree: str, project_root: Path) -> dict:
     """
-    Formats a markdown file acting as an explicit prompt for the Antigravity agent
+    Formats a markdown file acting as an explicit prompt for the active session agent
     to consume in the current context, effectively becoming the sub-agent.
     """
     tmp_dir = ensure_tmp_dir(project_root)
     run_id = datetime.now().strftime("%Y%md_%H%M%S")
     delegation_file = tmp_dir / f"subagent_{agent_id}_{run_id}.md"
 
-    prompt = f"""# 🤖 Sub-Agent Context For Antigravity
+    prompt = f"""# 🤖 Sub-Agent Context For Active Session
 
-You (Antigravity) have been assigned the role of sub-agent: `{agent_id}`.
+You (the active orchestrator session) have been assigned the role of sub-agent: `{agent_id}`.
 Due to hardware limitations or API constraints, you are executing this task natively
 in your current session rather than spawning an external worker.
 
@@ -141,11 +141,11 @@ If a worktree was assigned, you MUST perform your actions relative to this path:
 
     return {
         "agent_id": agent_id,
-        "status": "delegated_to_antigravity",
+        "status": "delegated_to_active_session",
         "action_required": True,
         "delegation_file": str(delegation_file.resolve()),
-        "message": f"Task requires cloud-level reasoning. Antigravity must read {delegation_file} and execute the task.",
-        "execution": "antigravity_context"
+        "message": f"Task requires cloud-level reasoning. The active orchestrator session must read {delegation_file} and execute the task.",
+        "execution": "active_session_context"
     }
 
 
@@ -170,9 +170,9 @@ def process_agent_task(agent_id: str, task: str, payload_str: str = "{}",
         local_task = f"As {agent_id}:\nTask: {task}\nPayload: {payload_str}"
         return execute_local_agent(agent_id, local_task, worktree=worktree)
     
-    # 4. Handle Antigravity Delegation
+    # 4. Handle Active Session Delegation
     else:
-        return format_antigravity_delegation(agent_id, task, payload_str, directive_content, worktree, project_root)
+        return format_active_session_delegation(agent_id, task, payload_str, directive_content, worktree, project_root)
 
 
 def cmd_spawn():
@@ -220,11 +220,11 @@ def cmd_dispatch():
     payload_str = json.dumps(payload, indent=2)
 
     # Simplified execution: Loop over sub_agents.
-    # Parallel execution implies background local tasks combined with ONE Antigravity task piece, 
-    # since Antigravity evaluates in a single conversation thread sequentially.
+    # Parallel execution implies background local tasks combined with ONE active session task piece, 
+    # since the active session evaluates in a single conversation thread sequentially.
     
     results = []
-    antigravity_delegations = []
+    active_session_delegations = []
 
     for sa in sub_agents:
         agent_id = sa.get("id", "unknown")
@@ -242,8 +242,8 @@ def cmd_dispatch():
         )
         results.append(res)
         
-        if res.get("status") == "delegated_to_antigravity":
-            antigravity_delegations.append(res)
+        if res.get("status") == "delegated_to_active_session":
+            active_session_delegations.append(res)
 
     summary = {
         "team": team,
@@ -254,7 +254,7 @@ def cmd_dispatch():
 
     print(json.dumps(summary, indent=2))
     
-    # If any task was delegated to antigravity, exit 0 but the IDE prompt picks up the JSON
+    # If any task was delegated to the active session, exit 0 but the IDE prompt picks up the JSON
     # and processes the files.
     sys.exit(0)
 

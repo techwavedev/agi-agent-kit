@@ -894,7 +894,7 @@ A **team agent** is a named group of sub-agents that collaborate toward a shared
 
 Starting with v1.7.7, the framework uses a **Native Agent Runtime** to manage these teams without relying on external Node CLIs. 
 - **Simple Tasks:** Are automatically routed to `local_micro_agent.py` running locally on Ollama.
-- **Complex Tasks:** Are delegated back to *you*, the active Antigravity session (In-Context Delegation), so no external cloud API keys are expended.
+- **Complex Tasks:** Are delegated back to *you*, the active orchestrator session (Claude, Antigravity, Copilot, etc.) via In-Context Delegation, so no external cloud API keys are expended.
 
 Dispatch teams using the native runtime execution flag:
 
@@ -902,7 +902,7 @@ Dispatch teams using the native runtime execution flag:
 python3 execution/dispatch_agent_team.py --team <team_id> --payload '<json>' --execute-native
 ```
 
-> **Mandatory Rule:** When a sub-agent task returns `"status": "delegated_to_antigravity"`, you MUST immediately open the provided `delegation_file` and execute its instructions natively as the specified persona.
+> **Mandatory Rule:** When a sub-agent task returns `"status": "delegated_to_active_session"`, you MUST immediately open the provided `delegation_file` and execute its instructions natively as the specified persona.
 
 ### Dynamic State Handoff (Agent Communication)
 
