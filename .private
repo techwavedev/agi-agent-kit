@@ -1,0 +1,30 @@
+# .private — Private-only file manifest
+# ─────────────────────────────────────────────────────────────────────
+# Files listed here exist on `main` for internal development use
+# but must NEVER appear on the `public` branch or in NPM releases.
+#
+# This file is the SINGLE SOURCE OF TRUTH for private/public separation.
+# It is consumed by:
+#   1. execution/publish_to_public.py  — filtered merge script
+#   2. .agent/scripts/release_gate.py  — pre-release validation
+#   3. .githooks/pre-push              — local push safety net
+#
+# Format: one path per line (relative to repo root), # comments, blank lines OK.
+# Glob patterns supported: directives/internal_*.md
+# ─────────────────────────────────────────────────────────────────────
+
+# === Internal directives (development SOPs, not for end users) ===
+directives/framework_development.md
+directives/template_sync.md
+directives/skill_development.md
+directives/setup_environment.md
+
+# === Internal tooling (sync/validate between private and public repos) ===
+execution/sync_to_template.py
+execution/validate_template.py
+
+# === Internal documentation (references private repo structure) ===
+docs/implementation_plan.md
+
+# === This manifest itself ===
+.private

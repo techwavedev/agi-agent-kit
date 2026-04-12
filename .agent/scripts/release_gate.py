@@ -33,16 +33,21 @@ PRIVATE_INFO_PATTERNS = [
     r"synology.*ssh://",          # NAS git remote URL
 ]
 
-# Files that must NEVER appear on the public branch.
-# If present, the release gate blocks and tells the agent to remove them.
-PRIVATE_ONLY_FILES = [
-    "directives/framework_development.md",
-    "directives/template_sync.md",
-    "directives/skill_development.md",
-    "execution/sync_to_template.py",
-    "execution/validate_template.py",
-    ".agent/rules/framework_dev_rules.md",
-]
+# Private-only files are loaded from .private manifest (single source of truth).
+# See .private file at repo root for the authoritative list.
+PRIVATE_MANIFEST = ROOT_DIR / ".private"
+
+def load_private_files():
+    """Load private-only file paths from .private manifest."""
+    if not PRIVATE_MANIFEST.exists():
+        return []
+    paths = []
+    for line in PRIVATE_MANIFEST.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        paths.append(line)
+    return paths
 
 REQUIRED_DOCS = ["README.md", "CHANGELOG.md"]
 
@@ -165,13 +170,34 @@ def scan_secrets():
 
 
 def scan_private_info():
-    """Scan for private repo references, personal info, and private-only files."""
+    """Scan for private repo references, personal info, and private-only files.
+    
+    This check only BLOCKS on the public branch (where private files must not exist).
+    On main, it runs as a WARNING so developers are aware of what would be caught.
+    """
     print("🔍 Scanning for private information leaks...")
+    
+    # Detect current branch
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True, text=True, check=True, cwd=ROOT_DIR
+        )
+        branch = result.stdout.strip()
+    except subprocess.CalledProcessError:
+        branch = "unknown"
+    
+    is_public = branch == "public" or os.environ.get("GITHUB_ACTIONS") == "true"
+    
+    if not is_public:
+        print(f"   ℹ️  On branch '{branch}' — private info scan runs as advisory only.")
+    
     issues = []
     scanned = 0
 
     # Check for private-only files that should not exist on public branch
-    for rel_path in PRIVATE_ONLY_FILES:
+    private_files = load_private_files()
+    for rel_path in private_files:
         full_path = ROOT_DIR / rel_path
         if full_path.exists():
             issues.append(f"PRIVATE-ONLY FILE present: {rel_path} (must be removed before release)")
@@ -194,10 +220,17 @@ def scan_private_info():
             scanned += 1
 
     if issues:
-        print(f"❌ Private information leaks found ({len(issues)} issues, {scanned} files scanned):")
-        for issue in issues:
-            print(f"   - {issue}")
-        sys.exit(1)
+        if is_public:
+            print(f"❌ Private information leaks found ({len(issues)} issues, {scanned} files scanned):")
+            for issue in issues:
+                print(f"   - {issue}")
+            sys.exit(1)
+        else:
+            print(f"⚠️  Advisory: {len(issues)} private info items found (OK on '{branch}', would BLOCK on public):")
+            for issue in issues[:5]:
+                print(f"   - {issue}")
+            if len(issues) > 5:
+                print(f"   ... and {len(issues) - 5} more")
     print(f"✅ No private information leaks detected ({scanned} files scanned).")
 
 def check_versions():

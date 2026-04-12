@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+"""
+pre-push hook — blocks pushing private files to the public remote.
+
+Install: cp .githooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+Or:      git config core.hooksPath .githooks
+
+This hook reads .private manifest and checks if any listed files
+are staged for push to a public remote. Blocks if found.
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+MANIFEST = ROOT_DIR / ".private"
+
+# Remotes that are considered public (block private files here)
+PUBLIC_REMOTES = {"public", "public-repo"}
+
+
+def load_private_files():
+    if not MANIFEST.exists():
+        return []
+    paths = []
+    for line in MANIFEST.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        paths.append(line)
+    return paths
+
+
+def get_current_branch():
+    result = subprocess.run(
+        ["git", "branch", "--show-current"],
+        capture_output=True, text=True, cwd=ROOT_DIR
+    )
+    return result.stdout.strip()
+
+
+def main():
+    remote_name = sys.argv[1] if len(sys.argv) > 1 else ""
+
+    # Only check when pushing to public remotes
+    if remote_name not in PUBLIC_REMOTES:
+        sys.exit(0)
+
+    branch = get_current_branch()
+    if branch != "public":
+        sys.exit(0)
+
+    private_files = load_private_files()
+    if not private_files:
+        sys.exit(0)
+
+    # Check if any private files exist in the current tree
+    violations = []
+    for rel_path in private_files:
+        full_path = ROOT_DIR / rel_path
+        if full_path.exists():
+            violations.append(rel_path)
+
+    if violations:
+        print("\n🚫 PRE-PUSH BLOCKED — private files detected on public branch!")
+        print("─" * 60)
+        for f in violations:
+            print(f"   ❌ {f}")
+        print("─" * 60)
+        print("These files are listed in .private and must not be pushed")
+        print("to the public remote.")
+        print()
+        print("Fix: Run 'python3 execution/publish_to_public.py' instead")
+        print("     of 'git merge main' to get a filtered merge.")
+        print()
+        sys.exit(1)
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
