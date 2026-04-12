@@ -22,10 +22,9 @@ Arguments:
     --parallel    Run sub-agents in parallel using git worktree isolation
     --partitions  JSON mapping agent IDs to file globs they'll modify (optional)
     --dry-run     Print the manifest without storing to memory (optional)
-    --claude      Force Claude Code-native output via claude_dispatch.py
-    --no-claude   Force standard manifest even if Claude Code env is detected
-    --claude-mode Output mode for claude_dispatch: native, fallback, schedule
+    --execute-native Run the manifest directly through agent_runtime.py
     --project     Project name for Qdrant tagging (default: agi-agent-kit)
+
 
 Exit Codes:
     0 - Success, manifest printed to stdout
@@ -542,14 +541,10 @@ def main():
     parser.add_argument("--partitions",
                         help="JSON mapping agent IDs to file globs (validates no overlap)")
     parser.add_argument("--dry-run", action="store_true", help="Print manifest without storing to memory")
-    parser.add_argument("--claude", action="store_true",
-                        help="Output Claude Code-native Agent tool instructions via claude_dispatch.py")
-    parser.add_argument("--no-claude", action="store_true",
-                        help="Force standard manifest output even if Claude Code is detected")
-    parser.add_argument("--claude-mode", choices=["native", "fallback", "schedule"],
-                        default="native", help="Claude dispatch mode (default: native)")
+    parser.add_argument("--execute-native", action="store_true",
+                        help="Pass the generated manifest directly to agent_runtime.py")
     parser.add_argument("--project", default="agi-agent-kit",
-                        help="Project name for Qdrant tagging (used with --claude)")
+                        help="Project name for Qdrant tagging")
     parser.add_argument("--local-route", action="store_true",
                         help="Pre-classify subtasks via task_router.py and tag local-eligible ones")
     args = parser.parse_args()
@@ -614,47 +609,28 @@ def main():
     if emitted_path and not args.dry_run:
         manifest["state_file"] = emitted_path
 
-    # Claude Code-native dispatch: auto-detect or explicit --claude flag
-    use_claude = args.claude
-    if not use_claude and not args.no_claude:
-        # Auto-detect Claude Code environment
-        if os.environ.get("CLAUDE_CODE") or os.environ.get("CLAUDE_SESSION_ID"):
-            use_claude = True
-
-    if use_claude:
-        claude_script = root / "execution" / "claude_dispatch.py"
-        if claude_script.exists():
-            # Write manifest to temp file and pipe through claude_dispatch.py
+    if args.execute_native:
+        runtime_script = root / "execution" / "agent_runtime.py"
+        if runtime_script.exists():
             import tempfile
             with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
                 json.dump(manifest, f)
                 tmp_path = f.name
             try:
-                cmd = [
-                    sys.executable, str(claude_script),
-                    "--manifest", tmp_path,
-                    "--mode", args.claude_mode,
-                    "--project", args.project,
-                ]
-                if args.dry_run:
-                    cmd.append("--dry-run")
-                result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(root))
-                if result.returncode == 0:
-                    print(result.stdout)
-                else:
-                    # Fall back to standard manifest on error
+                cmd = [sys.executable, str(runtime_script), "dispatch", "--manifest", tmp_path]
+                result = subprocess.run(cmd, cwd=str(root))
+                if result.returncode != 0:
                     print(json.dumps({
-                        "warning": "claude_dispatch.py failed, falling back to standard manifest",
-                        "stderr": result.stderr.strip()
+                        "warning": "agent_runtime.py error occurred",
                     }), file=sys.stderr)
-                    print(json.dumps(manifest, indent=2))
             finally:
                 os.unlink(tmp_path)
             sys.exit(0)
         else:
             print(json.dumps({
-                "warning": "claude_dispatch.py not found, outputting standard manifest"
+                "warning": "agent_runtime.py not found, outputting standard manifest"
             }), file=sys.stderr)
+
 
     print(json.dumps(manifest, indent=2))
     sys.exit(0)
