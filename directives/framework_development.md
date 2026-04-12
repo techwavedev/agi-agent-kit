@@ -6,11 +6,11 @@ Develop and maintain the AGI Agent Kit public framework (`templates/base/`) usin
 
 ## Architecture
 
-| Layer | Private Repo (root) | Public Repo (templates/base/) |
+| Layer | Root | Public Distribution (templates/base/) |
 |-------|---------------------|-------------------------------|
-| Remote | `origin` (techwavedev/agi) | `public-repo` (techwavedev/agi-agent-kit) |
+| Remote | `origin` | `techwavedev/agi-agent-kit` |
 | Purpose | Development & orchestration | NPM distribution |
-| Branch flow | `main` → `public` → push to `public-repo` |
+| Branch flow | `main` → tagged release → push to remote |
 
 ### Key Mapping: Root → Template
 
