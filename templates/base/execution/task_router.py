@@ -294,6 +294,14 @@ def route_and_execute(task: str, context: str = "", preferred_model: str | None 
 
     # Local tasks (local or local_required): execute via local_micro_agent
     micro_agent = Path(__file__).resolve().parent / "local_micro_agent.py"
+    if not micro_agent.exists():
+        return {
+            "status": "error",
+            "classification": classification,
+            "message": "local_micro_agent.py not found in execution registry.",
+            "fallback_blocked": route == "local_required"
+        }
+        
     cmd = [sys.executable, str(micro_agent), "--task", task]
 
     if preferred_model:
