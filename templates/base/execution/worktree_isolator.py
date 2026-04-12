@@ -62,14 +62,14 @@ def get_project_name(root: Path) -> str:
 
 
 def get_worktree_dir(root: Path) -> Path:
-    """Return the worktree base directory on LOCAL filesystem.
+    """Return the worktree base directory beneath the project root.
 
-    Uses /tmp/agi-worktrees/<project>/ to avoid cloud-synced filesystem
-    slowness (e.g., Synology Drive, iCloud, OneDrive, Dropbox).
-    Git worktrees share .git internals, so they work fine from /tmp.
+    Uses <root>/.tmp/agi-worktrees/<project>/ so worktrees stay within the
+    project boundary, avoiding both cloud-sync slowness and the /tmp TOCTOU
+    symlink attack surface.  The .tmp directory is gitignored.
     """
     project = get_project_name(root)
-    wt_dir = Path(f"/tmp/agi-worktrees/{project}")
+    wt_dir = root / ".tmp" / "agi-worktrees" / project
     wt_dir.mkdir(parents=True, exist_ok=True)
     return wt_dir
 
@@ -220,15 +220,6 @@ def cmd_merge(args):
         }, indent=2))
         sys.exit(3)
 
-    # Perform the merge
-    if strategy == "rebase":
-        merge_cmd = ["git", "rebase", branch, "--onto", base_branch]
-    else:
-        merge_cmd = [
-            "git", "merge", branch,
-            "-m", f"Merge agent '{agent}' work from run {run_id}"
-        ]
-
     # Stash any uncommitted work on base branch first
     subprocess.run(["git", "stash", "push", "-m", f"pre-merge-{run_id}"],
                     capture_output=True, text=True, cwd=str(root))
@@ -236,6 +227,41 @@ def cmd_merge(args):
     # Checkout base branch
     subprocess.run(["git", "checkout", base_branch],
                     capture_output=True, text=True, cwd=str(root))
+
+    # Perform the merge
+    if strategy == "rebase":
+        # Rebase the agent's branch onto base_branch, then fast-forward merge.
+        # We need to be on the agent branch to rebase it onto base_branch.
+        subprocess.run(["git", "checkout", branch],
+                        capture_output=True, text=True, cwd=str(root))
+        rebase_result = subprocess.run(
+            ["git", "rebase", base_branch],
+            capture_output=True, text=True, cwd=str(root)
+        )
+        if rebase_result.returncode != 0:
+            subprocess.run(["git", "rebase", "--abort"],
+                            capture_output=True, text=True, cwd=str(root))
+            subprocess.run(["git", "checkout", base_branch],
+                            capture_output=True, text=True, cwd=str(root))
+            subprocess.run(["git", "stash", "pop"],
+                            capture_output=True, text=True, cwd=str(root))
+            print(json.dumps({
+                "status": "conflict",
+                "agent": agent,
+                "branch": branch,
+                "message": f"Rebase failed: {rebase_result.stderr.strip()}",
+                "resolution_hint": f"Manually rebase: git checkout {branch} && git rebase {base_branch}"
+            }, indent=2))
+            sys.exit(3)
+        # Switch back to base branch and fast-forward merge
+        subprocess.run(["git", "checkout", base_branch],
+                        capture_output=True, text=True, cwd=str(root))
+        merge_cmd = ["git", "merge", "--ff-only", branch]
+    else:
+        merge_cmd = [
+            "git", "merge", branch,
+            "-m", f"Merge agent '{agent}' work from run {run_id}"
+        ]
 
     # Merge
     result = subprocess.run(

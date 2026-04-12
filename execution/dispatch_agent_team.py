@@ -254,16 +254,23 @@ def build_validation_gate(output_files: list) -> dict:
     if not output_files:
         return {}
 
-    # Shell-quote each path safely by wrapping in double quotes and
-    # escaping embedded double quotes. Paths are author-controlled in the
-    # directive, so we keep this simple.
-    quoted = [f'"{p.replace(chr(34), chr(92) + chr(34))}"' for p in output_files]
-    # Each check either echoes PASS for that file or echoes FAIL and exits 1.
+    def _shell_single_quote(s: str) -> str:
+        """Wrap string in single quotes, escaping any embedded single quotes.
+
+        This prevents shell expansion of $(), backticks, ${VAR}, and other
+        metacharacters that would execute inside double-quoted strings.
+        """
+        return "'" + s.replace("'", "'\\''") + "'"
+
+    # Shell-quote each path using single quotes to block command substitution
+    # ($(), backticks, ${VAR}) which can execute inside double-quoted strings.
+    quoted = [_shell_single_quote(p) for p in output_files]
+    # Each check uses printf '%s\n' (not echo) for predictable output.
     clauses = " && ".join(
-        f'(test -s {q} || {{ echo "VALIDATION:FAIL:{output_files[i]}"; exit 1; }})'
+        f"(test -s {q} || {{ printf '%s\\n' {_shell_single_quote('VALIDATION:FAIL:' + output_files[i])}; exit 1; }})"
         for i, q in enumerate(quoted)
     )
-    command = f"set -e; {clauses} && echo 'VALIDATION:PASS'"
+    command = f"set -e; {clauses} && printf '%s\\n' 'VALIDATION:PASS'"
 
     return {
         "output_files": output_files,
@@ -612,10 +619,11 @@ def main():
     if args.execute_native:
         runtime_script = root / "execution" / "agent_runtime.py"
         if runtime_script.exists():
-            import tempfile
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-                json.dump(manifest, f)
-                tmp_path = f.name
+            # Write the manifest to .tmp/ (project-local, not world-readable /tmp)
+            tmp_dir = root / ".tmp"
+            tmp_dir.mkdir(parents=True, exist_ok=True)
+            tmp_path = str(tmp_dir / f"manifest-{uuid.uuid4()}.json")
+            Path(tmp_path).write_text(json.dumps(manifest), encoding="utf-8")
             try:
                 cmd = [sys.executable, str(runtime_script), "dispatch", "--manifest", tmp_path]
                 result = subprocess.run(cmd, cwd=str(root))

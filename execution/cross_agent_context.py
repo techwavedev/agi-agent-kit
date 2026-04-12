@@ -92,6 +92,7 @@ def sync_from_agents(requesting_agent: str, project: str = None, hours: int = 24
     query = f"cross-agent team coordination recent work {project or ''}"
     filters_must = [
         {"key": "tags", "match": {"value": "cross-agent"}},
+        {"key": "timestamp", "range": {"gte": cutoff}},
     ]
     if project:
         filters_must.append({"key": "project", "match": {"value": project}})

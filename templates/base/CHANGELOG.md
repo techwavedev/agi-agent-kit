@@ -5,9 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
 ## [1.7.8] - 2026-04-12
+
+### Security
+- **Internal Security Update**: Several security updates applied to repository workflows and boundary controls. Versions prior to `v1.6.0` are officially unsupported and deprecated.
 
 ### Fixed
 - **Platform-Adaptive Routing Links**: Restored missing `OPENCODE.md`, `COPILOT.md`, and `OPENCLAW.md` symlinks required natively by the architecture to properly bind orchestrator directives to new local models.

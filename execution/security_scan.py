@@ -33,7 +33,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 # Directories to skip entirely
 SKIP_DIRS = {"node_modules", ".git", ".venv", ".venv.test", ".idea", ".tmp", "__pycache__",
              ".mypy_cache", "venv", "env", "browser_state", "browser_profile",
-             "_metadata", ".playwright-browsers"}
+             "_metadata", ".playwright-browsers", "public_release"}
 # Files always skipped (gitignored, private, or generated)
 SKIP_FILES = {"docker-compose.langfuse.yml", "library.json", "auth_info.json",
               "state.json", "verified_contents.json"}
@@ -202,7 +202,7 @@ def scan_secrets() -> dict:
                 if entropy > 4.5 and not is_safe_value(value):
                     # Avoid duplicating findings already caught by regex patterns
                     already_found = any(
-                        f["file"] == str(path.relative_to(ROOT_DIR)) and f["line"] == i + 1
+                        f["file"] == str(path.relative_to(ROOT_DIR)) and f["line"] == i
                         for f in findings
                     )
                     if not already_found:

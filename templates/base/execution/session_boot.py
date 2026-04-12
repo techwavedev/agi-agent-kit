@@ -151,7 +151,7 @@ def pull_model() -> bool:
         return False
 
 
-def pull_generative_models(json_output: bool = False) -> list:
+def pull_generative_models(json_output: bool = False) -> tuple:
     """Pull generative models for local task routing. Returns (actions, issues)."""
     actions = []
     issues = []
@@ -333,19 +333,6 @@ def main():
     except Exception:
         report["control_tower"] = {"status": "skipped"}
 
-    # Step 5: Write session boot marker (for PreToolUse enforcement)
-    try:
-        tmp_dir = PROJECT_DIR / ".tmp"
-        tmp_dir.mkdir(parents=True, exist_ok=True)
-        boot_marker = tmp_dir / "session_booted.json"
-        boot_marker.write_text(json.dumps({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "agent": os.environ.get("AGENT_NAME", "claude"),
-            "memory_ready": True,  # Will be updated below
-        }, indent=2))
-    except Exception:
-        pass  # Non-blocking
-
     # Final readiness
     qdrant = report["qdrant"]
     ollama = report["ollama"]
@@ -359,6 +346,20 @@ def main():
         and agent_mem.get("exists", False)
         and sem_cache.get("exists", False)
     )
+
+    # Step 5: Write session boot marker (for PreToolUse enforcement)
+    # Written AFTER memory_ready is evaluated so the value is accurate.
+    try:
+        tmp_dir = PROJECT_DIR / ".tmp"
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        boot_marker = tmp_dir / "session_booted.json"
+        boot_marker.write_text(json.dumps({
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "agent": os.environ.get("AGENT_NAME", "claude"),
+            "memory_ready": report["memory_ready"],
+        }, indent=2))
+    except Exception:
+        pass  # Non-blocking
 
     # Summary
     total_points = (

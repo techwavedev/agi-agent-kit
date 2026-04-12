@@ -300,8 +300,8 @@ Example workflow:
             
             print(f"  🤖 Sending Autonomous 'Ralph' Feedback Loop to local engine for patching...")
             patch_result = subprocess.run(
-                ["python3", "execution/local_micro_agent.py", "--task", prompt, "--raw"],
-                capture_output=True, text=True
+                [sys.executable, "execution/local_micro_agent.py", "--task", prompt, "--raw"],
+                capture_output=True, text=True, timeout=180
             )
             
             new_content = patch_result.stdout.strip()
@@ -326,6 +326,19 @@ Example workflow:
         if queries_path:
             entry["trigger_rate_before"] = best_trigger_rate
             entry["trigger_rate_after"] = current_trigger_rate
+
+        # On iteration 1 no patching has occurred yet — just record the baseline
+        # and update best scores without resetting anything.
+        if iteration == 1:
+            best_pass_rate = current_rate
+            best_trigger_rate = current_trigger_rate
+            entry["action"] = "baseline"
+            history.append(entry)
+            print(f"  #01 📊 Baseline: {current_rate}%")
+            if best_pass_rate == 100.0:
+                print(f"\n  🎯 Perfect score at baseline — no improvements needed!")
+                break
+            continue
 
         improvement = current_rate - best_pass_rate
         trigger_improvement = current_trigger_rate - best_trigger_rate if queries_path else 0.0

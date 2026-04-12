@@ -23,6 +23,32 @@ SENSITIVE_PATTERNS = [
     r"(?i)api_key\s*=\s*['\"](sk-[a-zA-Z0-9]{32,})['\"]",
     r"(?i)private_key\s*=\s*['\"](-----BEGIN PRIVATE KEY-----)['\"]",
 ]
+
+# Patterns that leak private repo identity or personal info.
+# These are checked in all tracked files and block release if found.
+PRIVATE_INFO_PATTERNS = [
+    r"techwavedev/agi[^-]",       # Private repo name (must NOT match agi-agent-kit)
+    r"/Users/elton",              # Local username in absolute paths
+    r"192\.168\.68\.",           # Private NAS IP range
+    r"synology.*ssh://",          # NAS git remote URL
+]
+
+# Private-only files are loaded from .private manifest (single source of truth).
+# See .private file at repo root for the authoritative list.
+PRIVATE_MANIFEST = ROOT_DIR / ".private"
+
+def load_private_files():
+    """Load private-only file paths from .private manifest."""
+    if not PRIVATE_MANIFEST.exists():
+        return []
+    paths = []
+    for line in PRIVATE_MANIFEST.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        paths.append(line)
+    return paths
+
 REQUIRED_DOCS = ["README.md", "CHANGELOG.md"]
 
 # ── WIP LOCK ──────────────────────────────────────────────────────────────────
@@ -141,6 +167,74 @@ def scan_secrets():
             print(f"   - {issue}")
         sys.exit(1)
     print(f"✅ No hardcoded secrets found ({scanned} files scanned).")
+
+
+def scan_private_info():
+    """Scan for private repo references, personal info, and private-only files.
+    
+    This check only BLOCKS on the public branch (where private files must not exist).
+    On main, it runs as a WARNING so developers are aware of what would be caught.
+    """
+    print("🔍 Scanning for private information leaks...")
+    
+    # Detect current branch
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True, text=True, check=True, cwd=ROOT_DIR
+        )
+        branch = result.stdout.strip()
+    except subprocess.CalledProcessError:
+        branch = "unknown"
+    
+    is_public = branch == "public" or os.environ.get("GITHUB_ACTIONS") == "true"
+    
+    if not is_public:
+        print(f"   ℹ️  On branch '{branch}' — private info scan runs as advisory only.")
+    
+    issues = []
+    scanned = 0
+
+    # Check for private-only files that should not exist on public branch
+    private_files = load_private_files()
+    for rel_path in private_files:
+        full_path = ROOT_DIR / rel_path
+        if full_path.exists():
+            issues.append(f"PRIVATE-ONLY FILE present: {rel_path} (must be removed before release)")
+
+    # Check tracked files for private info patterns
+    for ext in ["py", "js", "md", "json", "yml", "yaml", "ts", "sh"]:
+        for path in ROOT_DIR.rglob(f"*.{ext}"):
+            if "node_modules" in str(path) or ".git" in str(path) or ".venv" in str(path) or ".idea" in str(path) or ".tmp" in str(path):
+                continue
+            try:
+                rel = path.relative_to(ROOT_DIR)
+                if str(rel) in [".agent/scripts/release_gate.py", ".agent/workflows/release-protocol.md"]:
+                    continue
+                    
+                content = path.read_text(errors="ignore")
+                for pattern in PRIVATE_INFO_PATTERNS:
+                    match = re.search(pattern, content)
+                    if match:
+                        issues.append(f"{rel}: Private info leak — matched pattern '{pattern}'")
+                        break  # one issue per file is enough
+            except Exception:
+                pass
+            scanned += 1
+
+    if issues:
+        if is_public:
+            print(f"❌ Private information leaks found ({len(issues)} issues, {scanned} files scanned):")
+            for issue in issues:
+                print(f"   - {issue}")
+            sys.exit(1)
+        else:
+            print(f"⚠️  Advisory: {len(issues)} private info items found (OK on '{branch}', would BLOCK on public):")
+            for issue in issues[:5]:
+                print(f"   - {issue}")
+            if len(issues) > 5:
+                print(f"   ... and {len(issues) - 5} more")
+    print(f"✅ No private information leaks detected ({scanned} files scanned).")
 
 def check_versions():
     """Check package.json version matches changelog and enforce the Patch-99 limit."""
@@ -320,6 +414,7 @@ def main():
     scan_secrets()
     check_versions()
     syntax_check()
+    scan_private_info()
     check_markdown_size()
 
     # ── Security Team (MANDATORY — blocks release on failure) ──

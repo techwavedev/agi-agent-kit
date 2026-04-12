@@ -6,58 +6,70 @@ description: Comprehensive Release Protocol for Agi Agent Kit. Enforces document
 
 > **⚠️ REPOSITORY MAP — Read before every release:**
 >
-> | Repo                        | Remote        | Purpose             | NPM Publish? |
-> | --------------------------- | ------------- | ------------------- | ------------ |
-> | `techwavedev/agi`           | `origin`      | Private development | ❌ NEVER     |
-> | `techwavedev/agi-agent-kit` | `public-repo` | Public distribution | ✅ YES       |
+> | Repo                        | Physical Location        | Purpose             | NPM Publish? |
+> | --------------------------- | ------------------------ | ------------------- | ------------ |
+> | `techwavedev/agi`           | `.` (Root Directory)     | Private development | ❌ NEVER     |
+> | `techwavedev/agi-agent-kit` | `./public_release/`      | Public distribution | ✅ YES       |
 >
-> **Flow:** `main` → `public` branch → push to `public-repo` → create release on `public-repo` → NPM auto-publishes
+> **Flow:** `main` → Airgap Sync to `public_release/` → commit & tag inside `public_release/` → push to origin -> NPM auto-publishes
 
-Before merging to `public` branch or publishing the Github Actions release, execute this protocol.
+### 0. Private/Public Physical Separation (CRITICAL)
+
+> **🚫 NEVER run `git merge` between private and public branches.**
+> The repository uses a strict **Physical Airgap**. 
+> The public release lives purely in the `public_release/` directory.
+
+```bash
+# Sync public files from root to the public_release/ airgap
+python3 execution/publish_to_public.py --dry-run   # preview blocked private files
+python3 execution/publish_to_public.py             # wipe and sync files securely
+```
+
+This script reads the `.private` manifest and explicitly omits those files
+when copying to the `public_release/` folder. The `.private` file at repo root is the
+**single source of truth** for what must never appear on the public repository.
+
+As a failsafe, the sync script dynamically executes `.agent/scripts/release_gate.py` ON the copied destination path BEFORE it commits, guaranteeing nothing slips through.
+
+**Adding new private files?** Add the absolute or relative path to `.private` before syncing.
 
 ### 1. Preparation
 
 - [ ] Ensure `CHANGELOG.md` is updated with all features/fixes.
 - [ ] Ensure `package.json` version is bumped correctly (semver).
 - [ ] Review `README.md` for any API changes.
+- [ ] If you added new internal-only files, add them to `.private` manifest.
 
-### 2. Automated Gate
-
-Run the Release Gate script to enforce checks:
-
-```bash
-python3 .agent/scripts/release_gate.py
-```
-
-This script will verify:
-
-- Git status (clean working tree)
-- Documentation presence
-- Secret scanning (no API keys)
-- Version consistency
-- Python syntax validity
-
-### 3. Manual Review
+### 2. Manual Review
 
 - [ ] Check if `AGENTS.md` reflects new capabilities.
 - [ ] Verify `memory_integration.md` if memory system changed.
 - [ ] Ensure no temporary files in `execution/` or `skills/` unless intended.
 
-### 4. Publish (Automated via GitHub Actions)
+### 3. Publish (Automated via GitHub Actions)
 
-Only proceed if Step 2 passes.
-
-**DO NOT RUN `npm publish` LOCALLY!** The NPM package is published securely and automatically via OIDC provenance by a GitHub Action when a new release is published to the `public-repo` remote.
+**DO NOT RUN `npm publish` LOCALLY!** The NPM package is published securely and automatically via OIDC provenance by a GitHub Action when a new tag is pushed to the public repo.
 
 To trigger the release:
 
-1. Checkout the `public` branch and ensure it is synced with `main`.
-2. Tag the release: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
-3. Push everything to the **public** remote:
+1. Sync the files across the airgap:
 
 ```bash
-git push public-repo public
-git push public-repo vX.Y.Z
+python3 execution/publish_to_public.py
 ```
 
-4. Create the release directly on the `public-repo` GitHub UI (or via `gh release create vX.Y.Z -R "techwavedev/agi-agent-kit"`). This will natively trigger `publish.yml` and handle the NPM rollout!
+2. Change to the public repository directory:
+
+```bash
+cd public_release
+```
+
+3. Tag the release and push:
+
+```bash
+git tag -a vX.Y.Z -m "Release vX.Y.Z"
+git push origin public
+git push origin vX.Y.Z
+```
+
+4. Create the release directly on the `techwavedev/agi-agent-kit` GitHub UI (or via `gh release create vX.Y.Z -R "techwavedev/agi-agent-kit"`). This will natively trigger `publish.yml` and handle the NPM rollout!

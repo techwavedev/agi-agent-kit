@@ -610,10 +610,10 @@ def cmd_export(args):
 
     try:
         cmd = [
-            "python3", str(memory_script), "store",
+            sys.executable, str(memory_script), "store",
             "--content", content_str,
             "--type", "conversation",
-            "--tags", "context-mode,session-export",
+            "--tags", "context-mode", "session-export",
         ]
         if args.project:
             cmd.extend(["--project", args.project])

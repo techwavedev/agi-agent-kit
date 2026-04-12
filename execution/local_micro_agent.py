@@ -183,11 +183,20 @@ def select_model(preferred: str | None, task: str) -> str:
         if info.get("tier") != "embedding":
             return m
 
-    # Total fallback to cloud if no viable local model
+    # No suitable generation model found locally — fall back to cloud
     if cloud_available:
         return cloud_available[0]
 
-    return available[0] if available else None
+    # All local models are embedding-only and no cloud keys are available
+    print(json.dumps({
+        "status": "error",
+        "message": (
+            "No generation model available. All installed Ollama models are "
+            "embedding-only and no cloud API keys are configured. "
+            "Run 'ollama pull gemma4:e4b' or set OPENAI_API_KEY / GEMINI_API_KEY."
+        )
+    }), file=sys.stderr)
+    sys.exit(1)
 
 
 def run_cloud_inference(model: str, prompt: str, temperature: float = 0.0,
