@@ -157,7 +157,7 @@ def process_agent_task(agent_id: str, task: str, payload_str: str = "{}",
 
     # 1. Load directive context if available
     directive_content = ""
-    if directive_path and Path(directive_path).exists():
+    if directive_path and Path(directive_path).is_file():
         directive_content = Path(directive_path).read_text(encoding="utf-8")
 
     # 2. Classify task routing (local vs cloud)
@@ -236,7 +236,7 @@ def cmd_dispatch():
             agent_id=agent_id,
             task=task,
             payload_str=payload_str,
-            directive_path=str(directive_path) if directive_path.exists() else "",
+            directive_path=str(directive_path) if directive_path.is_file() else "",
             worktree=worktree,
             project_root=project_root
         )
