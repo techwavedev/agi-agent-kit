@@ -103,24 +103,22 @@ npm install
 
 ---
 
-## Repository Structure
+## Repository
 
 | Repository | URL | Purpose |
 |---|---|---|
-| **Private (dev)** | `https://github.com/techwavedev/agi` | Main development. All work happens here via feature branches + PRs. |
-| **Public (release)** | `https://github.com/techwavedev/agi-agent-kit` | Public-facing. Auto-deploys to NPM on merge to `main`. |
+| **Public** | `https://github.com/techwavedev/agi-agent-kit` | Public distribution. Auto-deploys to NPM on tagged releases. |
 
 ### Branch Workflow
 
 ```
-main (private)
-  └── feat/xyz or fix/xyz  →  PR  →  merge to main
-        └── cherry-pick or sync to public-dev  →  PR  →  merge to public/main  →  NPM publish
+main
+  └── feat/xyz or fix/xyz  →  PR  →  merge to main  →  NPM publish
 ```
 
 **Rules**:
 - All changes go through **issues → branches → PRs → merge approval**.
-- Never push directly to `main` or `public`.
+- Never push directly to `main`.
 - Use `execution/session_boot.py --auto-fix` as the first command in every agent session.
 
 ---
@@ -129,7 +127,7 @@ main (private)
 
 ```bash
 # 1. Clone
-git clone https://github.com/techwavedev/agi.git && cd agi
+git clone https://github.com/techwavedev/agi-agent-kit.git && cd agi-agent-kit
 
 # 2. Homebrew deps
 brew install python node ollama gh

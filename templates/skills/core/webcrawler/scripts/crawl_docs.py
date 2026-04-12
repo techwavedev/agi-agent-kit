@@ -66,7 +66,7 @@ class DocumentationCrawler:
         self.robot_parser = None
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'DocumentationHarvester/1.0 (+https://github.com/techwavedev/agi)',
+            'User-Agent': 'DocumentationHarvester/1.0 (+https://github.com/techwavedev/agi-agent-kit)',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.5',
         })
