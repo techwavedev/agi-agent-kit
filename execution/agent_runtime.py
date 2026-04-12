@@ -68,11 +68,13 @@ def execute_local_agent(agent_id: str, task: str, context: str = "", worktree: s
     
     start_time = datetime.now(timezone.utc)
     try:
+        Path(worktree).mkdir(parents=True, exist_ok=True)
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
             cwd=worktree,
+            timeout=120,
         )
         duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
         
@@ -91,6 +93,15 @@ def execute_local_agent(agent_id: str, task: str, context: str = "", worktree: s
                 "error": result.stderr.strip(),
                 "execution": "local"
             }
+    except subprocess.TimeoutExpired:
+        duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+        return {
+            "agent_id": agent_id,
+            "status": "error",
+            "error": "Local model execution timed out after 120s. Unable to complete operation.",
+            "duration_ms": duration_ms,
+            "execution": "local"
+        }
     except Exception as e:
         return {
             "agent_id": agent_id,
@@ -157,7 +168,7 @@ def process_agent_task(agent_id: str, task: str, payload_str: str = "{}",
 
     # 1. Load directive context if available
     directive_content = ""
-    if directive_path and Path(directive_path).exists():
+    if directive_path and Path(directive_path).is_file():
         directive_content = Path(directive_path).read_text(encoding="utf-8")
 
     # 2. Classify task routing (local vs cloud)
@@ -213,7 +224,12 @@ def cmd_dispatch():
         print(json.dumps({"status": "error", "message": "Manifest not found"}), file=sys.stderr)
         sys.exit(1)
 
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        print(json.dumps({"status": "error", "message": f"Malformed manifest JSON: {str(e)}"}), file=sys.stderr)
+        sys.exit(3)
+        
     team = manifest.get("team", "unknown")
     sub_agents = manifest.get("sub_agents", [])
     payload = manifest.get("payload", {})
@@ -236,7 +252,7 @@ def cmd_dispatch():
             agent_id=agent_id,
             task=task,
             payload_str=payload_str,
-            directive_path=str(directive_path) if directive_path.exists() else "",
+            directive_path=str(directive_path) if directive_path.is_file() else "",
             worktree=worktree,
             project_root=project_root
         )

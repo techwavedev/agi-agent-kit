@@ -66,16 +66,16 @@ def check_service(name: str, url: str, timeout: int = 3) -> dict:
                 "error": str(e)}
 
 
-def check_command(name: str, cmd: list, timeout: int = 5) -> dict:
+def check_command(name: str, cmd: list, timeout: int = 5, required: bool = True) -> dict:
     """Check if a command runs successfully."""
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-        return {"check": f"cmd:{name}", "status": "pass" if result.returncode == 0 else "warn",
-                "exit_code": result.returncode}
+        status = "pass" if result.returncode == 0 else ("fail" if required else "skip")
+        return {"check": f"cmd:{name}", "status": status, "exit_code": result.returncode}
     except FileNotFoundError:
-        return {"check": f"cmd:{name}", "status": "warn", "error": "not found"}
+        return {"check": f"cmd:{name}", "status": "fail" if required else "skip", "error": "not found"}
     except Exception as e:
-        return {"check": f"cmd:{name}", "status": "warn", "error": str(e)}
+        return {"check": f"cmd:{name}", "status": "fail" if required else "skip", "error": str(e)}
 
 
 def check_dependencies(root: Path) -> dict:
@@ -152,7 +152,7 @@ def run_checkup(root: Path, verbose: bool = False) -> dict:
     # Commands
     results.append(check_command("git", ["git", "--version"]))
     results.append(check_command("python3", [sys.executable, "--version"]))
-    results.append(check_command("docker", ["docker", "--version"]))
+    results.append(check_command("docker", ["docker", "--version"], required=False))
 
     # Dependency scan
     results.append(check_dependencies(root))
@@ -161,6 +161,7 @@ def run_checkup(root: Path, verbose: bool = False) -> dict:
     passed = sum(1 for r in results if r["status"] == "pass")
     failed = sum(1 for r in results if r["status"] == "fail")
     warned = sum(1 for r in results if r["status"] == "warn")
+    skipped = sum(1 for r in results if r["status"] == "skip")
 
     return {
         "summary": {
@@ -168,9 +169,10 @@ def run_checkup(root: Path, verbose: bool = False) -> dict:
             "passed": passed,
             "failed": failed,
             "warnings": warned,
+            "skipped": skipped,
             "healthy": failed == 0,
         },
-        "results": results if verbose else [r for r in results if r["status"] != "pass"],
+        "results": results if verbose else [r for r in results if r["status"] not in ("pass", "skip")],
     }
 
 
@@ -207,7 +209,7 @@ def main():
         s = report["summary"]
         icon = "pass" if s["healthy"] else "FAIL"
         print(f"[{icon}] System Checkup: {s['passed']}/{s['total']} passed, "
-              f"{s['failed']} failed, {s['warnings']} warnings")
+              f"{s['failed']} failed, {s['warnings']} warnings, {s['skipped']} skipped")
 
         if report["results"]:
             for r in report["results"]:
