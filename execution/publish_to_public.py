@@ -1,39 +1,47 @@
 #!/usr/bin/env python3
 """
-publish_to_public.py — Safe filtered merge from main to public.
+publish_to_public.py — Physical Airgap Sync Script for Public Releases.
 
-REPLACES: `git merge main` (which is unfiltered and leaks private files).
+This script enforces a STRICT physical barrier between private development and
+public release. It completely bypasses Git merges between branches.
 
-This script:
-1. Reads .private manifest for the list of private-only files
-2. Merges main into public
-3. Removes all private-only files from the resulting tree
-4. Commits the clean state
-5. Optionally pushes to the public remote
+How it works:
+1. Validates the existence of the `public_release/` airgap folder.
+2. Reads `.private` as the single source of truth for blocked files.
+3. Wipes the `public_release/` folder clean (preserving its `.git`).
+4. Copies all allowed files from the root repo into `public_release/`.
+5. Commits the new state in the `public_release/` folder.
 
 Usage:
-  python3 execution/publish_to_public.py              # merge + clean (no push)
-  python3 execution/publish_to_public.py --push       # merge + clean + push
-  python3 execution/publish_to_public.py --dry-run    # show what would happen
+  python3 execution/publish_to_public.py              # sync + commit (no push)
+  python3 execution/publish_to_public.py --push       # sync + commit + push
+  python3 execution/publish_to_public.py --dry-run    # show what would be blocked
 """
 
 import argparse
 import subprocess
 import sys
+import shutil
+import os
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT_DIR / ".private"
+PUBLIC_DIR = ROOT_DIR / "public_release"
+
+IGNORED_ROOT_DIRS = {".git", "public_release", "node_modules", ".venv", ".idea", "__pycache__"}
 
 
-def run(cmd, check=True, capture=True):
+def run(cmd, check=True, capture=True, cwd=None):
     """Run a shell command and return output."""
+    if cwd is None:
+        cwd = PUBLIC_DIR
     result = subprocess.run(
-        cmd, shell=True, capture_output=capture, text=True, cwd=ROOT_DIR
+        cmd, shell=True, capture_output=capture, text=True, cwd=cwd
     )
     if check and result.returncode != 0:
         print(f"FAILED: {cmd}")
-        print(result.stderr)
+        print(result.stderr or result.stdout)
         sys.exit(1)
     return result
 
@@ -42,7 +50,6 @@ def load_private_files():
     """Read .private manifest, return list of relative paths."""
     if not MANIFEST.exists():
         print("ERROR: .private manifest not found at repo root.")
-        print("       Create it with the list of private-only file paths.")
         sys.exit(1)
 
     paths = []
@@ -51,112 +58,96 @@ def load_private_files():
         if not line or line.startswith("#"):
             continue
         paths.append(line)
-    return paths
+    return set(paths)
 
 
-def get_current_branch():
-    result = run("git branch --show-current")
-    return result.stdout.strip()
+def sync_directory(src_root, dest_root, private_files, dry_run=False):
+    """Deep copy from src to dest, adhering to hard exclusions and private files."""
+    copied = 0
+    blocked = 0
+
+    if not dry_run:
+        # Wipe the destination clean (except .git)
+        for item in dest_root.iterdir():
+            if item.name == ".git":
+                continue
+            if item.is_dir():
+                shutil.rmtree(item)
+            else:
+                item.unlink()
+
+    # Step-by-step copy
+    for root, dirs, files in os.walk(src_root):
+        rel_root = Path(root).relative_to(src_root)
+        
+        # Modify dirs in-place to prune excluded branches
+        dirs[:] = [d for d in dirs if d not in IGNORED_ROOT_DIRS]
+        
+        for file in files:
+            rel_file_path = rel_root / file
+            str_path = str(rel_file_path)
+
+            if str_path in private_files or str_path == ".private":
+                if dry_run:
+                    print(f"   🚫 BLOCKED: {str_path}")
+                blocked += 1
+                continue
+
+            # Ensure destination directory exists
+            dest_dir = dest_root / rel_root
+            if not dry_run:
+                dest_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_root / rel_file_path, dest_root / rel_file_path)
+            copied += 1
+
+    return copied, blocked
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Safe filtered merge from main to public")
-    parser.add_argument("--push", action="store_true", help="Push to public remote after merge")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would happen without doing it")
+    parser = argparse.ArgumentParser(description="Airgap Sync to Public Release folder")
+    parser.add_argument("--push", action="store_true", help="Push to public remote after sync")
+    parser.add_argument("--dry-run", action="store_true", help="Only show file blocking simulation")
     args = parser.parse_args()
 
+    print("🛡️  AGI Airgap Sync Protocol Started\n")
+
+    if not (PUBLIC_DIR / ".git").exists():
+        print("❌ ERROR: 'public_release/' directory is not a valid Git repository.")
+        print("   Initialize it first: git clone https://github.com/techwavedev/agi-agent-kit.git public_release")
+        sys.exit(1)
+
     private_files = load_private_files()
-    print(f"📋 Loaded {len(private_files)} private-only paths from .private")
-
-    # --- Pre-flight checks ---
-    branch = get_current_branch()
-    if branch != "public":
-        print(f"ERROR: Must be on 'public' branch. Currently on '{branch}'.")
-        print("       Run: git checkout public")
-        sys.exit(1)
-
-    # Check for uncommitted changes
-    status = run("git status --porcelain").stdout.strip()
-    if status:
-        print("ERROR: Working tree is not clean. Commit or stash changes first.")
-        print(status)
-        sys.exit(1)
+    print(f"📋 Loaded {len(private_files)} blocked paths from .private manifest\n")
 
     if args.dry_run:
-        print("\n🔍 DRY RUN — would perform these steps:")
-        print("  1. git merge main --no-edit")
-        print(f"  2. git rm {len(private_files)} private-only files:")
-        for f in private_files:
-            exists = (ROOT_DIR / f).exists()
-            marker = "  (exists)" if exists else "  (not present)"
-            print(f"       - {f}{marker}")
-        print("  3. git commit --amend (clean merge)")
-        if args.push:
-            print("  4. git push public public")
+        print("🔍 DRY RUN — Simulation of file sync:")
+        copied, blocked = sync_directory(ROOT_DIR, PUBLIC_DIR, private_files, dry_run=True)
+        print(f"\n✅ Simulation complete. Would copy {copied} files. Blocked {blocked} private files.")
         return
 
-    # --- Step 1: Merge main into public ---
-    print("\n📦 Step 1: Merging main into public...")
-    merge_result = run("git merge main --no-edit", check=False)
-    if merge_result.returncode != 0:
-        if "CONFLICT" in merge_result.stdout or "CONFLICT" in merge_result.stderr:
-            print("⚠️  Merge conflicts detected. Resolve them manually, then re-run this script.")
-            sys.exit(1)
-        elif "Already up to date" in merge_result.stdout:
-            print("   Already up to date — nothing to merge.")
-            return
-        else:
-            print(f"   Merge failed: {merge_result.stderr}")
-            sys.exit(1)
-    print("   ✅ Merge complete")
+    # --- Step 1: Wipe & Sync ---
+    print("📦 Step 1: Syncing files across the airgap...")
+    copied, blocked = sync_directory(ROOT_DIR, PUBLIC_DIR, private_files, dry_run=False)
+    print(f"   ✅ Copied {copied} files securely. Excluded {blocked} private-only files.")
 
-    # --- Step 2: Remove private-only files ---
-    print(f"\n🔒 Step 2: Removing {len(private_files)} private-only files...")
-    removed = []
-    for rel_path in private_files:
-        full_path = ROOT_DIR / rel_path
-        if full_path.exists():
-            run(f'git rm -f "{rel_path}"')
-            removed.append(rel_path)
-            print(f"   🗑️  Removed: {rel_path}")
-        else:
-            print(f"   ⏭️  Skipped (not present): {rel_path}")
-
-    # --- Step 3: Amend the merge commit to include removals ---
-    if removed:
-        print(f"\n📝 Step 3: Amending merge commit with {len(removed)} removals...")
-        removed_list = ", ".join(removed)
-        run(f'git commit --amend --no-edit -m "Merge branch \'main\' into public (filtered)\n\nPrivate files excluded: {removed_list}"')
-        print("   ✅ Clean merge committed")
+    # --- Step 2: Commit in public_release ---
+    print("\n📝 Step 2: Committing to public_release local repository...")
+    status = run("git status --porcelain").stdout.strip()
+    if not status:
+        print("   ℹ️  No changes detected between main repo and public release.")
     else:
-        print("\n   ℹ️  No private files found to remove — merge is already clean.")
+        run("git add .")
+        run('git commit -m "sync: airgap update from private development source"')
+        print("   ✅ Committed changes to public_release local branch.")
 
-    # --- Step 4: Verify ---
-    print("\n🔍 Step 4: Verification...")
-    issues = []
-    for rel_path in private_files:
-        full_path = ROOT_DIR / rel_path
-        if full_path.exists():
-            issues.append(rel_path)
-
-    if issues:
-        print(f"   ❌ FAILED — these private files still exist:")
-        for f in issues:
-            print(f"      - {f}")
-        sys.exit(1)
-    else:
-        print("   ✅ All private files confirmed absent from public branch")
-
-    # --- Step 5: Push (optional) ---
+    # --- Step 3: Push ---
     if args.push:
-        print("\n🚀 Step 5: Pushing to public remote...")
-        run("git push public public")
-        run("git push synology public")
-        print("   ✅ Pushed to public and synology")
+        print("\n🚀 Step 3: Pushing to public remote (NPM Release Trigger)...")
+        run("git push origin public") # assuming default branch there is public
+        print("   ✅ Push complete!")
     else:
-        print("\n   ℹ️  Not pushing (use --push to auto-push)")
-
-    print("\n✅ Publish to public complete!")
+        print("\n   ℹ️  Changes committed locally in public_release/ but not pushed yet.")
+        print("      Run with --push to deploy, or cd into public_release and push manually.")
 
 
 if __name__ == "__main__":
