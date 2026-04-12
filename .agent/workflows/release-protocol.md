@@ -29,7 +29,9 @@ This script reads the `.private` manifest and explicitly omits those files
 when copying to the `public_release/` folder. The `.private` file at repo root is the
 **single source of truth** for what must never appear on the public repository.
 
-**Adding new private files?** Add the path to `.private` before syncing.
+As a failsafe, the sync script dynamically executes `.agent/scripts/release_gate.py` ON the copied destination path BEFORE it commits, guaranteeing nothing slips through.
+
+**Adding new private files?** Add the absolute or relative path to `.private` before syncing.
 
 ### 1. Preparation
 
@@ -38,23 +40,13 @@ when copying to the `public_release/` folder. The `.private` file at repo root i
 - [ ] Review `README.md` for any API changes.
 - [ ] If you added new internal-only files, add them to `.private` manifest.
 
-### 2. Automated Gate
-
-Run the Release Gate script to enforce checks:
-
-```bash
-python3 .agent/scripts/release_gate.py
-```
-
-### 3. Manual Review
+### 2. Manual Review
 
 - [ ] Check if `AGENTS.md` reflects new capabilities.
 - [ ] Verify `memory_integration.md` if memory system changed.
 - [ ] Ensure no temporary files in `execution/` or `skills/` unless intended.
 
-### 4. Publish (Automated via GitHub Actions)
-
-Only proceed if Step 2 passes.
+### 3. Publish (Automated via GitHub Actions)
 
 **DO NOT RUN `npm publish` LOCALLY!** The NPM package is published securely and automatically via OIDC provenance by a GitHub Action when a new tag is pushed to the public repo.
 

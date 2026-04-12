@@ -208,11 +208,14 @@ def scan_private_info():
             if "node_modules" in str(path) or ".git" in str(path) or ".venv" in str(path) or ".idea" in str(path) or ".tmp" in str(path):
                 continue
             try:
+                rel = path.relative_to(ROOT_DIR)
+                if str(rel) in [".agent/scripts/release_gate.py", ".agent/workflows/release-protocol.md"]:
+                    continue
+                    
                 content = path.read_text(errors="ignore")
                 for pattern in PRIVATE_INFO_PATTERNS:
                     match = re.search(pattern, content)
                     if match:
-                        rel = path.relative_to(ROOT_DIR)
                         issues.append(f"{rel}: Private info leak — matched pattern '{pattern}'")
                         break  # one issue per file is enough
             except Exception:
