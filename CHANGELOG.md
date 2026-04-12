@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.8] - 2026-04-12
+
+### Fixed
+- **Platform-Adaptive Routing Links**: Restored missing `OPENCODE.md`, `COPILOT.md`, and `OPENCLAW.md` symlinks required natively by the architecture to properly bind orchestrator directives to new local models.
+- **Documentation Parity**: Placed iced blockchain authentication features formally into backlog. Stripped associated modules and `README.md` concepts from the live execution architecture to align framework features with active repository capabilities.
+- **Docker Dependency Validation**: Relegated Docker Daemon checks in `system_checkup.py` to 'Optional', preventing OS-level warning crashes for strictly cloud-based Qdrant deployments.
+
 ## [1.7.7] - 2026-04-12
 
 ### Added
