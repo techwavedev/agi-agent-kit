@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-04-04 15:54
+> **Auto-generated Documentation** — Last updated: 2026-04-10 18:49
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -17,9 +17,11 @@ This document provides comprehensive documentation on available skills, how to u
 - [Available Skills](#available-skills)
   - [Cowork Export](#cowork-export)
   - [Documentation](#documentation)
+  - [Image Ai Generator](#image-ai-generator)
   - [Notebooklm](#notebooklm)
   - [Pdf Reader](#pdf-reader)
   - [Qdrant Memory](#qdrant-memory)
+  - [Resend](#resend)
   - [Supply Chain Monitor](#supply-chain-monitor)
   - [Upstream Sync](#upstream-sync)
   - [Webcrawler](#webcrawler)
@@ -93,6 +95,24 @@ skill-name/
 
 ---
 
+### Image Ai Generator
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `image-ai-generator` |
+| **Location** | `skills/image-ai-generator/` |
+| **Type** | Standalone |
+
+**Description:** >
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/generate.py` | *[See script for details]* |
+
+---
+
 ### Notebooklm
 
 | Property | Value |
@@ -101,7 +121,7 @@ skill-name/
 | **Location** | `skills/notebooklm/` |
 | **Type** | Standalone |
 
-**Description:** "Use this skill to query your Google NotebookLM notebooks directly from Claude Code for source-grounded, citation-backed answers from Gemini. Browser automation, library management, persistent auth...."
+**Description:** "Query Google NotebookLM notebooks from Claude Code for source-grounded, citation-backed answers. Browser automation, library management, persistent auth."
 
 **Scripts:**
 
@@ -119,6 +139,7 @@ skill-name/
 
 **References:**
 - `references/api_reference.md`
+- `references/configuration.md`
 - `references/troubleshooting.md`
 - `references/usage_patterns.md`
 
@@ -174,6 +195,18 @@ skill-name/
 - `references/collection_schemas.md`
 - `references/complete_guide.md`
 - `references/embedding_models.md`
+
+---
+
+### Resend
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `resend` |
+| **Location** | `skills/resend/` |
+| **Type** | Standalone |
+
+**Description:** >
 
 ---
 

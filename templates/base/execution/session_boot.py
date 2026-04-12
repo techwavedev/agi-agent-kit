@@ -27,6 +27,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
@@ -35,7 +36,21 @@ from urllib.error import URLError, HTTPError
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 EMBEDDING_MODEL = "nomic-embed-text"
-PROJECT_DIR = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Generative models for local task routing (optional but recommended)
+GENERATIVE_MODELS = [
+    {"name": "gemma4:e4b", "tier": "fast", "required": False},
+    {"name": "glm-4.7-flash:latest", "tier": "medium", "required": False},
+]
+
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from resolve_paths import get_project_root
+except ImportError:
+    def get_project_root(): return Path.cwd()
+
+PROJECT_DIR = get_project_root()
 
 
 def check_qdrant() -> dict:
@@ -88,7 +103,7 @@ def run_session_init() -> bool:
         return False
     try:
         proc = subprocess.run(
-            ["python3", str(init_script)],
+            [sys.executable, str(init_script)],
             capture_output=True, text=True, timeout=30,
             cwd=str(PROJECT_DIR),
         )
@@ -136,6 +151,41 @@ def pull_model() -> bool:
         return False
 
 
+def pull_generative_models(json_output: bool = False) -> list:
+    """Pull generative models for local task routing. Returns (actions, issues)."""
+    actions = []
+    issues = []
+    try:
+        req = Request(f"{OLLAMA_URL}/api/tags", method="GET")
+        with urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode())
+            installed = [m["name"] for m in data.get("models", [])]
+    except Exception:
+        return actions, issues
+
+    for model_info in GENERATIVE_MODELS:
+        model_name = model_info["name"]
+        # Check if the exact requested model/tag is already installed.
+        if model_name in installed:
+            continue
+        if not json_output:
+            print(f"⏳ Pulling generative model {model_name} (for local task routing)...")
+        try:
+            proc = subprocess.run(
+                ["ollama", "pull", model_name],
+                capture_output=True, text=True, timeout=600,  # 10 min timeout for large models
+            )
+            if proc.returncode == 0:
+                actions.append(f"Pulled generative model {model_name}")
+            else:
+                issues.append(f"Failed to pull {model_name}: {proc.stderr.strip()[:100]}")
+        except subprocess.TimeoutExpired:
+            issues.append(f"Timeout pulling {model_name} (try manually: ollama pull {model_name})")
+        except Exception as e:
+            issues.append(f"Error pulling {model_name}: {e}")
+    return actions, issues
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Session boot: check + initialize memory system"
@@ -144,6 +194,8 @@ def main():
                         help="JSON output only")
     parser.add_argument("--auto-fix", action="store_true",
                         help="Auto-fix issues (pull model, create collections)")
+    parser.add_argument("--no-generative", action="store_true",
+                        help="Skip pulling large generative models during --auto-fix")
     args = parser.parse_args()
 
     report = {
@@ -159,7 +211,49 @@ def main():
     report["qdrant"] = qdrant
 
     if qdrant["status"] != "ok":
-        report["issues"].append("Qdrant not running. Start with: docker run -d -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant")
+        if args.auto_fix:
+            # Try restarting existing container first, then create new one
+            import subprocess as _sp
+            restarted = False
+            try:
+                check = _sp.run(["docker", "ps", "-a", "--filter", "name=^qdrant$", "--format", "{{.Names}}"],
+                                capture_output=True, text=True, timeout=10)
+                if "qdrant" in check.stdout.strip():
+                    if not args.json_output:
+                        print("⏳ Restarting existing Qdrant container...")
+                    start = _sp.run(["docker", "start", "qdrant"], capture_output=True, text=True, timeout=30)
+                    if start.returncode == 0:
+                        import time as _time; _time.sleep(3)
+                        qdrant = check_qdrant()
+                        report["qdrant"] = qdrant
+                        if qdrant["status"] == "ok":
+                            restarted = True
+                            report["actions_taken"].append("Restarted existing Qdrant container")
+            except Exception:
+                pass
+            if not restarted:
+                if not args.json_output:
+                    print("⏳ Starting new Qdrant container...")
+                try:
+                    run_result = _sp.run(
+                        ["docker", "run", "-d", "--name", "qdrant", "-p", "6333:6333",
+                         "-v", "qdrant_storage:/qdrant/storage", "qdrant/qdrant"],
+                        capture_output=True, text=True, timeout=30
+                    )
+                    if run_result.returncode == 0:
+                        import time as _time; _time.sleep(3)
+                        qdrant = check_qdrant()
+                        report["qdrant"] = qdrant
+                        if qdrant["status"] == "ok":
+                            report["actions_taken"].append("Started new Qdrant container")
+                        else:
+                            report["issues"].append("Qdrant container started but not responding yet")
+                    else:
+                        report["issues"].append(f"Failed to start Qdrant: {run_result.stderr.strip()}")
+                except Exception as e:
+                    report["issues"].append(f"Failed to start Qdrant: {e}")
+        else:
+            report["issues"].append("Qdrant not running. Start with: docker start qdrant (or docker run -d --name qdrant -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant)")
 
     # Step 2: Check Ollama
     ollama = check_ollama()
@@ -178,6 +272,12 @@ def main():
                 report["issues"].append(f"Failed to pull {EMBEDDING_MODEL}")
         else:
             report["issues"].append(f"Embedding model missing. Run: ollama pull {EMBEDDING_MODEL}")
+
+    # Step 2b: Pull generative models for local task routing (best-effort, opt-out with --no-generative)
+    if ollama.get("status") == "ok" and args.auto_fix and not args.no_generative:
+        gen_actions, gen_issues = pull_generative_models(json_output=args.json_output)
+        report["actions_taken"].extend(gen_actions)
+        report["issues"].extend(gen_issues)
 
     # Step 2.5: Check agent identity
     identity = check_identity(args.auto_fix)
@@ -207,6 +307,21 @@ def main():
             else:
                 report["issues"].append("Collections missing. Run: python3 execution/session_init.py")
 
+    # Step 3.5: Check Langfuse observability (optional, for local dev)
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from langfuse_tracing import check_langfuse
+        langfuse = check_langfuse()
+        report["langfuse"] = langfuse
+        if langfuse["status"] == "ok":
+            report["actions_taken"].append("Langfuse tracing active")
+        elif langfuse["status"] == "not_configured":
+            report["langfuse"]["note"] = "Optional: set LANGFUSE_* in .env for observability"
+        elif langfuse["status"] == "unreachable":
+            report["langfuse"]["note"] = "Langfuse server not running (optional)"
+    except Exception:
+        report["langfuse"] = {"status": "skipped"}
+
     # Step 4: Register with Control Tower (best-effort)
     try:
         from control_tower import register_agent
@@ -217,6 +332,19 @@ def main():
         report["actions_taken"].append(f"Registered with Control Tower as {agent_name}")
     except Exception:
         report["control_tower"] = {"status": "skipped"}
+
+    # Step 5: Write session boot marker (for PreToolUse enforcement)
+    try:
+        tmp_dir = PROJECT_DIR / ".tmp"
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        boot_marker = tmp_dir / "session_booted.json"
+        boot_marker.write_text(json.dumps({
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "agent": os.environ.get("AGENT_NAME", "claude"),
+            "memory_ready": True,  # Will be updated below
+        }, indent=2))
+    except Exception:
+        pass  # Non-blocking
 
     # Final readiness
     qdrant = report["qdrant"]

@@ -1,5 +1,5 @@
 ---
-name: writing-plans
+name: plan-writing
 description: Use when you have a spec or requirements for a multi-step task, before touching code
 ---
 

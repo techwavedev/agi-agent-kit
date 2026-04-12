@@ -1,7 +1,7 @@
 ---
 name: github-actions-templates
-description: "Create production-ready GitHub Actions workflows for automated testing, building, and deploying applications. Use when setting up CI/CD with GitHub Actions, automating development workflows, or cre..."
-risk: unknown
+description: "Production-ready GitHub Actions workflow patterns for testing, building, and deploying applications."
+risk: critical
 source: community
 date_added: "2026-02-27"
 ---
@@ -279,6 +279,19 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Run Snyk vulnerability scanner
+      uses: aquasecurity/snyk-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'snyk-results.sarif'
+
+    - name: Upload Snyk results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'snyk-results.sarif'
 
     - name: Run Snyk Security Scan
       uses: snyk/actions/node@master

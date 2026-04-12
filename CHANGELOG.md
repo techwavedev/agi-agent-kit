@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.7] - 2026-04-12
+
+### Added
+- **Native Multi-Agent Runtime Integration**: Replaced external node CLI integrations with `execution/agent_runtime.py`, executing workloads directly via IDE prompt adoptions ("In-Context Delegation") or seamlessly shifting to deterministic Ollama subsets using `task_router.py`. Worktree state isolations are cleanly synchronized natively without API bridge lag.
+
+## [1.7.6] - 2026-04-10
+
+### Added
+- **Security Validation Support**: Added `code_security_reviewer`, `dependency_auditor`, `secret_scanner`, and `security_team` directives for comprehensive security scanning.
+- **Langfuse Integration**: Introduced `langfuse_dashboard` and `langfuse_tracing` for enhanced observability.
+- **Local Micro Agent**: Added robust `local_micro_agent` execution to handle deterministic internal operations locally and save context tokens.
+- **Task Router**: Intelligent sub-task routing that correctly balances cloud inference API calls with local execution layers.
+
+## [1.7.5] - 2026-04-07
+
+### Added
+
+- **MemPalace Architecture Integration**: Adopted AAAK Symbolic Compression (via `Dialect` class) and Spatial Hierarchy (Wings/Rooms) for Qdrant storage.
+- **Temporal Memory Ledger**: Added native temporal expiration utilizing Qdrant's `must_not` range clauses (`--expire-days`).
+- **AI-Driven Contradiction Resolution**: Pre-store semantic conflict check using `local_micro_agent.py` to auto-deprecate old facts.
+- **Out-of-the-Box Cloud Fallback**: Automatically delegates fast deterministic tasks to `gemini-1.5-flash`, `gpt-4o-mini`, or `claude-3-haiku` by detecting API keys in `.env` if local hardware (Ollama) is unavailable.
+- **Zero-Loss Payload Preservation**: Retaining raw verbatim text within Qdrant payloads alongside AAAK compression to ensure source fidelity.
+
+### Fixed
+- **Payload Passthrough Bug**: `hybrid_search.py` and `memory_retrieval.py` were silently stripping `wing`, `room`, `original_text`, and `valid_until` from Qdrant payloads — making spatial metadata and zero-loss recovery invisible to all consumers.
+- **BM25 AAAK Compression Leak**: `memory_retrieval.py` was indexing compressed AAAK tokens into BM25 instead of the original raw text, making keyword search impossible.
+- **Datetime Format Collision (Python 3.12/3.14)**: Replaced deprecated `datetime.utcnow()` with timezone-aware `datetime.now(timezone.utc)` across all caching layers. This fixes silent query failures where `semantic_cache` filters failed to match Qdrant's RFC 3339 constraints.
+- **Missing Qdrant Payload Indexes**: Added `wing`, `room`, and `valid_until` optimized payload indexes to `init_collection.py`, improving vector scope search from O(N) linear scans to O(logN).
+- **Resolver Double Extinction**: Removed duplicate `exclude_expired` constraint from `build_filter`, fixing a dual-range conflict and ensuring deprecation logic relies solely on the primary `must_not` layer.
+- **Multiple ID Resolution**: Upgraded the generic `/auto` contradiction resolver in `memory_manager.py` to identify, parse, and deprecate *multiple* legacy IDs at once via `[0, 2]` syntax.
+- **Default Embedding Dimensions**: Corrected `init_collection` default dimension configuration from `1536` to `768`, stabilizing `nomic-embed-text` deployments out-of-the-box.
+- **Retrieve Threshold Mismatch**: `retrieve` command defaulted to `score_threshold: 0.7` while `auto` used `0.45`, causing `retrieve` to silently return empty results for valid queries.
+- **UnboundLocalError on `json`**: Duplicate `import json` inside contradiction resolver scope shadowed the global import, crashing all `store` and `retrieve` CLI operations.
+- **UnboundLocalError on `retrieve_context`**: Local re-import of `retrieve_context` inside contradiction block masked the global import, crashing the retrieve subcommand.
+- **Invalid `exclude_expired` kwarg**: Nonexistent parameter passed to `retrieve_context()` in the contradiction resolver, crashing `--resolve-contradictions`.
+- **Orphaned docstring in `local_micro_agent.py`**: Dead string literal left inside `run_inference()` after cloud routing was prepended.
+- **Duplicate inner imports**: Stale `import time` and `from urllib.request import Request, urlopen` inside function bodies shadowing top-level imports in `memory_manager.py`.
+- **Hybrid Search Filter Piping**: Updated SQLite/Vector hybrid logic to directly pipe raw Qdrant schema conditionals instead of string matching.
+- **Legacy Qdrant Sweeper**: Added `sweep_legacy_memory.py` to formally purge un-scoped points from local Vector mappings.
+
+## [1.7.4] - 2026-04-05
+
+### Added
+
+- **Workflow Engine** (`execution/workflow_engine.py`) — Guided multi-skill playbook executor for the 4 playbooks defined in `data/workflows.json` (`ship-saas-mvp`, `security-audit-web-app`, `build-ai-agent-system`, `qa-browser-automation`). Commands: `list`, `start <id>`, `next`, `status`, `complete [--notes]`, `skip [--reason]`, `abort`. Progress is persisted to `.tmp/playbook_state.json`. Detects and warns about missing recommended skills. Full `--json` output mode for programmatic use.
+- **Phase-Reset Architecture** (`directives/phase_reset_architecture.md`) — Context isolation boundaries for multi-step playbooks to prevent LLM token drift. Integrates with Workflow Engine via `phase_boundary: true` in `workflows.json`.
+- **Global Install Mode** (`bin/init.js`) — Added `--global` flag bridging framework commands dynamically via `execution/resolve_paths.py` from `~/.agent/`, while bootstrapping local `~/.claude/CLAUDE.md` pointers.
+- **Router / Architect** — Added `/agi` slash command, `execution/route_request.py`, and `execution/compose_team.py` for on-the-fly dynamic team compositing based on intent.
+- **Skill Trigger Evaluations** (`execution/run_skill_trigger_eval.py`, `execution/aggregate_skill_benchmark.py`) — Tests skill trigger determinism using Claude sandbox queries (`claude -p`). Integrates into `karpathy_loop.py` to gate Git commits unless the `pass_rate` and `trigger_rate` jointly improve.
+
 ### Security
 
 - **CodeQL alerts — resolved all 23 open findings on `techwavedev/agi-agent-kit`.**

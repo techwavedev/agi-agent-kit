@@ -1,7 +1,7 @@
 ---
 name: github-automation
 description: "Automate GitHub repositories, issues, pull requests, branches, CI/CD, and permissions via Rube MCP (Composio). Manage code workflows, review PRs, search code, and handle deployments programmatically."
-risk: unknown
+risk: critical
 source: community
 date_added: "2026-02-27"
 ---
@@ -19,7 +19,6 @@ Automate GitHub repository management, issue tracking, pull request workflows, b
 ## Setup
 
 **Get Rube MCP**: Add `https://rube.app/mcp` as an MCP server in your client configuration. No API keys needed — just add the endpoint and it works.
-
 
 1. Verify Rube MCP is available by confirming `RUBE_SEARCH_TOOLS` responds
 2. Call `RUBE_MANAGE_CONNECTIONS` with toolkit `github`

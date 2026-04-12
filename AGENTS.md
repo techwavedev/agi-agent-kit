@@ -315,7 +315,7 @@ Only create new scripts when truly necessary. Reuse and extend existing tools.
 
 ### 3. Local-First Routing (Security + Token Savings)
 
-**Principle:** Small deterministic tasks run on local Ollama models (Gemma 4, GLM). Security-sensitive tasks (secrets, tokens, credentials) MUST stay local — never sent to cloud APIs.
+**Principle:** Small deterministic tasks run on local Ollama models (Gemma 4, GLM). Security-sensitive tasks (secrets, tokens, credentials) MUST stay local — never sent to cloud APIs. **Performance-first rule:** Never sacrifice output quality for token savings — if a task needs deep reasoning, it MUST go to cloud.
 
 #### Task Router (auto-classification)
 
@@ -333,14 +333,27 @@ python3 execution/task_router.py split --task "1) Read .env 2) summarize the log
 python3 execution/task_router.py stats
 ```
 
-**Routing rules (enforced by `task_router.py`):**
+#### Task Classification Matrix
 
-| Signal | Route | Reason |
-|--------|-------|--------|
-| Task references `.env`, passwords, tokens, API keys, credentials | `local_required` | Secrets never leave the machine |
-| Task is summarize, classify, extract, parse, format, convert | `local` | Small + deterministic = free tokens |
-| Task is architect, refactor, review, implement, design | `cloud` | Needs deep reasoning |
-| Security task fails locally | **BLOCKED** | No cloud fallback for secrets |
+| Route | When | Examples | Model |
+|-------|------|----------|-------|
+| `local_required` | Secrets, credentials, .env, tokens, passwords, private keys | Parse .env, extract API key, read credentials.json, check token format | `gemma4:e4b` |
+| `local` | Simple deterministic tasks that don't need deep reasoning | Summarize error log, classify text, convert naming convention, format JSON, count lines, extract fields | `gemma4:e4b` → `glm-4.7-flash` fallback |
+| `cloud` | Complex reasoning, multi-file understanding, architecture | Design system, refactor module, review PR, debug complex issue, implement feature, write documentation | Cloud LLM (Claude, Gemini, etc.) |
+
+**Decision tree:**
+
+```
+Is this task security-sensitive (secrets, .env, credentials)?
+  YES → local_required (NEVER cloud, even if local fails → BLOCKED)
+  NO  → Is it simple + deterministic (summarize, classify, format, extract, parse)?
+    YES → Can Gemma4 handle it without quality loss?
+      YES → local (free tokens)
+      NO  → cloud (quality over savings)
+    NO  → cloud (needs deep reasoning)
+```
+
+**Key rule:** When in doubt, err on the side of **cloud for quality** and **local for security**. The savings from routing simple tasks locally add up (80-100% on repeated work), but a bad answer from a weak model costs more than the tokens saved.
 
 #### Local Micro Agent (execution)
 
@@ -358,6 +371,18 @@ python3 execution/local_micro_agent.py health
 **Model registry:** `gemma4:e4b` (fast tier, 4B) → `glm-4.7-flash` (medium tier, 12B). Automatic fallback chain if preferred model fails.
 
 **Agent protocol:** Before delegating any task to a sub-agent, the orchestrator SHOULD run `task_router.py classify` to check if it can be handled locally. For batch operations, use `task_router.py split` to decompose compound tasks and route each subtask independently.
+
+#### What Local Models Handle Well (concrete examples)
+
+- ✅ `"Read .env and extract the DATABASE_URL value"` → `local_required`
+- ✅ `"Summarize this 50-line error stack trace"` → `local`
+- ✅ `"Convert camelCase function names to snake_case"` → `local`
+- ✅ `"Parse this JSON and extract the 'status' field"` → `local`
+- ✅ `"Classify this log entry as error/warning/info"` → `local`
+- ✅ `"Count the number of TODO comments in this file"` → `local`
+- ❌ `"Refactor the auth module to use JWT"` → `cloud` (needs deep reasoning)
+- ❌ `"Review this PR for security issues"` → `cloud` (needs context awareness)
+- ❌ `"Design a caching strategy for this API"` → `cloud` (needs architecture thinking)
 
 ### 4. Self-Anneal When Things Break
 
@@ -865,11 +890,19 @@ When a script returns an error:
 
 ### What Are Team Agents?
 
-A **team agent** is a named group of sub-agents that collaborate toward a shared goal. Teams are defined in `directives/teams/` and dispatched with:
+A **team agent** is a named group of sub-agents that collaborate toward a shared goal. Teams are defined in `directives/teams/`. 
+
+Starting with v1.7.7, the framework uses a **Native Agent Runtime** to manage these teams without relying on external Node CLIs. 
+- **Simple Tasks:** Are automatically routed to `local_micro_agent.py` running locally on Ollama.
+- **Complex Tasks:** Are delegated back to *you*, the active Antigravity session (In-Context Delegation), so no external cloud API keys are expended.
+
+Dispatch teams using the native runtime execution flag:
 
 ```bash
-python3 execution/dispatch_agent_team.py --team <team_id> --payload '<json>'
+python3 execution/dispatch_agent_team.py --team <team_id> --payload '<json>' --execute-native
 ```
+
+> **Mandatory Rule:** When a sub-agent task returns `"status": "delegated_to_antigravity"`, you MUST immediately open the provided `delegation_file` and execute its instructions natively as the specified persona.
 
 ### Dynamic State Handoff (Agent Communication)
 
@@ -919,7 +952,8 @@ python3 execution/dispatch_agent_team.py \
   --team my_team \
   --payload '{"task": "..."}' \
   --parallel \
-  --partitions '{"agent-1": ["src/api/**"], "agent-2": ["tests/**"]}'
+  --partitions '{"agent-1": ["src/api/**"], "agent-2": ["tests/**"]}' \
+  --execute-native
 ```
 
 **How it works:**

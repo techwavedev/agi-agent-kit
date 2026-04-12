@@ -1,7 +1,7 @@
 ---
 name: dotnet-backend-patterns
-description: "Master C#/.NET backend development patterns for building robust APIs, MCP servers, and enterprise applications. Covers async/await, dependency injection, Entity Framework Core, Dapper, configuratio..."
-risk: unknown
+description: "Master C#/.NET patterns for building production-grade APIs, MCP servers, and enterprise backends with modern best practices (2024/2025)."
+risk: safe
 source: community
 date_added: "2026-02-27"
 ---

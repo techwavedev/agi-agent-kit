@@ -429,7 +429,6 @@ saveFile('emergency-card-qr.png', emergencyCard.qr_code);
 
 
 ## When to Use
-
 Use this skill when tackling tasks related to its primary domain or functionality as described above.
 
 ---

@@ -36,7 +36,21 @@ from urllib.error import URLError, HTTPError
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 EMBEDDING_MODEL = "nomic-embed-text"
-PROJECT_DIR = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Generative models for local task routing (optional but recommended)
+GENERATIVE_MODELS = [
+    {"name": "gemma4:e4b", "tier": "fast", "required": False},
+    {"name": "glm-4.7-flash:latest", "tier": "medium", "required": False},
+]
+
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from resolve_paths import get_project_root
+except ImportError:
+    def get_project_root(): return Path.cwd()
+
+PROJECT_DIR = get_project_root()
 
 
 def check_qdrant() -> dict:
@@ -89,7 +103,7 @@ def run_session_init() -> bool:
         return False
     try:
         proc = subprocess.run(
-            ["python3", str(init_script)],
+            [sys.executable, str(init_script)],
             capture_output=True, text=True, timeout=30,
             cwd=str(PROJECT_DIR),
         )
@@ -137,6 +151,41 @@ def pull_model() -> bool:
         return False
 
 
+def pull_generative_models(json_output: bool = False) -> list:
+    """Pull generative models for local task routing. Returns (actions, issues)."""
+    actions = []
+    issues = []
+    try:
+        req = Request(f"{OLLAMA_URL}/api/tags", method="GET")
+        with urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode())
+            installed = [m["name"] for m in data.get("models", [])]
+    except Exception:
+        return actions, issues
+
+    for model_info in GENERATIVE_MODELS:
+        model_name = model_info["name"]
+        # Check if the exact requested model/tag is already installed.
+        if model_name in installed:
+            continue
+        if not json_output:
+            print(f"⏳ Pulling generative model {model_name} (for local task routing)...")
+        try:
+            proc = subprocess.run(
+                ["ollama", "pull", model_name],
+                capture_output=True, text=True, timeout=600,  # 10 min timeout for large models
+            )
+            if proc.returncode == 0:
+                actions.append(f"Pulled generative model {model_name}")
+            else:
+                issues.append(f"Failed to pull {model_name}: {proc.stderr.strip()[:100]}")
+        except subprocess.TimeoutExpired:
+            issues.append(f"Timeout pulling {model_name} (try manually: ollama pull {model_name})")
+        except Exception as e:
+            issues.append(f"Error pulling {model_name}: {e}")
+    return actions, issues
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Session boot: check + initialize memory system"
@@ -145,6 +194,8 @@ def main():
                         help="JSON output only")
     parser.add_argument("--auto-fix", action="store_true",
                         help="Auto-fix issues (pull model, create collections)")
+    parser.add_argument("--no-generative", action="store_true",
+                        help="Skip pulling large generative models during --auto-fix")
     args = parser.parse_args()
 
     report = {
@@ -221,6 +272,12 @@ def main():
                 report["issues"].append(f"Failed to pull {EMBEDDING_MODEL}")
         else:
             report["issues"].append(f"Embedding model missing. Run: ollama pull {EMBEDDING_MODEL}")
+
+    # Step 2b: Pull generative models for local task routing (best-effort, opt-out with --no-generative)
+    if ollama.get("status") == "ok" and args.auto_fix and not args.no_generative:
+        gen_actions, gen_issues = pull_generative_models(json_output=args.json_output)
+        report["actions_taken"].extend(gen_actions)
+        report["issues"].extend(gen_issues)
 
     # Step 2.5: Check agent identity
     identity = check_identity(args.auto_fix)

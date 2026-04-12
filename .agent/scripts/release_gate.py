@@ -208,7 +208,7 @@ def syntax_check():
     checked = 0
     for py in py_files:
         try:
-            subprocess.run(["python3", "-m", "py_compile", str(py)], check=True, capture_output=True)
+            subprocess.run([sys.executable, "-m", "py_compile", str(py)], check=True, capture_output=True)
         except subprocess.CalledProcessError:
             print(f"❌ Syntax error in {py}")
             failed = True

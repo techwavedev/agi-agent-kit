@@ -5,32 +5,180 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.7.6] - 2026-04-10
+
+### Added
+- **Security Validation Support**: Added `code_security_reviewer`, `dependency_auditor`, `secret_scanner`, and `security_team` directives for comprehensive security scanning.
+- **Langfuse Integration**: Introduced `langfuse_dashboard` and `langfuse_tracing` for enhanced observability.
+- **Local Micro Agent**: Added robust `local_micro_agent` execution to handle deterministic internal operations locally and save context tokens.
+- **Task Router**: Intelligent sub-task routing that correctly balances cloud inference API calls with local execution layers.
+
+## [1.7.5] - 2026-04-07
+
+### Added
+
+- **MemPalace Architecture Integration**: Adopted AAAK Symbolic Compression (via `Dialect` class) and Spatial Hierarchy (Wings/Rooms) for Qdrant storage.
+- **Temporal Memory Ledger**: Added native temporal expiration utilizing Qdrant's `must_not` range clauses (`--expire-days`).
+- **AI-Driven Contradiction Resolution**: Pre-store semantic conflict check using `local_micro_agent.py` to auto-deprecate old facts.
+- **Out-of-the-Box Cloud Fallback**: Automatically delegates fast deterministic tasks to `gemini-1.5-flash`, `gpt-4o-mini`, or `claude-3-haiku` by detecting API keys in `.env` if local hardware (Ollama) is unavailable.
+- **Zero-Loss Payload Preservation**: Retaining raw verbatim text within Qdrant payloads alongside AAAK compression to ensure source fidelity.
+
+### Fixed
+- **Payload Passthrough Bug**: `hybrid_search.py` and `memory_retrieval.py` were silently stripping `wing`, `room`, `original_text`, and `valid_until` from Qdrant payloads — making spatial metadata and zero-loss recovery invisible to all consumers.
+- **BM25 AAAK Compression Leak**: `memory_retrieval.py` was indexing compressed AAAK tokens into BM25 instead of the original raw text, making keyword search impossible.
+- **Datetime Format Collision (Python 3.12/3.14)**: Replaced deprecated `datetime.utcnow()` with timezone-aware `datetime.now(timezone.utc)` across all caching layers. This fixes silent query failures where `semantic_cache` filters failed to match Qdrant's RFC 3339 constraints.
+- **Missing Qdrant Payload Indexes**: Added `wing`, `room`, and `valid_until` optimized payload indexes to `init_collection.py`, improving vector scope search from O(N) linear scans to O(logN).
+- **Resolver Double Extinction**: Removed duplicate `exclude_expired` constraint from `build_filter`, fixing a dual-range conflict and ensuring deprecation logic relies solely on the primary `must_not` layer.
+- **Multiple ID Resolution**: Upgraded the generic `/auto` contradiction resolver in `memory_manager.py` to identify, parse, and deprecate *multiple* legacy IDs at once via `[0, 2]` syntax.
+- **Default Embedding Dimensions**: Corrected `init_collection` default dimension configuration from `1536` to `768`, stabilizing `nomic-embed-text` deployments out-of-the-box.
+- **Retrieve Threshold Mismatch**: `retrieve` command defaulted to `score_threshold: 0.7` while `auto` used `0.45`, causing `retrieve` to silently return empty results for valid queries.
+- **UnboundLocalError on `json`**: Duplicate `import json` inside contradiction resolver scope shadowed the global import, crashing all `store` and `retrieve` CLI operations.
+- **UnboundLocalError on `retrieve_context`**: Local re-import of `retrieve_context` inside contradiction block masked the global import, crashing the retrieve subcommand.
+- **Invalid `exclude_expired` kwarg**: Nonexistent parameter passed to `retrieve_context()` in the contradiction resolver, crashing `--resolve-contradictions`.
+- **Orphaned docstring in `local_micro_agent.py`**: Dead string literal left inside `run_inference()` after cloud routing was prepended.
+- **Duplicate inner imports**: Stale `import time` and `from urllib.request import Request, urlopen` inside function bodies shadowing top-level imports in `memory_manager.py`.
+- **Hybrid Search Filter Piping**: Updated SQLite/Vector hybrid logic to directly pipe raw Qdrant schema conditionals instead of string matching.
+- **Legacy Qdrant Sweeper**: Added `sweep_legacy_memory.py` to formally purge un-scoped points from local Vector mappings.
+
+## [1.7.4] - 2026-04-05
+
+### Added
+
+- **Workflow Engine** (`execution/workflow_engine.py`) — Guided multi-skill playbook executor for the 4 playbooks defined in `data/workflows.json` (`ship-saas-mvp`, `security-audit-web-app`, `build-ai-agent-system`, `qa-browser-automation`). Commands: `list`, `start <id>`, `next`, `status`, `complete [--notes]`, `skip [--reason]`, `abort`. Progress is persisted to `.tmp/playbook_state.json`. Detects and warns about missing recommended skills. Full `--json` output mode for programmatic use.
+- **Phase-Reset Architecture** (`directives/phase_reset_architecture.md`) — Context isolation boundaries for multi-step playbooks to prevent LLM token drift. Integrates with Workflow Engine via `phase_boundary: true` in `workflows.json`.
+- **Global Install Mode** (`bin/init.js`) — Added `--global` flag bridging framework commands dynamically via `execution/resolve_paths.py` from `~/.agent/`, while bootstrapping local `~/.claude/CLAUDE.md` pointers.
+- **Router / Architect** — Added `/agi` slash command, `execution/route_request.py`, and `execution/compose_team.py` for on-the-fly dynamic team compositing based on intent.
+- **Skill Trigger Evaluations** (`execution/run_skill_trigger_eval.py`, `execution/aggregate_skill_benchmark.py`) — Tests skill trigger determinism using Claude sandbox queries (`claude -p`). Integrates into `karpathy_loop.py` to gate Git commits unless the `pass_rate` and `trigger_rate` jointly improve.
+
+### Security
+
+- **CodeQL alerts — resolved all 23 open findings on `techwavedev/agi-agent-kit`.**
+  - `py/command-line-injection` in [execution/fastapi_tool_bridge.py](execution/fastapi_tool_bridge.py) — replaced the `shell=True` subprocess call with a strict allowlist and argv-list invocation (no shell).
+  - `py/reflective-xss` and `js/reflected-xss` in the WhatsApp Cloud API webhook boilerplate — webhook challenge is now echoed with an explicit `text/plain` content-type so it cannot be interpreted as HTML/JS.
+  - `py/flask-debug` — Flask debug mode is now opt-in via `FLASK_DEBUG` env var (default: off).
+  - `py/insecure-protocol` in `claude-monitor/api_bench.py` — TLS context now enforces `TLSv1.2` minimum.
+  - `js/shell-command-injection-from-environment` in `ui-ux-pro-max/cli/src/utils/extract.ts` — shell-based copy fallback replaced with `execFile` + argv array.
+  - `js/incomplete-sanitization` in `ui-ux-pro-max/cli/src/utils/template.ts` — YAML frontmatter escaping now escapes backslashes before quotes.
+  - `js/functionality-from-untrusted-source` in `algorithmic-art/templates/viewer.html` — p5.js CDN include pinned with Subresource Integrity (`sha384-…`) and `crossorigin="anonymous"`.
+  - `py/clear-text-logging-sensitive-data` (×13) and `py/clear-text-storage-sensitive-data` (×1) across the `007`, `whatsapp-cloud-api`, and `instagram` skill templates — refactored to never bind bearer tokens to named locals that flow to `print`, added regex-based `_redact()` scrubbers at every print/write sink, masked phone numbers as PII before logging, and removed full-response dumps that echoed the Authorization header.
+- **Dependabot hardened** — `.github/dependabot.yml` now covers the nested `ui-ux-pro-max/cli` package and Docker images, splits production vs dev npm groups, labels all PRs with `security`, and keeps the existing weekly cadence for pip + github-actions. Security (CVE-triggered) updates remain always-on by default.
+
+## [1.7.3] - 2026-04-04
+
+### Fixed
+
+- **Publish job Node version** — Previous v1.7.2 only fixed the `publish-github` job; the `publish` (NPM) job still used Node 22 + `npm install -g npm@latest` which broke with `MODULE_NOT_FOUND` on `promise-retry`. Both jobs now use Node 24 (native npm 11.x).
+
+## [1.7.2] - 2026-04-04
+
+### Fixed
+
+- **NPM publish workflow** — Migrated from token-based auth to OIDC trusted publisher. Upgraded to Node 24 (ships with npm 11.x needed for OIDC). Added skip-if-already-published guard for GitHub Packages to allow re-running failed workflows.
+
+## [1.7.1] - 2026-04-04
+
+### Security
+
+- Removed LiteLLM/Trivy (TeamPCP compromise). Added blocked-package enforcement and `supply-chain-monitor` skill.
+
+### Added
+
+- **Langfuse Model Proxy** (`execution/langfuse_model_proxy.py`) — Traced LLM call wrapper for Anthropic models. Resolves model aliases (`haiku`, `sonnet`, `opus`), records each call as a Langfuse generation with token counts, cost, and latency. Provides `call_llm`, `estimate_cost`, and `call_llm_with_validation` (retry loop with assertion feedback). Langfuse tracing failure never blocks the API call. CLI: `call` and `cost` subcommands.
+- **Langfuse Dashboard** (`execution/langfuse_dashboard.py`) — Observability CLI for querying Langfuse traces. Commands: `overview`, `compare` (before/after windows), `traces` (name filter), `errors`, `slow` (latency threshold). HTTP Basic auth; normalises Langfuse latency units automatically.
+- **Harness Engine Directive** (`directives/harness_engine.md`) — Design reference for the full-stack agent execution harness. Documents 8 pillars: Langfuse observability, state management, human-in-the-loop fan-out via Pulsar, model tier strategy, sandboxed execution, context compression, validation loops, and multi-agent fan-out.
+- **Harness Engine** (`execution/harness_engine.py`) — Main orchestrator implementing the `init → planning → executing → validating → complete` state machine. `HarnessEngine.run()` auto-plans via Sonnet, dispatches steps to bash/python/llm/memory/delegate executors, validates outputs with binary assertions, retries with exponential backoff, scores the session in Langfuse, and stores a summary in Qdrant. `fan_out()` executes multiple independent tasks with isolated per-task context. State persisted to `.tmp/harness_state.json` for session resume. All dependencies (Langfuse, harness_context, harness_validator, langfuse_model_proxy) degrade gracefully to no-ops when unavailable.
+
+- **Agent Harness Context Manager** (`execution/harness_context.py`) — Retrieves relevant Qdrant memory chunks, compresses them to a token budget, and packages task + context for delegation to cheaper sub-agent models. Provides `prepare_subagent_context`, `compress_context`, `build_delegation_prompt`, `fan_out_tasks`, and `store_subagent_result`. CLI: `prepare` (single task) and `fan-out` (multi-task). Per-chunk token ceiling, near-duplicate deduplication, and graceful Qdrant-unreachable fallback.
+- **Langfuse Harness** (`execution/langfuse_harness.py`) — State-file-based cross-process span manager for Claude Code hooks. `init_session_trace()` creates a session-level Langfuse trace persisted in `.tmp/langfuse_session.json`; `open_span()` / `close_span()` open and end child spans per tool call, correlating PreToolUse and PostToolUse processes via deterministic MD5 span keys (`.tmp/langfuse_spans/`); `child_span()` lets execution scripts nest finer-grained spans without depending on the hook lifecycle; `score_trace()` attaches numeric scores; `end_session()` finalises the trace, flushes the client, and removes all state files. Atomic writes (temp + rename) and optional `filelock` prevent race conditions. Full no-op behaviour when `LANGFUSE_ENABLED != true`. CLI: `test`, `status`, `cleanup`.
+- **Claude Code-Native Dispatch Adapter** (`execution/claude_dispatch.py`) — Added adapter that translates agent team manifests into Claude Code Agent tool calls with worktree isolation and cross-agent Qdrant context sharing.
+- **Claude-Aware Dispatch Flags** (`execution/dispatch_agent_team.py`) — Added `--claude`, `--no-claude`, `--claude-mode`, and `--project` flags with auto-detection of Claude Code environment.
+- **Claude-Aware Team Template** (`directives/teams/claude_aware_template.md`) — Added directive template for defining agent teams that leverage Claude Code-native dispatch.
+- **Claude Dispatch SOP** (`directives/claude_dispatch.md`) — Added standard operating procedure for using the Claude Code-native dispatch adapter.
+- **Local Micro Agent** (`execution/local_micro_agent.py`) — Local Ollama model wrapper with model registry (gemma4:e4b fast tier, glm-4.7-flash medium tier), automatic fallback chain, structured JSON output with token metrics, and `health`/`list-models` subcommands. Routes small deterministic tasks to cost-free local inference.
+- **Task Router** (`execution/task_router.py`) — Security-first intelligent task classifier and router. Auto-detects security-sensitive tasks (secrets, tokens, .env, credentials) and forces local-only execution — secrets never leave the machine. Classifies tasks as `local`, `local_required`, or `cloud` based on complexity patterns. Subcommands: `classify`, `route` (execute local or delegate cloud), `split` (decompose compound tasks into independently-routable subtasks), `batch`, `stats`. Tracks routing decisions in `.tmp/task_router_stats.json`.
+- **NotebookLM Skill** (`skills/notebooklm/`) — Query Google NotebookLM notebooks directly from Claude Code for source-grounded, citation-backed answers from Gemini. Browser automation, notebook library management, persistent auth. Adapted for AGI framework with memory-first protocol and cross-agent collaboration.
+- **Local Router Hook** (`.claude/hooks/local_router_hook.py`) — PreToolUse hook that auto-intercepts Bash commands and classifies them via `task_router.py`. Security-sensitive tasks (secrets, tokens, .env) get a `[SECURITY ROUTER]` warning. Small deterministic tasks get pre-computed local results injected as context. Never blocks — soft enforcement via context injection.
+- **Claude Native Config** (`execution/claude_native_config.py`) — Configuration manager for Claude Code native features. Enables agent teams (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`), configures model overrides, generates `settings.local.json`. Subcommands: `status`, `env`, `enable-teams`, `set-model-overrides`, `generate-local-config`.
+- **Dependency Tracker** (`execution/dependency_tracker.py`) — Scans all project dependencies (npm/pip) for known vulnerabilities and supply chain risks. Maintains a curated CVE database (axios, express, lodash, jsonwebtoken, requests, urllib3, etc.). Subcommands: `scan`, `check`, `summary`, `export` (SBOM-lite). Flags unpinned dependencies as warnings.
+- **Local Route Flag** (`execution/dispatch_agent_team.py`) — Added `--local-route` flag that pre-classifies subtasks via `task_router.py` and tags security-sensitive ones as `_local_only` in the payload.
+
+### Security
+
+- **axios** — Updated from `~1.7.9` to `^1.8.2` in whatsapp-cloud-api boilerplate (CVE-2025-27152: SSRF/credential leakage).
+- **express** — Updated from `^4.18.0`/`^4.21.0`/`^4.21.1` to `^4.21.2` across telegram, whatsapp-cloud-api, and loki-mode boilerplates (CVE-2024-29041: open redirect).
+- **requests** — Updated from `>=2.31.0` to `>=2.32.0` in telegram python boilerplate (CVE-2024-35195: cert verification bypass).
+- **Qdrant container fix** (`execution/session_boot.py`) — Fixed `--auto-fix` to restart existing named `qdrant` container instead of creating new unnamed ones. Prevents orphaned containers and data loss.
+
+### Documentation
+
+- **`docs/execution/claude_dispatch.md`** — New. Full reference for the Claude Code-native dispatch adapter, including API, CLI flags, environment detection, and worktree isolation.
+- **`docs/execution/dispatch_agent_team.md`** — Updated. Added Claude Code-native dispatch flags (`--claude`, `--no-claude`, `--claude-mode`, `--project`) and auto-detection behavior.
+- **`docs/execution/local_micro_agent.md`** — New. Local Ollama model wrapper reference: model registry, fallback chain, CLI flags, health check.
+- **`docs/execution/task_router.md`** — New. Security-first task router reference: classification rules, routing table, split/batch commands, stats tracking.
+- **`docs/execution/dependency_tracker.md`** — New. Dependency vulnerability scanner reference: scan/check/summary/export commands, known CVE database, SBOM-lite export.
+- **`docs/execution/langfuse_harness.md`** — New. Full API reference for all public functions, state file schemas, CLI commands, env vars, and design notes.
+- **`docs/execution/langfuse_dashboard.md`** — Updated. Corrected argument defaults to match code (`--before 60`, `--after 30`, `--threshold 2000`); expanded command descriptions with output column details.
+- **`docs/directives/harness_engine.md`** — Updated. Added `langfuse_harness.py` to Key Scripts table.
+
 ## [1.7.0] - 2026-03-22
 
 ### Added
 
-- **Parallel Agent Isolation via Git Worktrees** — Full worktree lifecycle management for parallel agent dispatch.
-- **Parallel Dispatch Mode** — `--parallel` and `--partitions` flags for worktree-isolated parallel execution.
-- **Cloud Automation 4-Tier Architecture** — Local Agent, Cowork, Cloud Tasks, Channels.
-- **Cowork Project Bootstrap** — Delegate full project creation to Claude Cowork.
-- **Session Close Protocol** — End-of-session wrapup with memory verification.
-- **Skill Evaluation Script** — Automated structural evaluation with Qdrant storage.
+- **Parallel Agent Isolation via Git Worktrees** (`execution/worktree_isolator.py`) — Full worktree lifecycle management for parallel agent dispatch. 7 commands: `create`, `create-all`, `merge`, `merge-all`, `cleanup`, `status`, `validate-partitions`. Branch naming: `worktree/{run_id}/{agent}`. Auto-copies `.env` files to worktrees. Worktrees placed in `/tmp/agi-worktrees/<project>/` for performance on cloud-synced filesystems (Synology Drive).
+- **Parallel Dispatch Mode** (`execution/dispatch_agent_team.py`) — New `--parallel` and `--partitions` flags for running sub-agents in parallel using git worktree isolation. File partition validation prevents agents from editing the same files. Manifest enriched with worktree paths and branches per sub-agent. Exit code 5 for partition overlap.
+- **Cloud Automation Directive** (`directives/cloud_automation.md`) — 4-tier automation SOP: Tier 1 Local Agent (Claude Code CLI), Tier 2 Claude Cowork (desktop VM with skills/MCP/scheduling), Tier 3 Cloud Tasks (24/7 scheduled on Anthropic servers), Tier 4 Channels (Telegram/Discord bot). Full automation patterns for hands-free dev cycles, mobile-first control, and project bootstrap.
+- **Cowork Project Bootstrap** (`skills/cowork-export/SKILL.md`) — New "Project Bootstrap Pattern" for delegating full project creation to Claude Cowork. Includes framework structure embedding, constraint passing, and pull-back workflow. Added 5 common automation project ideas.
+- **Session Close Protocol** (`execution/session_wrapup.py`) — End-of-session script that reviews Qdrant activity, verifies memory stores, optionally broadcasts accomplishments to other agents, and flags stale `.tmp/` files. Counterpart to `session_boot.py`.
+- **Skill Evaluation Script** (`skill-creator/scripts/evaluate_skill.py`) — Automated structural evaluation of skills against binary criteria (YAML frontmatter, line count, naming convention, script executability, etc.) with Qdrant storage for historical trend tracking.
+- **Progressive Disclosure Rule** — `SKILL.md` files must stay under 200 lines; overflow content goes into `references/` files.
+- **Mermaid Context Compression** — Added best practice rule to use Mermaid diagrams instead of verbose textual descriptions of architecture to reduce token usage.
+- **Security Team** (`directives/teams/security_team.md`) — New mandatory pre-release agent team with 3 sequential sub-agents: `secret-scanner` (enhanced regex + Shannon entropy + dangerous file detection), `dependency-auditor` (npm audit + license compliance), `code-security-reviewer` (OWASP Top 10 static analysis with CWE tags). Any critical/high finding blocks the release.
+- **Security Scan Script** (`execution/security_scan.py`) — Deterministic security scanner with 4 modes: `secrets`, `dependencies`, `code`, `all`. Supports 16 secret patterns, entropy analysis, npm audit integration, license compliance checks, and 16 OWASP code patterns across Python and JavaScript. Exit code 2 = release blocked, 3 = warnings only.
+- **Security Sub-Agents** — `secret_scanner.md`, `dependency_auditor.md`, `code_security_reviewer.md` in `directives/subagents/`.
+
+### Changed
+
+- **AGENTS.md** — Added Parallel Dispatch with Worktree Isolation section, Cloud Automation section (tier table, Cowork integration, full automation patterns), Session Close Protocol, `evaluate_skill.py` command reference, progressive disclosure enforcement, and Mermaid context compression examples. Added `directives/cloud_automation.md` to Key Directives table. Updated Pattern Reference with "Parallel sub-agents (worktree)".
+- **Multi-LLM Collaboration** (`directives/multi_llm_collaboration.md`) — Added "Pattern 5: Parallel Worktree Isolation (Same Machine)" with architecture diagram, key rules, Claude Code `isolation: "worktree"` integration, dispatch command examples, and edge cases for merge conflicts and orphaned worktrees.
+- **Subagent-Driven Development** (`templates/skills/extended/ai-agents/subagent-driven-development/SKILL.md`) — Added parallel mode comparison, full "Parallel Dispatch with Worktree Isolation" section with prerequisites, workflow, Claude Code Agent tool usage, and decision matrix.
+- **`.gitignore`** — Added `.worktrees/` exclusion for agent worktree directories.
+- **Release Gate** (`.agent/scripts/release_gate.py`) — Now runs the full Security Team scan (`execution/security_scan.py all`) as a mandatory final check. Release is blocked if any critical/high security findings are detected.
+- **Publish Workflow** (`.agent/workflows/publish-npm.md`) — Added Step 3 "Security Team Review" as mandatory gate before version bump. Renumbered steps 4-10.
+
+### Documentation
+
+- **`docs/execution/worktree_isolator.md`** — New. Full reference for worktree isolation commands, flags, exit codes, and edge cases.
+- **`docs/execution/dispatch_agent_team.md`** — New. Updated dispatch documentation covering parallel mode, partitions, and worktree integration.
+- **`docs/directives/cloud_automation.md`** — New. Summary doc pointing to the 4-tier cloud automation directive.
 
 ## [1.6.5] - 2026-03-19
 
 ### Added
+- **Skill Self-Improvement (Karpathy Loop)** — Autonomous test → improve → commit/reset cycle for continuous skill quality improvement. Inspired by Andrej Karpathy's "auto-research" concept:
+  - `execution/run_skill_eval.py` — Binary assertion runner with 18 assertion types (`contains`, `regex_match`, `max_words`, `has_yaml_frontmatter`, `no_trailing_whitespace`, etc.)
+  - `execution/karpathy_loop.py` — Autonomous loop orchestrator with git commit/reset integration, dry-run mode, and status reporting
+  - `eval/evals.json` standard — Structured binary assertion format for objective skill quality measurement
+- **Skill Creator: Step 8** — Added "Self-Improvement Loop (Karpathy Loop)" step to `SKILL_skillcreator.md` with methodology, assertion examples, and auto-generation guidance
+- **Eval Directory Scaffolding** — `init_skill.py` now creates `eval/evals.json` with 4 starter assertions (frontmatter, description quality, structure, no-placeholders) for every new skill
+- **Example evals** — `skills/qdrant-memory/eval/evals.json` added as reference implementation (17/17 passing)
 
-- **Skill Self-Improvement (Karpathy Loop)** — Autonomous test → improve → commit/reset cycle.
+### Documentation
+
+- **`AGENTS.md`** — Added "Skill Self-Improvement (Karpathy Loop)" section with quick start commands, assertion types reference, and key rules. Updated directory structure to show `eval/`. Added eval scripts to Key Scripts section.
 
 ## [1.6.4] - 2026-03-14
 
 ### Fixed
 
-- **CI publish pipeline** — `release_gate.py` no longer hangs on interactive prompts in CI.
+- **CI publish pipeline** — `release_gate.py` no longer hangs on interactive prompts when running in GitHub Actions. All `input()` calls are now CI-aware: auto-fail with a clear error message in non-interactive environments.
+- **CHANGELOG version check** — release gate now exits non-zero with an actionable message instead of prompting when the version is missing from CHANGELOG.
 
 ## [1.6.3] - 2026-03-14
 
 ### Added
+
 - **MCP Compatibility Layer** — The framework is now consumable as MCP servers by Claude Desktop, Antigravity, Cursor, Copilot, OpenCode, OpenClaw, and any MCP-compatible client. Two servers provided:
   - `execution/mcp_server.py` (`agi-framework`) — 13 tools covering the full execution layer: memory auto-query, store, retrieve, cache, list, cross-agent coordination (store/sync/status/handoff/broadcast/pending), and session health check.
   - `skills/qdrant-memory/mcp_server.py` (`qdrant-memory`) — 6 tools wrapping the skill's Python modules directly (no subprocess, no external package).

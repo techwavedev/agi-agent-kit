@@ -39,7 +39,7 @@ import math
 import os
 import sqlite3
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from urllib.request import Request, urlopen
 from urllib.error import URLError
@@ -170,7 +170,7 @@ class BM25Index:
         cursor.execute(
             "INSERT INTO memory_meta (doc_id, content_hash, indexed_at, source) "
             "VALUES (?, ?, ?, ?)",
-            (doc_id, content_hash, datetime.utcnow().isoformat(), "direct")
+            (doc_id, content_hash, datetime.now(timezone.utc).isoformat(), "direct")
         )
 
         self.conn.commit()
@@ -375,7 +375,7 @@ class BM25Index:
         cursor = self.conn.cursor()
         cursor.execute(
             "INSERT OR REPLACE INTO index_stats (key, value) VALUES (?, ?)",
-            ("last_sync", datetime.utcnow().isoformat())
+            ("last_sync", datetime.now(timezone.utc).isoformat())
         )
         self.conn.commit()
 
