@@ -23,6 +23,27 @@ SENSITIVE_PATTERNS = [
     r"(?i)api_key\s*=\s*['\"](sk-[a-zA-Z0-9]{32,})['\"]",
     r"(?i)private_key\s*=\s*['\"](-----BEGIN PRIVATE KEY-----)['\"]",
 ]
+
+# Patterns that leak private repo identity or personal info.
+# These are checked in all tracked files and block release if found.
+PRIVATE_INFO_PATTERNS = [
+    r"techwavedev/agi[^-]",       # Private repo name (must NOT match agi-agent-kit)
+    r"/Users/elton",              # Local username in absolute paths
+    r"192\.168\.68\.",           # Private NAS IP range
+    r"synology.*ssh://",          # NAS git remote URL
+]
+
+# Files that must NEVER appear on the public branch.
+# If present, the release gate blocks and tells the agent to remove them.
+PRIVATE_ONLY_FILES = [
+    "directives/framework_development.md",
+    "directives/template_sync.md",
+    "directives/skill_development.md",
+    "execution/sync_to_template.py",
+    "execution/validate_template.py",
+    ".agent/rules/framework_dev_rules.md",
+]
+
 REQUIRED_DOCS = ["README.md", "CHANGELOG.md"]
 
 # ── WIP LOCK ──────────────────────────────────────────────────────────────────
@@ -141,6 +162,43 @@ def scan_secrets():
             print(f"   - {issue}")
         sys.exit(1)
     print(f"✅ No hardcoded secrets found ({scanned} files scanned).")
+
+
+def scan_private_info():
+    """Scan for private repo references, personal info, and private-only files."""
+    print("🔍 Scanning for private information leaks...")
+    issues = []
+    scanned = 0
+
+    # Check for private-only files that should not exist on public branch
+    for rel_path in PRIVATE_ONLY_FILES:
+        full_path = ROOT_DIR / rel_path
+        if full_path.exists():
+            issues.append(f"PRIVATE-ONLY FILE present: {rel_path} (must be removed before release)")
+
+    # Check tracked files for private info patterns
+    for ext in ["py", "js", "md", "json", "yml", "yaml", "ts", "sh"]:
+        for path in ROOT_DIR.rglob(f"*.{ext}"):
+            if "node_modules" in str(path) or ".git" in str(path) or ".venv" in str(path) or ".idea" in str(path) or ".tmp" in str(path):
+                continue
+            try:
+                content = path.read_text(errors="ignore")
+                for pattern in PRIVATE_INFO_PATTERNS:
+                    match = re.search(pattern, content)
+                    if match:
+                        rel = path.relative_to(ROOT_DIR)
+                        issues.append(f"{rel}: Private info leak — matched pattern '{pattern}'")
+                        break  # one issue per file is enough
+            except Exception:
+                pass
+            scanned += 1
+
+    if issues:
+        print(f"❌ Private information leaks found ({len(issues)} issues, {scanned} files scanned):")
+        for issue in issues:
+            print(f"   - {issue}")
+        sys.exit(1)
+    print(f"✅ No private information leaks detected ({scanned} files scanned).")
 
 def check_versions():
     """Check package.json version matches changelog and enforce the Patch-99 limit."""
@@ -320,6 +378,7 @@ def main():
     scan_secrets()
     check_versions()
     syntax_check()
+    scan_private_info()
     check_markdown_size()
 
     # ── Security Team (MANDATORY — blocks release on failure) ──
