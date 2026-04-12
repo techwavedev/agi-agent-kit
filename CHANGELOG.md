@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.7] - 2026-04-12
+
+### Added
+- **Native Multi-Agent Runtime Integration**: Replaced external node CLI integrations with `execution/agent_runtime.py`, executing workloads directly via IDE prompt adoptions ("In-Context Delegation") or seamlessly shifting to deterministic Ollama subsets using `task_router.py`. Worktree state isolations are cleanly synchronized natively without API bridge lag.
+
 ## [1.7.6] - 2026-04-10
 
 ### Added
