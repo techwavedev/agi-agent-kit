@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.6] - 2026-04-10
+
+### Added
+- **Security Validation Support**: Added `code_security_reviewer`, `dependency_auditor`, `secret_scanner`, and `security_team` directives for comprehensive security scanning.
+- **Langfuse Integration**: Introduced `langfuse_dashboard` and `langfuse_tracing` for enhanced observability.
+- **Local Micro Agent**: Added robust `local_micro_agent` execution to handle deterministic internal operations locally and save context tokens.
+- **Task Router**: Intelligent sub-task routing that correctly balances cloud inference API calls with local execution layers.
+
+### Fixed
+- Addressed Time Machine restore path sync issues and confirmed valid `package.json` state.
+
 ## [1.7.5] - 2026-04-07
 
 ### Added

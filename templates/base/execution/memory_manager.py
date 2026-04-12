@@ -42,21 +42,29 @@ import json
 import os
 import sys
 from pathlib import Path
+import time
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
 # Resolve path to qdrant-memory scripts
-# Adaptive path: try project root first, then core subfolder, then repo template structure
+# Resolve path to qdrant-memory scripts using dual-path (Issue #35)
 current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(current_dir)
+sys.path.insert(0, current_dir)
+try:
+    from resolve_paths import get_project_root, resolve_file
+except ImportError:
+    def get_project_root(): return Path.cwd()
+    def resolve_file(path_str): return Path(path_str)
+
+project_root = get_project_root()
 # Try paths in order of likelihood
 _candidates = [
-    os.path.join(project_root, "skills", "qdrant-memory", "scripts"),
-    os.path.join(project_root, "skills", "core", "qdrant-memory", "scripts"),
-    os.path.join(os.path.dirname(project_root), "skills", "qdrant-memory", "scripts"),
-    os.path.join(os.path.dirname(project_root), "skills", "core", "qdrant-memory", "scripts"),
+    resolve_file("skills/qdrant-memory/scripts"),
+    resolve_file("skills/core/qdrant-memory/scripts"),
+    resolve_file("../skills/qdrant-memory/scripts"),
+    resolve_file("../skills/core/qdrant-memory/scripts"),
 ]
-SKILL_SCRIPTS_DIR = next((p for p in _candidates if os.path.exists(p)), _candidates[0])
+SKILL_SCRIPTS_DIR = next((str(p) for p in _candidates if p.exists()), str(_candidates[0]))
 
 sys.path.insert(0, SKILL_SCRIPTS_DIR)
 
@@ -64,12 +72,44 @@ from embedding_utils import check_embedding_service, get_embedding, get_embeddin
 from semantic_cache import check_cache, store_response, clear_cache
 from memory_retrieval import retrieve_context, store_memory, list_memories, build_filter
 
+# Langfuse Observability — use framework's shared client
+try:
+    from langfuse_tracing import observe_function, get_client as _get_langfuse
+    _LANGFUSE_AVAILABLE = True
+except ImportError:
+    _LANGFUSE_AVAILABLE = False
+
+# Fallback: try langfuse.decorators directly (backward compat)
+try:
+    from langfuse.decorators import observe
+except ImportError:
+    def observe(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+
 # Import BM25 index (optional — graceful if unavailable)
 try:
     from bm25_index import BM25Index
     _BM25_AVAILABLE = True
 except ImportError:
     _BM25_AVAILABLE = False
+
+# Import AAAK Dialect
+try:
+    from aaak_compressor import Dialect
+    _AAAK_AVAILABLE = True
+except ImportError:
+    _AAAK_AVAILABLE = False
+
+def _flush_langfuse():
+    """Flush Langfuse events if available. Safe no-op otherwise."""
+    if _LANGFUSE_AVAILABLE:
+        try:
+            from langfuse_tracing import flush
+            flush()
+        except Exception:
+            pass
 
 # Configuration
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
@@ -128,12 +168,15 @@ def health_check() -> dict:
     return result
 
 
+@observe(name="auto_query_memory", as_type="retrieval")
 def auto_query(
     query: str, 
     project: str = None, 
     threshold: float = 0.92,
     vector_weight: float = None,
-    text_weight: float = None
+    text_weight: float = None,
+    wing: str = None,
+    room: str = None
 ) -> dict:
     """
     Smart query: check cache first, then retrieve context using Hybrid Search.
@@ -168,8 +211,14 @@ def auto_query(
     # Step 2: Context retrieval
     try:
         filters = None
-        if project:
-            filters = {"must": [{"key": "project", "match": {"value": project}}]}
+        if project or wing or room:
+            filters = {"must": []}
+            if project:
+                filters["must"].append({"key": "project", "match": {"value": project}})
+            if wing:
+                filters["must"].append({"key": "wing", "match": {"value": wing}})
+            if room:
+                filters["must"].append({"key": "room", "match": {"value": room}})
 
         context = retrieve_context(
             query, 
@@ -203,6 +252,7 @@ def _parse_markdown_sections(text: str, filename: str) -> list:
 
     for line in text.splitlines():
         if line.startswith("## "):
+            # Save previous section if it has content
             body = "\n".join(current_lines).strip()
             if body:
                 sections.append({"section": current_heading, "content": body, "filename": filename})
@@ -211,6 +261,7 @@ def _parse_markdown_sections(text: str, filename: str) -> list:
         else:
             current_lines.append(line)
 
+    # Save last section
     body = "\n".join(current_lines).strip()
     if body:
         sections.append({"section": current_heading, "content": body, "filename": filename})
@@ -222,7 +273,8 @@ def knowledge_sync(knowledge_dir: str, project: str, reset: bool = False) -> dic
     """
     Sync knowledge/*.md files (excluding core.md) to Qdrant as type=knowledge.
 
-    Uses deterministic UUIDs (project:filename:section) so re-runs are idempotent.
+    Uses deterministic UUIDs (project:filename:section) so re-runs are idempotent
+    (Qdrant upsert behaviour — no duplicates).
 
     Args:
         knowledge_dir: Path to the knowledge/ directory.
@@ -243,6 +295,7 @@ def knowledge_sync(knowledge_dir: str, project: str, reset: bool = False) -> dic
     if not md_files:
         return {"status": "ok", "synced": 0, "message": "No non-core knowledge files found."}
 
+    # Optional: delete existing knowledge points for this project before re-sync
     if reset:
         try:
             delete_filter = {
@@ -273,10 +326,12 @@ def knowledge_sync(knowledge_dir: str, project: str, reset: bool = False) -> dic
         sections = _parse_markdown_sections(text, md_file.name)
 
         for chunk in sections:
+            # Deterministic UUID from project + filename + section (SHA-256 → UUID5 namespace)
             uid_src = f"{project}:{chunk['filename']}:{chunk['section']}"
             sha = hashlib.sha256(uid_src.encode()).hexdigest()[:32]
             det_uuid = str(_uuid.UUID(sha))
 
+            # Embed
             try:
                 embedding = get_embedding(chunk["content"])
             except Exception as e:
@@ -299,6 +354,7 @@ def knowledge_sync(knowledge_dir: str, project: str, reset: bool = False) -> dic
     if not points:
         return {"status": "ok", "synced": 0, "errors": errors, "message": "Nothing to sync."}
 
+    # Batch upsert
     try:
         upsert_body = json.dumps({"points": points}).encode()
         req = Request(
@@ -315,6 +371,7 @@ def knowledge_sync(knowledge_dir: str, project: str, reset: bool = False) -> dic
     except Exception as e:
         return {"status": "error", "message": f"Qdrant upsert error: {e}", "errors": errors}
 
+    # Rebuild BM25 index if available
     if _BM25_AVAILABLE:
         try:
             with BM25Index() as bm25:
@@ -355,6 +412,8 @@ Examples:
     )
     auto_parser.add_argument("--query", required=True, help="Natural language query")
     auto_parser.add_argument("--project", help="Filter by project name")
+    auto_parser.add_argument("--wing", help="Filter by wing")
+    auto_parser.add_argument("--room", help="Filter by room")
     auto_parser.add_argument(
         "--threshold", type=float, default=0.92, help="Cache similarity threshold"
     )
@@ -373,7 +432,12 @@ Examples:
         help="Memory type",
     )
     store_parser.add_argument("--project", help="Project name")
+    store_parser.add_argument("--wing", help="Wing name")
+    store_parser.add_argument("--room", help="Room name")
     store_parser.add_argument("--tags", nargs="+", help="Tags for the memory")
+    store_parser.add_argument("--compress-aaak", action="store_true", help="Compress content using AAAK dialect")
+    store_parser.add_argument("--expire-days", type=int, help="Number of days until this memory expires (temporal filters)")
+    store_parser.add_argument("--resolve-contradictions", action="store_true", help="Check for and invalidate contradicting old facts before storing")
 
     # Retrieve command
     retrieve_parser = subparsers.add_parser(
@@ -382,11 +446,13 @@ Examples:
     retrieve_parser.add_argument("--query", required=True, help="Search query")
     retrieve_parser.add_argument("--type", help="Filter by memory type")
     retrieve_parser.add_argument("--project", help="Filter by project")
+    retrieve_parser.add_argument("--wing", help="Filter by wing")
+    retrieve_parser.add_argument("--room", help="Filter by room")
     retrieve_parser.add_argument(
         "--top-k", type=int, default=5, help="Number of results"
     )
     retrieve_parser.add_argument(
-        "--threshold", type=float, default=0.7, help="Score threshold"
+        "--threshold", type=float, default=0.45, help="Score threshold (default: 0.45)"
     )
     retrieve_parser.add_argument("--vector-weight", type=float, help="Hybrid search vector weight")
     retrieve_parser.add_argument("--text-weight", type=float, help="Hybrid search text weight")
@@ -446,7 +512,9 @@ Examples:
                 args.project, 
                 args.threshold,
                 vector_weight=args.vector_weight,
-                text_weight=args.text_weight
+                text_weight=args.text_weight,
+                wing=getattr(args, "wing", None),
+                room=getattr(args, "room", None)
             )
             print(json.dumps(result, indent=2))
             sys.exit(0 if result["source"] != "none" else 1)
@@ -455,41 +523,168 @@ Examples:
             metadata = {}
             if args.project:
                 metadata["project"] = args.project
+            if getattr(args, "wing", None):
+                metadata["wing"] = args.wing
+            if getattr(args, "room", None):
+                metadata["room"] = args.room
             if args.tags:
                 metadata["tags"] = args.tags
-            result = store_memory(args.content, args.type, metadata)
+            if getattr(args, "expire_days", None):
+                metadata["valid_until"] = int(time.time() + (args.expire_days * 86400))
+
+            content = args.content
+            if getattr(args, "compress_aaak", False) and _AAAK_AVAILABLE:
+                metadata["original_text"] = content
+                try:
+                    dialect = Dialect()
+                    content = dialect.compress(content, metadata=metadata)
+                except Exception:
+                    pass
+                    
+            if getattr(args, "resolve_contradictions", False) and getattr(args, "wing", None) and getattr(args, "room", None):
+                if _LANGFUSE_AVAILABLE:
+                    observe_function("ledger_contradiction_check", op_type="span")(lambda: "Initiated")()
+                try:
+                    # 1. Fetch top existing facts for this wing/room
+                    filters = {"must": [
+                        {"key": "wing", "match": {"value": args.wing}},
+                        {"key": "room", "match": {"value": args.room}}
+                    ]}
+                    # Search using the new content to find semantically similar existing facts
+                    old_context = retrieve_context(args.content, filters=filters, top_k=3, score_threshold=0.5)
+                    
+                    if old_context["total_chunks"] > 0:
+                        from local_micro_agent import run_with_fallback
+
+                        facts = []
+                        valid_points = []
+                        for i, chunk in enumerate(old_context["chunks"]):
+                            if chunk.get("point_id"):
+                                facts.append(f"[{i}] {chunk['content']}")
+                                valid_points.append(chunk["point_id"])
+                        
+                        if facts:
+                            prompt_context = "Existing Facts:\n" + "\n".join(facts)
+                            task = (
+                                f"Does this new fact strictly contradict any of the Existing Facts? "
+                                f"New fact: '{args.content}'\n"
+                                "If yes, reply ONLY with the exact index number(s) in brackets (e.g. '[0]' or '[0, 2]'). "
+                                "If no contradiction, reply 'none'."
+                            )
+                            
+                            res = run_with_fallback(task, prompt_context, None, 0.0, 50, False)
+                            if res["status"] == "success":
+                                resp_text = res["response"]
+                                import re
+                                # Extract all numbers inside brackets
+                                matches = re.findall(r'\[([\d,\s]+)\]', resp_text)
+                                if matches:
+                                    # Split by comma and clean whitespace
+                                    idx_strings = [i.strip() for i in sum([m.split(',') for m in matches], []) if i.strip().isdigit()]
+                                    target_ids = []
+                                    for idx_str in idx_strings:
+                                        idx = int(idx_str)
+                                        if idx < len(valid_points):
+                                            target_ids.append(valid_points[idx])
+                                            
+                                    if target_ids:
+                                        # Issue deprecation update to Qdrant
+                                        from memory_retrieval import QDRANT_URL, COLLECTION
+                                        update_payload = {
+                                            "payload": {"valid_until": int(time.time())},
+                                            "points": target_ids
+                                        }
+                                        req = Request(
+                                            f"{QDRANT_URL}/collections/{COLLECTION}/points/payload",
+                                            data=json.dumps(update_payload).encode(),
+                                            headers={"Content-Type": "application/json"},
+                                            method="POST"
+                                        )
+                                        with urlopen(req, timeout=10):
+                                            pass
+                except Exception as e:
+                    print(f"WARN: Contradiction check failed: {e}", file=sys.stderr)
+
+            # Trace the store operation
+            if _LANGFUSE_AVAILABLE:
+                _traced_store = observe_function("memory_store", op_type="span")(store_memory)
+                result = _traced_store(content, args.type, metadata)
+            else:
+                result = store_memory(content, args.type, metadata)
             print(json.dumps(result, indent=2))
+            _flush_langfuse()
             sys.exit(0)
 
         elif args.command == "retrieve":
             filters = build_filter(
                 type_filter=getattr(args, "type", None), project=args.project
             )
-            result = retrieve_context(
-                args.query,
-                filters={"must": filters["must"]} if filters else None,
-                top_k=args.top_k,
-                score_threshold=args.threshold,
-                vector_weight=args.vector_weight,
-                text_weight=args.text_weight
-            )
+            if filters is None:
+                filters = {"must": []}
+            if not isinstance(filters, dict) or "must" not in filters:
+                filters = {"must": []}
+            if "must_not" not in filters:
+                filters["must_not"] = []
+            
+            if getattr(args, "wing", None):
+                filters["must"].append({"key": "wing", "match": {"value": args.wing}})
+            if getattr(args, "room", None):
+                filters["must"].append({"key": "room", "match": {"value": args.room}})
+            if not filters["must"] and not filters["must_not"]:
+                filters = None
+
+            # Trace the retrieve operation
+            if _LANGFUSE_AVAILABLE:
+                _traced_retrieve = observe_function("memory_retrieve", op_type="retrieval")(retrieve_context)
+                result = _traced_retrieve(
+                    args.query,
+                    filters=filters,
+                    top_k=args.top_k,
+                    score_threshold=args.threshold,
+                    vector_weight=args.vector_weight,
+                    text_weight=args.text_weight
+                )
+            else:
+                result = retrieve_context(
+                    args.query,
+                    filters=filters,
+                    top_k=args.top_k,
+                    score_threshold=args.threshold,
+                    vector_weight=args.vector_weight,
+                    text_weight=args.text_weight
+                )
             print(json.dumps(result, indent=2))
+            _flush_langfuse()
             sys.exit(0 if result.get("total_chunks", 0) > 0 else 1)
 
         elif args.command == "cache-store":
             metadata = {"model": args.model}
             if args.project:
                 metadata["project"] = args.project
-            result = store_response(args.query, args.response, metadata)
+            # Trace the cache-store operation
+            if _LANGFUSE_AVAILABLE:
+                _traced_cache = observe_function("cache_store", op_type="span")(store_response)
+                result = _traced_cache(args.query, args.response, metadata)
+            else:
+                result = store_response(args.query, args.response, metadata)
             print(json.dumps(result, indent=2))
+            _flush_langfuse()
             sys.exit(0)
 
         elif args.command == "list":
             filters = build_filter(
                 type_filter=getattr(args, "type", None), project=args.project
             )
+            list_filters = None
+            if filters:
+                list_filters = {}
+                if "must" in filters:
+                    list_filters["must"] = filters["must"]
+                if "must_not" in filters:
+                    list_filters["must_not"] = filters["must_not"]
+            
             result = list_memories(
-                filters={"must": filters["must"]} if filters else None, limit=args.limit
+                filters=list_filters, limit=args.limit
             )
             print(json.dumps(result, indent=2))
             sys.exit(0)
@@ -517,9 +712,11 @@ Examples:
             sys.exit(0 if result["status"] == "synced" else 2)
 
         elif args.command == "knowledge-sync":
+            # Resolve knowledge directory
             if args.dir:
                 kb_dir = Path(args.dir)
             else:
+                # Default: project_root/knowledge/
                 kb_dir = Path(current_dir).parent / "knowledge"
             result = knowledge_sync(str(kb_dir), args.project, reset=args.reset)
             print(json.dumps(result, indent=2))

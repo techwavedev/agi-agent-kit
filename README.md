@@ -46,7 +46,8 @@ If this project helps you, consider [supporting it here](https://www.buymeacoffe
 Scaffold a new agent workspace in seconds:
 
 ```bash
-npx @techwavedev/agi-agent-kit init
+I added new documentation and a new fork of gsd (get shit done), the notebooklm rag is at as usual for this project https://notebooklm.google.com/notebook/d5e2c764-2dd6-410f-9f67-4d78223aa260 and I would like to know if there are anything we can apply to our project or inspire or make better than gsd on our agi project 
+
 
 # Or install globally to ~/.agent to share skills across projects
 npx @techwavedev/agi-agent-kit init --global
@@ -68,7 +69,7 @@ You'll be guided through an interactive wizard:
 
 After installation the wizard shows your next steps, including:
 
-```bash
+```bashok misunderstood
 # Boot the memory system (verifies Qdrant + Ollama, auto-fixes issues)
 python3 execution/session_boot.py --auto-fix
 

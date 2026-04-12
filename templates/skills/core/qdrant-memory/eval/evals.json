@@ -1,0 +1,59 @@
+{
+  "skill": "qdrant-memory",
+  "version": "1.0.0",
+  "description": "Binary assertions for qdrant-memory SKILL.md quality",
+  "evaluations": [
+    {
+      "name": "frontmatter-valid",
+      "description": "SKILL.md has proper YAML frontmatter with name and description",
+      "input_file": "../SKILL.md",
+      "assertions": [
+        {"type": "has_yaml_frontmatter", "value": true},
+        {"type": "contains", "value": "name:"},
+        {"type": "contains", "value": "description:"}
+      ]
+    },
+    {
+      "name": "description-quality",
+      "description": "Description is comprehensive and not a placeholder",
+      "input_file": "../SKILL.md",
+      "assertions": [
+        {"type": "not_contains", "value": "[TODO:"},
+        {"type": "min_chars", "value": 200},
+        {"type": "min_words", "value": 30}
+      ]
+    },
+    {
+      "name": "structure-complete",
+      "description": "Has proper heading structure with overview",
+      "input_file": "../SKILL.md",
+      "assertions": [
+        {"type": "regex_match", "pattern": "^# "},
+        {"type": "regex_match", "pattern": "^## "},
+        {"type": "contains", "value": "## Prerequisites"},
+        {"type": "contains", "value": "## Core Capabilities"},
+        {"type": "no_consecutive_blank_lines", "value": true}
+      ]
+    },
+    {
+      "name": "no-placeholder-content",
+      "description": "No leftover template placeholders",
+      "input_file": "../SKILL.md",
+      "assertions": [
+        {"type": "not_contains", "value": "[TODO:"},
+        {"type": "not_contains", "value": "Replace with"},
+        {"type": "not_contains", "value": "Delete this entire"}
+      ]
+    },
+    {
+      "name": "code-examples-present",
+      "description": "Has code examples for key capabilities",
+      "input_file": "../SKILL.md",
+      "assertions": [
+        {"type": "contains", "value": "```python"},
+        {"type": "contains", "value": "```bash"},
+        {"type": "contains", "value": "```json"}
+      ]
+    }
+  ]
+}

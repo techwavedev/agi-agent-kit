@@ -42,6 +42,7 @@ QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 PROJECT_DIR = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TMP_DIR = PROJECT_DIR / ".tmp"
 STALE_THRESHOLD_HOURS = 24
+TEAM_STATE_PRUNE_DAYS = int(os.environ.get("TEAM_STATE_PRUNE_DAYS", "7"))
 
 
 def get_recent_memories(since_minutes: int = 60, project: str = None) -> dict:
@@ -220,6 +221,98 @@ def check_stale_tmp_files() -> list:
     return stale_files
 
 
+def prune_team_state_files(days: int = None) -> dict:
+    """Remove .tmp/team-runs/ state directories older than `days` days."""
+    if days is None:
+        days = TEAM_STATE_PRUNE_DAYS
+    team_state_script = PROJECT_DIR / "execution" / "team_state.py"
+    if not team_state_script.exists():
+        return {"status": "skipped", "reason": "team_state.py not found"}
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(team_state_script), "prune", "--days", str(days)],
+            capture_output=True, text=True, timeout=15,
+            cwd=str(PROJECT_DIR),
+        )
+        if proc.returncode == 0:
+            try:
+                result = json.loads(proc.stdout)
+                result["status"] = "ok"
+                return result
+            except json.JSONDecodeError:
+                return {"status": "ok", "pruned": 0}
+        else:
+            return {"status": "error", "stderr": proc.stderr.strip()}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+def apply_session_learnings() -> dict:
+    """Apply accumulated learnings to skill.md files and sync to Qdrant."""
+    learnings_script = PROJECT_DIR / "execution" / "learnings_engine.py"
+    if not learnings_script.exists():
+        return {"status": "skipped", "reason": "learnings_engine.py not found"}
+
+    result = {"learnings_applied": 0, "qdrant_synced": False}
+
+    # Apply learnings to all skills (dry-run safe)
+    try:
+        proc = subprocess.run(
+            ["python3", str(learnings_script), "apply-all"],
+            capture_output=True, text=True, timeout=30,
+            cwd=str(PROJECT_DIR),
+        )
+        if proc.returncode == 0:
+            try:
+                data = json.loads(proc.stdout)
+                applied = [r for r in data.get("results", []) if r.get("status") == "applied"]
+                result["learnings_applied"] = len(applied)
+            except json.JSONDecodeError:
+                pass
+    except Exception as e:
+        result["apply_error"] = str(e)
+
+    # Sync learnings to Qdrant
+    try:
+        proc = subprocess.run(
+            ["python3", str(learnings_script), "sync"],
+            capture_output=True, text=True, timeout=15,
+            cwd=str(PROJECT_DIR),
+        )
+        result["qdrant_synced"] = proc.returncode == 0
+    except Exception:
+        pass
+
+    # Export context_mode session data
+    ctx_script = PROJECT_DIR / "execution" / "context_mode.py"
+    if ctx_script.exists():
+        try:
+            subprocess.run(
+                ["python3", str(ctx_script), "export"],
+                capture_output=True, text=True, timeout=15,
+                cwd=str(PROJECT_DIR),
+            )
+            result["context_exported"] = True
+        except Exception:
+            result["context_exported"] = False
+
+    return result
+
+
+def langfuse_session_summary(since_minutes: int = 60) -> dict:
+    """Get Langfuse trace summary for the session and flush pending events."""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from langfuse_tracing import get_session_summary, flush, shutdown
+        summary = get_session_summary(since_minutes)
+        flush()
+        return summary
+    except ImportError:
+        return {"status": "not_installed"}
+    except Exception as e:
+        return {"status": f"error: {e}"}
+
+
 def deregister_control_tower(agent: str, project: str = None) -> dict:
     """Best-effort heartbeat update via control_tower.py to mark session end."""
     try:
@@ -290,11 +383,23 @@ def main():
     else:
         report["broadcast_status"] = "not_requested"
 
-    # Step 4: Cleanup check for .tmp/
+    # Step 4: Apply session learnings and export context
+    learnings_result = apply_session_learnings()
+    report["learnings"] = learnings_result
+
+    # Step 5: Langfuse session metrics (optional, local dev)
+    langfuse_summary = langfuse_session_summary(args.since)
+    report["langfuse"] = langfuse_summary
+
+    # Step 6: Cleanup check for .tmp/
     stale = check_stale_tmp_files()
     report["stale_tmp_files"] = stale
 
-    # Step 5: Control Tower deregister (best-effort)
+    # Step 6b: Prune old team-run state files
+    prune_result = prune_team_state_files()
+    report["team_state_pruned"] = prune_result
+
+    # Step 7: Control Tower deregister (best-effort)
     ct_result = deregister_control_tower(args.agent, args.project)
     report["control_tower"] = ct_result
 
@@ -345,6 +450,33 @@ def main():
                 print(f"    ... and {len(stale) - 5} more")
         else:
             print("\n  No stale .tmp/ files.")
+
+        # Learnings
+        lr = report.get("learnings", {})
+        applied = lr.get("learnings_applied", 0)
+        synced = lr.get("qdrant_synced", False)
+        ctx_exp = lr.get("context_exported", False)
+        if applied > 0 or synced or ctx_exp:
+            parts = []
+            if applied > 0:
+                parts.append(f"{applied} skills updated")
+            if synced:
+                parts.append("Qdrant synced")
+            if ctx_exp:
+                parts.append("context exported")
+            print(f"\n  Self-correcting loop: {', '.join(parts)}")
+
+        # Langfuse observability
+        lf = report.get("langfuse", {})
+        lf_status = lf.get("status", "disabled")
+        if lf_status == "ok" and lf.get("traces", 0) > 0:
+            print(f"\n  Langfuse: {lf['traces']} traces, {lf.get('errors', 0)} errors, avg {lf.get('avg_latency_ms', 0)}ms")
+            for op_name, op_data in lf.get("operations", {}).items():
+                print(f"    {op_name}: {op_data['count']}x, {op_data.get('avg_latency_ms', 0)}ms avg")
+        elif lf_status == "ok":
+            print(f"\n  Langfuse: active, no traces this session")
+        elif lf_status not in ("disabled", "not_installed", "not_configured"):
+            print(f"\n  Langfuse: {lf_status}")
 
         # Broadcast
         if args.auto_broadcast:

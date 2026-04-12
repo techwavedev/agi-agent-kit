@@ -23,3 +23,7 @@ You must output JSON exactly in this format:
   "message": "Compilation finished successfully."
 }
 ```
+
+## Output Gate
+
+- .tmp/{{run_id}}/dist/index.js
