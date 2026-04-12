@@ -15,9 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Local Micro Agent**: Added robust `local_micro_agent` execution to handle deterministic internal operations locally and save context tokens.
 - **Task Router**: Intelligent sub-task routing that correctly balances cloud inference API calls with local execution layers.
 
-### Fixed
-- Addressed Time Machine restore path sync issues and confirmed valid `package.json` state.
-
 ## [1.7.5] - 2026-04-07
 
 ### Added
