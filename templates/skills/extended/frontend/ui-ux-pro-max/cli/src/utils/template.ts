@@ -102,8 +102,8 @@ function renderFrontmatter(frontmatter: Record<string, string> | null): string {
   const lines = ['---'];
   for (const [key, value] of Object.entries(frontmatter)) {
     // Quote values that contain special characters
-    if (value.includes(':') || value.includes('"') || value.includes('\n')) {
-      lines.push(`${key}: "${value.replace(/"/g, '\\"')}"`);
+    if (value.includes(':') || value.includes('"') || value.includes('\n') || value.includes('\\')) {
+      lines.push(`${key}: "${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`);
     } else {
       lines.push(`${key}: ${value}`);
     }
