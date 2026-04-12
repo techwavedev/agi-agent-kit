@@ -1,16 +1,13 @@
 ---
 name: debug-buttercup
-description: >
-  Debugs the Buttercup CRS (Cyber Reasoning System) running on Kubernetes.
-  Use when diagnosing pod crashes, restart loops, Redis failures, resource pressure,
-  disk saturation, DinD issues, or any service misbehavior in the crs namespace.
-  Covers triage, log analysis,...
+description: "All pods run in namespace crs. Use when pods in the crs namespace are in CrashLoopBackOff, OOMKilled, or restarting, multiple services restart simultaneously (cascade failure), or redis is unresponsive or showing AOF warnings."
+risk: unknown
+source: community
 ---
 
 # Debug Buttercup
 
 ## When to Use
-
 - Pods in the `crs` namespace are in CrashLoopBackOff, OOMKilled, or restarting
 - Multiple services restart simultaneously (cascade failure)
 - Redis is unresponsive or showing AOF warnings
@@ -33,7 +30,7 @@ All pods run in namespace `crs`. Key services:
 
 | Layer | Services |
 |-------|----------|
-| Infra | redis, dind, registry-cache |
+| Infra | redis, dind, langfuse, registry-cache |
 | Orchestration | scheduler, task-server, task-downloader, scratch-cleaner |
 | Fuzzing | build-bot, fuzzer-bot, coverage-bot, tracer-bot, merger-bot |
 | Analysis | patcher, seed-gen, program-model, pov-reproducer |
@@ -257,7 +254,7 @@ Quick reference:
 - **DinD**: `kubectl logs -n crs -l app=dind --tail=100` -- look for docker daemon crashes, storage driver errors
 - **Build-bot**: check build queue depth, DinD connectivity, OOM during compilation
 - **Fuzzer-bot**: corpus disk usage, CPU throttling, crash queue backlog
-- **Patcher**: LLM connectivity, LLM timeout, patch queue depth
+- **Patcher**: Langfuse connectivity, LLM timeout, patch queue depth
 - **Scheduler**: the central brain -- `kubectl logs -n crs -l app=scheduler --tail=-1 --prefix | grep "WAIT_PATCH_PASS\|ERROR\|SUBMIT"`
 
 ## Diagnostic Script

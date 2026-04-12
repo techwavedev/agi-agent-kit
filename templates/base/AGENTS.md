@@ -169,13 +169,9 @@ python execution/scrape_single_site.py \
 
 **All operations use the Hybrid Memory System (Qdrant + BM25) by default.**
 
-#### Session Start (MANDATORY — run once per session)
+#### Session Start
 
-```bash
-python3 execution/session_boot.py --auto-fix
-```
-
-If `"memory_ready": true`, proceed. If false, follow the printed instructions.
+See [Session Boot Protocol](#-session-boot-protocol-mandatory) above — run `session_boot.py --auto-fix` once per session.
 
 #### Before Every Complex Task (MANDATORY)
 
@@ -270,7 +266,7 @@ python3 execution/memory_usage_proof.py --check --since 60
 python3 execution/memory_usage_proof.py --report
 ```
 
-**Opt-out:** User says "don't use cache", "no cache", "skip memory", or "fresh"
+**Opt-out:** If the user says "don't use cache", "no cache", "skip memory", or "fresh" — skip `memory_manager.py auto` and `cache-store` calls for that task. Still run `session_boot.py` and `session_wrapup.py` (infrastructure health), but do not query or store task-specific memories.
 
 > See `directives/memory_integration.md` for full protocol and token savings reference.
 
@@ -317,7 +313,78 @@ Before writing any new script:
 
 Only create new scripts when truly necessary. Reuse and extend existing tools.
 
-### 3. Self-Anneal When Things Break
+### 3. Local-First Routing (Security + Token Savings)
+
+**Principle:** Small deterministic tasks run on local Ollama models (Gemma 4, GLM). Security-sensitive tasks (secrets, tokens, credentials) MUST stay local — never sent to cloud APIs. **Performance-first rule:** Never sacrifice output quality for token savings — if a task needs deep reasoning, it MUST go to cloud.
+
+#### Task Router (auto-classification)
+
+```bash
+# Classify a task → local, local_required, or cloud
+python3 execution/task_router.py classify --task "Extract the API key from .env"
+
+# Route and execute (local tasks run immediately, cloud returns delegation)
+python3 execution/task_router.py route --task "Convert getUserData to snake_case"
+
+# Split compound tasks into independently-routable subtasks
+python3 execution/task_router.py split --task "1) Read .env 2) summarize the log 3) architect caching"
+
+# Routing statistics
+python3 execution/task_router.py stats
+```
+
+#### Task Classification Matrix
+
+| Route | When | Examples | Model |
+|-------|------|----------|-------|
+| `local_required` | Secrets, credentials, .env, tokens, passwords, private keys | Parse .env, extract API key, read credentials.json, check token format | `gemma4:e4b` |
+| `local` | Simple deterministic tasks that don't need deep reasoning | Summarize error log, classify text, convert naming convention, format JSON, count lines, extract fields | `gemma4:e4b` → `glm-4.7-flash` fallback |
+| `cloud` | Complex reasoning, multi-file understanding, architecture | Design system, refactor module, review PR, debug complex issue, implement feature, write documentation | Cloud LLM (Claude, Gemini, etc.) |
+
+**Decision tree:**
+
+```
+Is this task security-sensitive (secrets, .env, credentials)?
+  YES → local_required (NEVER cloud, even if local fails → BLOCKED)
+  NO  → Is it simple + deterministic (summarize, classify, format, extract, parse)?
+    YES → Can Gemma4 handle it without quality loss?
+      YES → local (free tokens)
+      NO  → cloud (quality over savings)
+    NO  → cloud (needs deep reasoning)
+```
+
+**Key rule:** When in doubt, err on the side of **cloud for quality** and **local for security**. The savings from routing simple tasks locally add up (80-100% on repeated work), but a bad answer from a weak model costs more than the tokens saved.
+
+#### Local Micro Agent (execution)
+
+```bash
+# Direct invocation
+python3 execution/local_micro_agent.py --task "Summarize this error" --input-file error.log
+
+# Force a specific model
+python3 execution/local_micro_agent.py --task "Classify this text" --model glm-4.7-flash
+
+# Health check
+python3 execution/local_micro_agent.py health
+```
+
+**Model registry:** `gemma4:e4b` (fast tier, 4B) → `glm-4.7-flash` (medium tier, 12B). Automatic fallback chain if preferred model fails.
+
+**Agent protocol:** Before delegating any task to a sub-agent, the orchestrator SHOULD run `task_router.py classify` to check if it can be handled locally. For batch operations, use `task_router.py split` to decompose compound tasks and route each subtask independently.
+
+#### What Local Models Handle Well (concrete examples)
+
+- ✅ `"Read .env and extract the DATABASE_URL value"` → `local_required`
+- ✅ `"Summarize this 50-line error stack trace"` → `local`
+- ✅ `"Convert camelCase function names to snake_case"` → `local`
+- ✅ `"Parse this JSON and extract the 'status' field"` → `local`
+- ✅ `"Classify this log entry as error/warning/info"` → `local`
+- ✅ `"Count the number of TODO comments in this file"` → `local`
+- ❌ `"Refactor the auth module to use JWT"` → `cloud` (needs deep reasoning)
+- ❌ `"Review this PR for security issues"` → `cloud` (needs context awareness)
+- ❌ `"Design a caching strategy for this API"` → `cloud` (needs architecture thinking)
+
+### 4. Self-Anneal When Things Break
 
 Errors are learning opportunities, not failures. When something breaks:
 
@@ -342,7 +409,7 @@ Errors are learning opportunities, not failures. When something breaks:
 
 **Example:** You hit an API rate limit → investigate API docs → find batch endpoint → rewrite script to use batching → test → update directive with rate limit info and new approach.
 
-### 4. Update Directives as You Learn
+### 5. Update Directives as You Learn
 
 Directives are **living documents**. Update them when you discover:
 
@@ -358,7 +425,7 @@ Directives are **living documents**. Update them when you discover:
 - Append learnings to existing directives rather than replacing content
 - Date your additions for future reference
 
-### 5. Validate Before Delivering
+### 6. Validate Before Delivering
 
 Before marking a task complete:
 
@@ -366,7 +433,7 @@ Before marking a task complete:
 - Spot-check data quality where possible
 - Confirm deliverables are in the expected location (cloud service, output file, etc.)
 
-### 6. Release Governance Protocol (MANDATORY)
+### 7. Release Governance Protocol (MANDATORY)
 
 **Before merging to `public` branch or publishing to NPM, YOU MUST:**
 
@@ -468,7 +535,7 @@ The evaluation stores results in Qdrant for cross-agent visibility and tracks hi
 
 ### Deliverables vs. Intermediates
 
-| Type              | Location       | VExamples                                             |
+| Type              | Location       | Examples                                              |
 | ----------------- | -------------- | ---------------------------------------------------- |
 | **Deliverables**  | Cloud services | Google Sheets, Slides, Drive files, database records |
 | **Intermediates** | `.tmp/`        | Scraped HTML, processed JSON, temp exports           |
@@ -479,23 +546,19 @@ The evaluation stores results in Qdrant for cross-agent visibility and tracks hi
 
 ## Integration with Agent Tools
 
-### Reading and Research
+Use your environment's native tools to interact with the project. The mappings below cover common agent environments:
 
-- Use `view_file` to read directives before starting work
-- Use `grep_search` to find relevant scripts in `execution/`
-- Use `find_by_name` to locate files across the project
-- Search Knowledge Items for prior solutions to similar problems
+| Action | Claude Code | Windsurf / Cursor | Generic |
+|--------|------------|-------------------|---------|
+| Read files | `Read` tool | `view_file` | `cat` / `read` |
+| Search content | `Grep` tool | `grep_search` | `grep` / `rg` |
+| Find files | `Glob` tool | `find_by_name` | `find` / `ls` |
+| Run scripts | `Bash` tool | `run_command` | shell exec |
+| Edit files | `Edit` tool | `replace_file_content` | `sed` / patch |
+| Write files | `Write` tool | `write_to_file` | redirect / `tee` |
 
-### Execution
-
-- Use `run_command` to invoke execution scripts
-- Capture output and exit codes for decision-making
-- Use `command_status` to monitor long-running scripts
-
-### Writing and Updating
-
-- Use `write_to_file` for new scripts (with clear documentation)
-- Use `replace_file_content` to update existing directives with learnings
+- Read directives before starting work
+- Capture script output and exit codes for decision-making
 - Create new workflows in `.agent/workflows/` for repeatable processes
 
 ---
@@ -509,7 +572,8 @@ For frequently-used processes, create workflows in `.agent/workflows/`:
 
 ---
 
-## description: Refresh competitor pricing data and update comparison sheet
+description: Refresh competitor pricing data and update comparison sheet
+---
 
 1. Verify `.env` contains required API keys
 2. Run `python execution/scrape_all_competitors.py`
@@ -563,7 +627,8 @@ When a user says `/playbook`, "run a playbook", or asks for a multi-step workflo
    c. Execute the step using those skills' instructions
    d. Mark complete: `python3 execution/workflow_engine.py complete --notes "what was done"`
 5. **If a step is not applicable**, skip it: `python3 execution/workflow_engine.py skip --reason "why"`
-6. **If the user wants to stop**, abort: `python3 execution/workflow_engine.py abort`
+6. **If a step partially succeeds**, mark it complete with notes on what remains: `--notes "Done X, still needs Y"` — the next step or user can pick up the remainder
+7. **If the user wants to stop**, abort: `python3 execution/workflow_engine.py abort`
 
 ### Commands Reference
 
@@ -625,16 +690,100 @@ Markdown files containing instructions, SOPs, and documentation (`.md`) are fed 
 
 ### Rules for Markdown Conciseness:
 
-1. **Keep it Short**: Challenge every sentence. If the LLM already knows the concept (e.g., standard coding patterns), do not explain it. "Assume the agent is already smart."
-2. **Modularize Large Files**: If a directive or documentation file exceeds 1,500 words or 10,000 bytes, split it into smaller, logically separated files and use parent-child references.
-3. **Prefer Examples Over Prose**: Use concise input/output examples rather than verbose textual descriptions of how something should work.
-4. **Remove Filler**: Eliminate conversational filler, redundant instructions, and obvious statements. Focus on the *what* and the *how*.
-5. **Use Mermaid Context Compression**: Replace long, verbose textual descriptions of system architectures, folder structures, or process workflows with lightweight Mermaid diagrams. A Mermaid diagram costs a few hundred tokens; the same information as prose costs thousands. LLMs parse structured diagrams more efficiently than block paragraphs. Example — instead of a 20-line text description of a 5-step workflow, use:
+1. **Keep it Short**: Challenge every sentence. Assume the agent already knows standard patterns — don't explain them.
+2. **Modularize Large Files**: Over 1,500 words or 10KB? Split into smaller files with parent-child references.
+3. **Prefer Examples Over Prose**: Input/output examples beat verbose descriptions.
+4. **Remove Filler**: No conversational filler, no redundant instructions, no obvious statements.
+5. **Use Mermaid Context Compression**: Replace verbose architecture/workflow descriptions with Mermaid diagrams (hundreds of tokens vs. thousands). Example:
 
    ```mermaid
    graph LR
      A[Input] --> B[Process] --> C[Validate] --> D[Store] --> E[Output]
    ```
+
+---
+
+## Context Mode (Token Saving & Session Persistence)
+
+Context Mode dramatically extends session lifespan by sandbox-filtering heavy tool outputs and persisting session state in SQLite + Qdrant. Hooks auto-intercept tool calls so the system works transparently.
+
+```mermaid
+graph LR
+  A[Tool Output] --> B{> 8KB?}
+  B -->|Yes| C[Sandbox Filter]
+  B -->|No| D[Pass Through]
+  C --> E[Compressed Summary]
+  E --> F[SQLite Track]
+  D --> F
+  F --> G[Context Window]
+  H[Auto-Compact] --> I[Re-inject from SQLite + Qdrant]
+  I --> G
+```
+
+### Quick Start
+
+```bash
+# Manual init (hooks auto-init on SessionStart)
+python3 execution/context_mode.py init --session-id my-session --project myapp
+
+# Track a decision
+python3 execution/context_mode.py track --type decision --content "Chose X" --priority high
+
+# Track heavy data with sandbox filtering
+python3 execution/context_mode.py track --type file_read --content "..." --sandbox
+
+# Token savings dashboard
+python3 execution/context_mode.py status
+
+# Re-inject context after compaction
+python3 execution/context_mode.py reinject --max-tokens 2000
+
+# Export session to Qdrant
+python3 execution/context_mode.py export
+```
+
+### Hooks (Auto-Configured)
+
+Hooks in `.claude/settings.json` auto-intercept tool calls:
+
+| Hook | Event | Purpose |
+|------|-------|---------|
+| `context_session_start.py` | `SessionStart` | Auto-init SQLite session |
+| `context_filter.py` | `PostToolUse` | Sandbox-filter Read/Grep/Bash/Glob/WebFetch outputs > 8KB |
+| `context_reinject.py` | `PreCompact` | Re-inject critical context before compaction |
+
+### Environment Variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `CTX_COMPRESSION_THRESHOLD` | `8192` | Bytes threshold for sandbox filtering |
+| `CTX_REINJECT_TOKENS` | `2000` | Max tokens for re-injection payload |
+| `CTX_QDRANT_PERSIST` | `false` | Also store filtered context in Qdrant |
+| `CTX_AGENT` | `claude` | Agent name for session tracking |
+| `CTX_PROJECT` | `agi-agent-kit` | Project name for session tracking |
+
+### Self-Correcting Memory Loop (learnings.md)
+
+Skills self-improve via accumulated feedback:
+
+```bash
+# Log a learning after a failure or correction
+python3 execution/learnings_engine.py log --skill brainstorming --learning "Keep under 500 words" --severity warning
+
+# Read learnings before executing a skill
+python3 execution/learnings_engine.py read --skill brainstorming
+
+# Apply learnings to SKILL.md (rewrites the file)
+python3 execution/learnings_engine.py apply --skill brainstorming
+
+# Apply all accumulated learnings at session end
+python3 execution/learnings_engine.py apply-all
+
+# Sync learnings to Qdrant
+python3 execution/learnings_engine.py sync
+```
+
+**Agent protocol:** Before executing any skill, read its learnings. After any failure or user correction, log the learning. `session_wrapup.py` auto-applies and syncs at session end.
 
 ---
 
@@ -737,15 +886,23 @@ When a script returns an error:
 
 ## Agent Teams Protocol
 
-> See `docs/agent-teams/README.md` for full reference. See `.agent/rules/agent_team_rules.md` for mandatory rules.
+> See `docs/agent-teams/README.md` for full reference and mandatory rules.
 
 ### What Are Team Agents?
 
-A **team agent** is a named group of sub-agents that collaborate toward a shared goal. Teams are defined in `directives/teams/` and dispatched with:
+A **team agent** is a named group of sub-agents that collaborate toward a shared goal. Teams are defined in `directives/teams/`. 
+
+Starting with v1.7.7, the framework uses a **Native Agent Runtime** to manage these teams without relying on external Node CLIs. 
+- **Simple Tasks:** Are automatically routed to `local_micro_agent.py` running locally on Ollama.
+- **Complex Tasks:** Are delegated back to *you*, the active orchestrator session (Claude, Antigravity, Copilot, etc.) via In-Context Delegation, so no external cloud API keys are expended.
+
+Dispatch teams using the native runtime execution flag:
 
 ```bash
-python3 execution/dispatch_agent_team.py --team <team_id> --payload '<json>'
+python3 execution/dispatch_agent_team.py --team <team_id> --payload '<json>' --execute-native
 ```
+
+> **Mandatory Rule:** When a sub-agent task returns `"status": "delegated_to_active_session"`, you MUST immediately open the provided `delegation_file` and execute its instructions natively as the specified persona.
 
 ### Dynamic State Handoff (Agent Communication)
 
@@ -785,12 +942,56 @@ Then invoke each sub-agent in the manifest in order:
 
 **Tasks are not complete until the documentation team has run and passed.**
 
+### Parallel Dispatch with Worktree Isolation
+
+When sub-agents can work independently (different files), use `--parallel` to give each its own git worktree:
+
+```bash
+# Parallel mode: each sub-agent gets isolated worktree
+python3 execution/dispatch_agent_team.py \
+  --team my_team \
+  --payload '{"task": "..."}' \
+  --parallel \
+  --partitions '{"agent-1": ["src/api/**"], "agent-2": ["tests/**"]}' \
+  --execute-native
+```
+
+**How it works:**
+
+```
+Orchestrator
+  ├─ validate-partitions (ensure no file overlap)
+  ├─ create-all worktrees (one per sub-agent, separate branch each)
+  ├─ dispatch sub-agents IN PARALLEL (each in its own directory)
+  ├─ merge-all (sequential merge back to source branch)
+  └─ cleanup (remove worktrees + branches)
+```
+
+**Worktree isolator commands:**
+
+```bash
+python3 execution/worktree_isolator.py create --agent <name> --run-id <id>
+python3 execution/worktree_isolator.py merge --agent <name> --run-id <id>
+python3 execution/worktree_isolator.py merge-all --run-id <id>
+python3 execution/worktree_isolator.py cleanup --agent <name> --run-id <id>
+python3 execution/worktree_isolator.py status [--run-id <id>]
+python3 execution/worktree_isolator.py validate-partitions --partitions '<json>'
+```
+
+**Claude Code native support:** Use `isolation: "worktree"` on the Agent tool to auto-create an isolated worktree per subagent.
+
+**Key rules:**
+- Always validate file partitions before parallel dispatch
+- `.env` files are auto-copied to each worktree
+- Merge branches back sequentially (first-come-first-merged)
+- Never push worktree branches directly to main — use named branches + PRs
+
 ### Pattern Reference
 
 | Pattern | When to Use | How |
 |---------|-------------|-----|
 | Single sub-agent (sequential) | Independent task + two-stage review | `code_review_team` |
-| Parallel sub-agents | 2+ independent domains | Multiple dispatches in parallel |
+| Parallel sub-agents (worktree) | 2+ independent domains, different files | `--parallel` flag on dispatch |
 | Doc-team-on-code | After any code change | `documentation_team` (always) |
 | Full pipeline | Release-quality flow | `code_review_team` → `documentation_team` → `qa_team` |
 
@@ -806,6 +1007,44 @@ python3 execution/run_test_scenario.py --all
 
 ---
 
+## Cloud Automation (Cowork, Cloud Tasks, Channels)
+
+> See `directives/cloud_automation.md` for full SOP.
+
+The framework integrates with Claude's cloud-native features for full automation without human interaction:
+
+| Tier | Tool | When | How |
+|------|------|------|-----|
+| Local | Worktrees + `/loop` | Terminal-based, parallel agents | `worktree_isolator.py`, `/loop 10m <task>` |
+| Cowork | Desktop VM agent | Skills + file ops + connectors | `cowork-export` skill, Dispatch from phone |
+| Cloud | Cloud Tasks (24/7) | Critical scheduled runs | `claude.ai/code` web UI |
+| Remote | Channels (Telegram) | Phone → terminal control | `/plugin install telegram` |
+
+### Cowork Integration
+
+```bash
+# Export context + task to Cowork (clipboard)
+python3 skills/cowork-export/scripts/export_context.py \
+  --project agi-agent-kit \
+  --task "Build a new automation project with these specs" \
+  --include-files CLAUDE.md \
+  --clipboard
+
+# Track the handoff in Qdrant
+python3 execution/cross_agent_context.py handoff \
+  --from "claude" --to "cowork" \
+  --task "Build automation project" \
+  --project agi-agent-kit
+```
+
+### Full Automation Patterns
+
+1. **Hands-free dev cycle**: Cloud Task (nightly tests) → Cowork (morning briefing) → Local agent (implement) → Cowork (review)
+2. **Mobile dispatch**: Phone → Cowork Dispatch → Desktop executes → Phone gets summary
+3. **Project bootstrap**: Export spec → Cowork builds full project → Pull back locally
+
+---
+
 ## Framework Self-Development (Dogfooding)
 
 When working on the AGI Agent Kit framework itself, use its own system:
@@ -818,6 +1057,7 @@ When working on the AGI Agent Kit framework itself, use its own system:
 | `directives/template_sync.md` | Keeping root ↔ templates/base/ in sync |
 | `directives/skill_development.md` | Creating/updating/testing skills |
 | `directives/multi_llm_collaboration.md` | Multi-LLM collaboration via Qdrant |
+| `directives/cloud_automation.md` | Cloud Tasks, Cowork, Channels, full automation |
 
 ### Key Workflows
 
@@ -853,6 +1093,23 @@ python3 execution/run_skill_eval.py --evals skills/<skill>/eval/evals.json --ver
 
 # Skill self-improvement: Karpathy Loop
 python3 execution/karpathy_loop.py --skill skills/<skill> --status-only
+
+# Task router: classify, route, split
+python3 execution/task_router.py classify --task "Extract API key from .env"
+python3 execution/task_router.py route --task "Summarize this error" --input-file error.log
+python3 execution/task_router.py split --task "1) read .env 2) summarize log 3) architect cache"
+
+# Local micro agent: run small tasks on Ollama
+python3 execution/local_micro_agent.py --task "Convert to snake_case: getUserData" --raw
+python3 execution/local_micro_agent.py health
+
+# Dependency tracker: scan for vulnerabilities
+python3 execution/dependency_tracker.py scan
+python3 execution/dependency_tracker.py check --package axios --version 1.7.9 --ecosystem npm
+
+# Claude native config: enable agent teams, model overrides
+python3 execution/claude_native_config.py status
+python3 execution/claude_native_config.py enable-teams
 ```
 
 ### MCP Servers
@@ -868,7 +1125,7 @@ Two MCP servers expose the framework to Claude Desktop, Antigravity, Cursor, Cop
 
 ### Rules
 
-See `.agent/rules/framework_dev_rules.md` — enforces root-is-source-of-truth, mandatory sync, private file protection.
+See `.agent/rules/versioning_rules.md` and `directives/framework_development.md` — enforces root-is-source-of-truth, mandatory sync, private file protection.
 
 ---
 

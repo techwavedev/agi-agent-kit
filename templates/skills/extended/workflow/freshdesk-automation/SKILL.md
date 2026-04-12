@@ -1,7 +1,7 @@
 ---
 name: freshdesk-automation
 description: "Automate Freshdesk helpdesk operations including tickets, contacts, companies, notes, and replies via Rube MCP (Composio). Always search tools first for current schemas."
-risk: unknown
+risk: critical
 source: community
 date_added: "2026-02-27"
 ---
@@ -19,7 +19,6 @@ Automate Freshdesk customer support workflows including ticket management, conta
 ## Setup
 
 **Get Rube MCP**: Add `https://rube.app/mcp` as an MCP server in your client configuration. No API keys needed — just add the endpoint and it works.
-
 
 1. Verify Rube MCP is available by confirming `RUBE_SEARCH_TOOLS` responds
 2. Call `RUBE_MANAGE_CONNECTIONS` with toolkit `freshdesk`

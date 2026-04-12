@@ -40,7 +40,7 @@ import json
 import os
 import sys
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
@@ -145,7 +145,7 @@ def store_response(
     payload = {
         "query": query,
         "response": response,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "type": "cache",
         "token_count": len(response.split()),
         **(metadata or {})
@@ -209,7 +209,7 @@ def clear_cache(older_than_days: int = 7) -> Dict[str, Any]:
     Returns:
         Deletion result with count
     """
-    cutoff = (datetime.utcnow() - timedelta(days=older_than_days)).isoformat()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=older_than_days)).isoformat()
     
     delete_payload = {
         "filter": {

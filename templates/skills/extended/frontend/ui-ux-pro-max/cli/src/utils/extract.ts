@@ -1,16 +1,12 @@
 import { mkdir, rm, access, cp, mkdtemp, readdir } from 'node:fs/promises';
 import { join, basename } from 'node:path';
-import { exec, execFile } from 'node:child_process';
+import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import { tmpdir } from 'node:os';
 import type { AIType } from '../types/index.js';
 import { AI_FOLDERS } from '../types/index.js';
 
 const execAsync = promisify(exec);
-// execFile does NOT invoke a shell, so argv entries cannot be interpreted as
-// shell metacharacters. Use this for any path that originates from the user
-// or the environment (CodeQL js/shell-command-injection-from-environment).
-const execFileAsync = promisify(execFile);
 
 const EXCLUDED_FILES = ['settings.local.json'];
 
@@ -74,14 +70,12 @@ export async function copyFolders(
       await cp(sourcePath, targetPath, { recursive: true, filter: filterFn });
       copiedFolders.push(folder);
     } catch {
-      // Fallback for older Node versions. We use execFile (argv list, no
-      // shell) so the source/target paths cannot be re-interpreted as shell
-      // metacharacters, even when they originate from the environment.
+      // Try shell fallback for older Node versions
       try {
         if (process.platform === 'win32') {
-          await execFileAsync('xcopy', [sourcePath, targetPath, '/E', '/I', '/Y']);
+          await execAsync(`xcopy "${sourcePath}" "${targetPath}" /E /I /Y`);
         } else {
-          await execFileAsync('cp', ['-R', `${sourcePath}/.`, targetPath]);
+          await execAsync(`cp -r "${sourcePath}/." "${targetPath}"`);
         }
         copiedFolders.push(folder);
       } catch {

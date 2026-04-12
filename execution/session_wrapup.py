@@ -42,6 +42,7 @@ QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 PROJECT_DIR = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TMP_DIR = PROJECT_DIR / ".tmp"
 STALE_THRESHOLD_HOURS = 24
+TEAM_STATE_PRUNE_DAYS = int(os.environ.get("TEAM_STATE_PRUNE_DAYS", "7"))
 
 
 def get_recent_memories(since_minutes: int = 60, project: str = None) -> dict:
@@ -220,6 +221,32 @@ def check_stale_tmp_files() -> list:
     return stale_files
 
 
+def prune_team_state_files(days: int = None) -> dict:
+    """Remove .tmp/team-runs/ state directories older than `days` days."""
+    if days is None:
+        days = TEAM_STATE_PRUNE_DAYS
+    team_state_script = PROJECT_DIR / "execution" / "team_state.py"
+    if not team_state_script.exists():
+        return {"status": "skipped", "reason": "team_state.py not found"}
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(team_state_script), "prune", "--days", str(days)],
+            capture_output=True, text=True, timeout=15,
+            cwd=str(PROJECT_DIR),
+        )
+        if proc.returncode == 0:
+            try:
+                result = json.loads(proc.stdout)
+                result["status"] = "ok"
+                return result
+            except json.JSONDecodeError:
+                return {"status": "ok", "pruned": 0}
+        else:
+            return {"status": "error", "stderr": proc.stderr.strip()}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 def apply_session_learnings() -> dict:
     """Apply accumulated learnings to skill.md files and sync to Qdrant."""
     learnings_script = PROJECT_DIR / "execution" / "learnings_engine.py"
@@ -367,6 +394,10 @@ def main():
     # Step 6: Cleanup check for .tmp/
     stale = check_stale_tmp_files()
     report["stale_tmp_files"] = stale
+
+    # Step 6b: Prune old team-run state files
+    prune_result = prune_team_state_files()
+    report["team_state_pruned"] = prune_result
 
     # Step 7: Control Tower deregister (best-effort)
     ct_result = deregister_control_tower(args.agent, args.project)

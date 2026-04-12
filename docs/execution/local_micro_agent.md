@@ -1,10 +1,10 @@
 # local_micro_agent.py
 
-Route small, deterministic tasks to local Ollama models (Gemma 4, GLM) to save cloud API tokens. Supports model registry, automatic fallback, structured JSON output, and cost tracking.
+Route small, deterministic tasks to local Ollama models or cloud fallback providers to save tokens. Supports model registry, automatic fallback, structured JSON output, and cost tracking.
 
 ## Purpose
 
-Wraps Ollama's API with a model registry, automatic fallback chain, and structured output. Used by `task_router.py` for local execution and directly by agents for known-small tasks.
+Wraps Ollama's API with a model registry, automatic fallback chain, and structured output. When local Ollama is unavailable or the user's hardware is insufficient, the system transparently cascades to cheap cloud models (Gemini Flash, GPT-4o-mini, Claude Haiku) using API keys from `.env`.
 
 ## Usage
 
@@ -60,13 +60,25 @@ python3 execution/local_micro_agent.py health         # Ollama + model health ch
 
 ## Model Registry
 
+### Local Models (Ollama)
+
 | Model | Tier | Strength | Max Tokens |
 |-------|------|----------|------------|
 | `gemma4:e4b` | fast | Code understanding, classification, extraction, summarization | 2048 |
 | `glm-4.7-flash:latest` | medium | Reasoning, analysis, code generation, multi-step logic | 4096 |
 | `nomic-embed-text:latest` | embedding | Embeddings only (not for generation) | N/A |
 
-**Fallback chain:** `gemma4:e4b` -> `glm-4.7-flash:latest`. If preferred model fails, automatically tries the next.
+### Cloud Fallback Models
+
+When Ollama is unavailable, the system auto-detects API keys from `.env` and routes to the cheapest available cloud provider:
+
+| Model | Provider | Env Variable | Cost Tier |
+|-------|----------|-------------|-----------|
+| `gemini-1.5-flash` | Google | `GEMINI_API_KEY` | Lowest |
+| `gpt-4o-mini` | OpenAI | `OPENAI_API_KEY` | Low |
+| `claude-3-haiku-20240307` | Anthropic | `ANTHROPIC_API_KEY` | Low |
+
+**Fallback chain:** Local Ollama → Cloud cheapest available. No SDK dependencies — uses raw `urllib.request`.
 
 ## Output Format
 
@@ -87,23 +99,40 @@ Default (structured):
 }
 ```
 
+Cloud fallback output:
+```json
+{
+  "status": "success",
+  "model": "gemini-1.5-flash",
+  "response": "get_user_profile_data",
+  "metrics": {
+    "elapsed_seconds": 0.82,
+    "is_cloud": true
+  },
+  "cloud_tokens_saved": 0
+}
+```
+
 ## Exit Codes
 
 | Code | Meaning |
 |------|---------|
 | 0 | Success |
-| 1 | Ollama unreachable or model not available |
+| 1 | Ollama unreachable and no cloud API keys configured |
 | 2 | Input file not found |
 | 3 | Model inference error |
-| 4 | All fallback models exhausted |
+| 4 | All fallback models exhausted (local + cloud) |
 
 ## Environment Variables
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `OLLAMA_URL` | `http://localhost:11434` | Ollama API endpoint |
+| `GEMINI_API_KEY` | — | Google AI API key for Gemini Flash fallback |
+| `OPENAI_API_KEY` | — | OpenAI API key for GPT-4o-mini fallback |
+| `ANTHROPIC_API_KEY` | — | Anthropic API key for Claude Haiku fallback |
 
 ## Dependencies
 
-- Ollama running locally with at least one generation model
+- Ollama running locally with at least one generation model **OR** at least one cloud API key in `.env`
 - No pip dependencies (uses stdlib `urllib`)

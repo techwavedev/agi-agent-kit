@@ -82,21 +82,21 @@ async def handle_incoming_message(message: dict) -> None:
 
     # TODO: Implement your message handling logic here
     # Example: Echo back the message
-    match content["type"]:
-        case "text":
-            await whatsapp.send_text(from_number, f"Recebi sua mensagem: \"{content['text']}\"")
+    content_type = content["type"]
+    if content_type == "text":
+        await whatsapp.send_text(from_number, f"Recebi sua mensagem: \"{content['text']}\"")
 
-        case "button":
-            await whatsapp.send_text(from_number, f"Voce selecionou: {content['text']}")
+    elif content_type == "button":
+        await whatsapp.send_text(from_number, f"Voce selecionou: {content['text']}")
 
-        case "list":
-            await whatsapp.send_text(from_number, f"Voce escolheu: {content['text']}")
+    elif content_type == "list":
+        await whatsapp.send_text(from_number, f"Voce escolheu: {content['text']}")
 
-        case "image" | "document" | "video" | "audio":
-            await whatsapp.send_text(from_number, f"Recebi sua midia ({content['type']}).")
+    elif content_type in ("image", "document", "video", "audio"):
+        await whatsapp.send_text(from_number, f"Recebi sua midia ({content['type']}).")
 
-        case _:
-            await whatsapp.send_text(from_number, "Desculpe, nao entendi. Como posso ajudar?")
+    else:
+        await whatsapp.send_text(from_number, "Desculpe, nao entendi. Como posso ajudar?")
 
 
 # === Status Handler ===

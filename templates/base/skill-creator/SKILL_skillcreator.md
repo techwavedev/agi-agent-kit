@@ -400,3 +400,61 @@ After testing the skill, users may request improvements. Often this happens righ
 2. Notice struggles or inefficiencies
 3. Identify how SKILL.md or bundled resources should be updated
 4. Implement changes and test again
+
+### Step 8: Self-Improvement Loop (Karpathy Loop)
+
+For **automated, autonomous improvement** of skill quality, use the Karpathy Loop — an iterative cycle that tests, improves, and version-controls skills using binary assertions.
+
+> Inspired by Andrej Karpathy's "auto-research" concept and Simon Scrapes' application to Claude Code skills.
+
+#### Prerequisites
+
+- Skill has an `eval/evals.json` file with binary assertions (created by `init_skill.py`)
+- Git repository is initialized
+
+#### The Loop
+
+```
+1. Read SKILL.md + current eval pass rate
+2. Identify failing binary assertions
+3. Make a targeted change to fix failures
+4. Run evals: python3 execution/run_skill_eval.py --evals eval/evals.json
+5. If pass_rate > previous_best → git commit (keep)
+   If pass_rate <= previous_best → git reset (discard)
+6. Loop to step 1 until perfect score or max iterations
+```
+
+#### Quick Start
+
+```bash
+# Check current eval status
+python3 execution/karpathy_loop.py --skill skills/my-skill --status-only
+
+# Run improvement loop (agent makes changes, script evaluates)
+python3 execution/karpathy_loop.py --skill skills/my-skill --max-iterations 10
+
+# Dry run (no git operations)
+python3 execution/karpathy_loop.py --skill skills/my-skill --dry-run
+```
+
+#### Writing Good evals.json Assertions
+
+**Use only binary (true/false) assertions.** Never use subjective quality measures.
+
+| ✅ Good (Binary)                      | ❌ Bad (Subjective)              |
+|---------------------------------------|----------------------------------|
+| `"max_words": 300`                    | "Is the text concise?"           |
+| `"contains": "## Overview"`          | "Does it have a good structure?" |
+| `"not_contains": "[TODO:"`           | "Is the content complete?"       |
+| `"has_yaml_frontmatter": true`       | "Is the frontmatter correct?"    |
+| `"regex_match": "^## "`             | "Does it use proper headings?"   |
+
+#### Auto-Generating evals.json
+
+Ask the agent to generate assertions from SKILL.md:
+
+> "Read this SKILL.md and generate binary assertions for eval/evals.json that validate the structural requirements, forbidden patterns, and format constraints."
+
+#### Limitations
+
+The Karpathy Loop works for **structural quality** — format, word counts, forbidden patterns, required sections. It does **not** work for tone, creative quality, or contextual accuracy — those still need human review.

@@ -46,7 +46,8 @@ If this project helps you, consider [supporting it here](https://www.buymeacoffe
 Scaffold a new agent workspace in seconds:
 
 ```bash
-npx @techwavedev/agi-agent-kit init
+I added new documentation and a new fork of gsd (get shit done), the notebooklm rag is at as usual for this project https://notebooklm.google.com/notebook/d5e2c764-2dd6-410f-9f67-4d78223aa260 and I would like to know if there are anything we can apply to our project or inspire or make better than gsd on our agi project 
+
 
 # Or install globally to ~/.agent to share skills across projects
 npx @techwavedev/agi-agent-kit init --global
@@ -68,7 +69,7 @@ You'll be guided through an interactive wizard:
 
 After installation the wizard shows your next steps, including:
 
-```bash
+```bashok misunderstood
 # Boot the memory system (verifies Qdrant + Ollama, auto-fixes issues)
 python3 execution/session_boot.py --auto-fix
 
@@ -121,6 +122,20 @@ The agi framework adopts all best patterns from [obra/superpowers](https://githu
 | Platform Setup Wizard        |        ❌        |       ✅ One-shot config       |
 | Multi-Platform Symlinks      |  ❌ Claude only  |        ✅ 10 platforms         |
 | MCP Server                   |        ❌        |   ✅ Memory + coordination     |
+
+---
+
+## 🆚 How This Compares to MemPalace
+
+While traditional AI memory systems like MemPalace introduce clever textual compression techniques, they hit a fundamental scalability paradigm limit by treating memory like a localized SQLite filing cabinet. The **AGI Agent Kit** takes those theoretical leaps and deploys them onto an enterprise-grade infrastructure.
+
+| Capability                     | MemPalace (SQLite/Chroma)                      | AGI Swarm (Qdrant + BM25)                                 |
+| ------------------------------ | ---------------------------------------------- | --------------------------------------------------------- |
+| **Data Architecture**          | Strict Relational Graph (SQLite)               | Distributed Hybrid Vector Cloud (Qdrant)                  |
+| **Zero-Loss Compression**      | Requires secondary filesystem lookup ("Drawer")| Invisible JSON Payload ("Drawer" inside vector metadata)  |
+| **Time-Stamped Self-Healing**  | Manual hard-coded invalidations                | Native Qdrant Range Filters (`valid_until < NOW()`)       |
+| **Contradiction Resolution**   | Halts process, begs user                       | AI Ledger pre-store resolution via local LLM router       |
+| **Scale Limits**               | Local-only, single MCP server                  | Massive, Cross-Agent Multi-LLM Orchestration              |
 
 ---
 
@@ -301,25 +316,7 @@ MEMORY_MODE=solo python3 execution/session_boot.py --auto-fix
 MEMORY_MODE=team python3 execution/memory_manager.py store \
   --content "Use Redis for session cache" --type decision --project myapp --shared
 
-# Pro: signed writes with tamper detection and access control
-MEMORY_MODE=pro python3 execution/blockchain_auth.py init
-python3 execution/blockchain_auth.py register --entity-type developer --entity-id you@co.com
-python3 execution/blockchain_auth.py grant --entity-id you@co.com --project myapp --permissions read,write
-python3 execution/memory_manager.py store --content "Decision" --type decision --project myapp --auth
-# → {"status": "stored", "signature": "...", "blockchain_anchor": {"status": "anchored"}, "event": {"status": "published"}}
 ```
-
-### Blockchain Authentication (Pro Mode)
-
-Pro mode adds cryptographic verification to every write:
-
-- **HMAC-SHA256 signing** — every memory gets a signature at write-time
-- **Hash anchoring** — content hash stored in Qdrant `agent_auth` collection for tamper detection
-- **Project access control** — grant read/write per entity per project
-- **Audit trail** — who wrote what, when, with verification status
-- **W3C DID identity** (optional) — via Hyperledger Aries ACA-Py 1.5.0 (Apache 2.0)
-
-All auth data is stored in the shared Qdrant instance — no separate database needed. See [docs/blockchain-auth.md](./docs/blockchain-auth.md).
 
 ### Real-Time Agent Events (Apache Pulsar)
 
@@ -356,7 +353,7 @@ Every component is sourced from the shared Qdrant:
 - **BM25 keyword index** — local SQLite, auto-rebuilt from Qdrant on each `session_boot`
 - **Events** — Apache Pulsar (optional, graceful degradation)
 
-For full details: [docs/memory-modes.md](./docs/memory-modes.md) · [docs/blockchain-auth.md](./docs/blockchain-auth.md) · [docs/agent-events.md](./docs/agent-events.md)
+For full details: [docs/memory-modes.md](./docs/memory-modes.md) · [docs/agent-events.md](./docs/agent-events.md)
 
 ---
 
@@ -574,7 +571,6 @@ Use these keywords, commands, and phrases to trigger specific capabilities:
 
 - **[AGENTS.md](./AGENTS.md)** — Complete architecture and operating principles
 - **[docs/memory-modes.md](./docs/memory-modes.md)** — Memory mode tiers (Solo / Team / Pro)
-- **[docs/blockchain-auth.md](./docs/blockchain-auth.md)** — Distributed auth with Hyperledger Aries
 - **[docs/agent-events.md](./docs/agent-events.md)** — Real-time events with Apache Pulsar
 - **[skills/SKILLS_CATALOG.md](./skills/SKILLS_CATALOG.md)** — Skill catalog
 - **[CHANGELOG.md](./CHANGELOG.md)** — Version history
@@ -603,7 +599,7 @@ If these community skills help you, consider [starring the original repo](https:
 | Feature                             | Status       | Description                                                                                                                                                                                                               |
 | ----------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Federated Agent Memory**          | ✅ Shipped    | Cross-agent knowledge sharing via shared Qdrant. Multi-tenancy with developer isolation, `--shared` flag for team visibility. 15/15 tests. ([docs](./docs/memory-modes.md))                                               |
-| **Blockchain Agent Trust & Tenancy** | ✅ Shipped   | HMAC-SHA256 signed writes, hash anchoring, project access control, audit trail — all via shared Qdrant `agent_auth` collection. Optional W3C DID via Hyperledger Aries ACA-Py 1.5.0. 36/36 tests. ([docs](./docs/blockchain-auth.md)) |
+| **Blockchain Agent Trust & Tenancy** | 🧊 Backlogged | HMAC-SHA256 signed writes, hash anchoring, project access control, audit trail — all via shared Qdrant `agent_auth` collection. Optional W3C DID via Hyperledger Aries ACA-Py 1.5.0. 36/36 tests. ([docs](./docs/blockchain-auth.md)) |
 | **Event-Driven Agent Streaming**    | ✅ Shipped    | Apache Pulsar event bus with auto-publish on `memory_manager.py store`. Project-scoped topics, graceful degradation. 19/19 tests. ([docs](./docs/agent-events.md))                                                        |
 | **Memory Mode Tiers**               | ✅ Shipped    | Solo → Team → Pro progression. Backward-compatible upgrades, no data migration. BM25 auto-synced from shared Qdrant on boot. ([docs](./docs/memory-modes.md))                                                            |
 | **MCP Compatibility**               | ✅ Shipped    | Memory + cross-agent coordination exposed as MCP tools via `execution/mcp_server.py` (13 tools) and `skills/qdrant-memory/mcp_server.py` (6 tools). Pure chat clients (Claude Desktop) get full memory access. ([docs](./docs/mcp-compatibility.md)) |

@@ -85,3 +85,11 @@ Analyse changed source files and generate or update test cases that exercise the
 - Test names must describe the scenario, not the implementation: `test_returns_error_on_missing_team` not `test_line_47`
 - Never mock real filesystem operations in tests for scripts that are supposed to read files
 - Exit code tests matter: `assert result.returncode == 2` not just `assert result.returncode != 0`
+
+---
+
+## Output Gate
+
+- tests/
+
+If the gate reports `VALIDATION:FAIL:tests/`, the orchestrator retries the sub-agent once. On a second failure it escalates to the user (Retry / Skip / Abort). The LLM does not decide success — the bash exit code does.

@@ -42,6 +42,7 @@ import sys
 import uuid
 from datetime import datetime
 from typing import Optional, Dict, Any, List
+from datetime import datetime, timezone
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 
@@ -90,7 +91,7 @@ def retrieve_context(
     score_threshold: float = 0.7,
     vector_weight: float = None,  # Use default from hybrid_search if None
     text_weight: float = None     # Use default from hybrid_search if None
-) -> List[Dict[str, Any]]:
+) -> Dict[str, Any]:
     """
     Retrieve relevant context from long-term memory using HYBRID SEARCH.
     
@@ -111,35 +112,23 @@ def retrieve_context(
     """
     # Extract keyword filters from complex Qdrant filter structure if possible
     # specific structure: {"must": [{"key": "project", "match": {"value": "foo"}}]}
-    keyword_filters = {}
-    if filters and "must" in filters:
-        for condition in filters["must"]:
-            if "key" in condition and "match" in condition and "value" in condition["match"]:
-                keyword_filters[condition["key"]] = condition["match"]["value"]
+    # Instead of decomposing complex filters back into dicts which break range/nested structures,
+    # we just pass the raw Qdrant filters directly into hybrid_search.
+    kwargs = {
+        "text_query": query,
+        "raw_filters": filters,
+        "top_k": top_k,
+        "score_threshold": score_threshold,
+        "mode": "hybrid" if HYBRID_SEARCH else "vector"
+    }
     
-    # Use the new hybrid_query function
+    if vector_weight is not None:
+        kwargs["vector_weight"] = vector_weight
+    if text_weight is not None:
+        kwargs["text_weight"] = text_weight
+        
     try:
-        # Default weights are handled by hybrid_query if passed as None? 
-        # hybrid_query signature has defaults. 
-        # We need to handle arguments carefully.
-        
-        # Checking hybrid_query signature in hybrid_search.py:
-        # def hybrid_query(text_query, keyword_filters, must_not_filters, top_k, score_threshold, vector_weight, text_weight, mode)
-        
-        # We'll use defaults if not provided
-        kwargs = {
-            "text_query": query,
-            "keyword_filters": keyword_filters,
-            "top_k": top_k,
-            "score_threshold": score_threshold,
-            "mode": "hybrid" if HYBRID_SEARCH else "vector"
-        }
-        
-        if vector_weight is not None:
-            kwargs["vector_weight"] = vector_weight
-        if text_weight is not None:
-            kwargs["text_weight"] = text_weight
-            
+
         result = hybrid_query(**kwargs)
             
         chunks = []
@@ -151,6 +140,7 @@ def retrieve_context(
             total_tokens += token_estimate
             
             chunks.append({
+                "point_id": hit.get("doc_id"),
                 "content": content,
                 "score": hit.get("score", 0),  # Hybrid score
                 "vector_score": hit.get("vector_score", 0),
@@ -160,7 +150,12 @@ def retrieve_context(
                 "timestamp": hit.get("timestamp"),
                 "tags": hit.get("tags", []),
                 "token_estimate": token_estimate,
-                "search_sources": hit.get("search_sources", [])
+                "search_sources": hit.get("search_sources", []),
+                # Spatial + temporal + zero-loss fields
+                "wing": hit.get("wing"),
+                "room": hit.get("room"),
+                "original_text": hit.get("original_text"),
+                "valid_until": hit.get("valid_until"),
             })
         
         return {
@@ -203,7 +198,7 @@ def store_memory(
     payload = {
         "content": content,
         "type": memory_type,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "token_count": len(content.split()),
         **(metadata or {})
     }
@@ -251,9 +246,11 @@ def store_memory(
     if _BM25_AVAILABLE and HYBRID_SEARCH:
         try:
             with BM25Index() as bm25:
+                # If AAAK-compressed, index the original text for keyword matching
+                bm25_content = (metadata or {}).get("original_text", content)
                 bm25_result = bm25.index_document(
                     doc_id=point_id,
-                    content=content,
+                    content=bm25_content,
                     metadata={
                         "type": memory_type,
                         "project": (metadata or {}).get("project", ""),
@@ -338,7 +335,9 @@ def build_filter(type_filter: str = None, project: str = None, tags: List[str] =
     if tags:
         must.append({"key": "tags", "match": {"any": tags}})
     
-    return {"must": must} if must else None
+    res = {}
+    if must: res["must"] = must
+    return res if res else None
 
 
 def main():
@@ -380,7 +379,7 @@ def main():
             )
             result = retrieve_context(
                 args.query,
-                filters={"must": filters["must"]} if filters else None,
+                filters=filters,
                 top_k=args.top_k,
                 score_threshold=args.threshold
             )
@@ -404,7 +403,7 @@ def main():
                 project=args.project
             )
             result = list_memories(
-                filters={"must": filters["must"]} if filters else None,
+                filters=filters,
                 limit=args.limit
             )
             print(json.dumps(result, indent=2))

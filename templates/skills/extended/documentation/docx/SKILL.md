@@ -1,6 +1,6 @@
 ---
 name: docx-official
-description: "Comprehensive document creation, editing, and analysis with support for tracked changes, comments, formatting preservation, and text extraction. When Claude needs to work with professional document..."
+description: "A user may ask you to create, edit, or analyze the contents of a .docx file. A .docx file is essentially a ZIP archive containing XML files and other resources that you can read or edit. You have different tools and workflows available for different tasks."
 risk: unknown
 source: community
 date_added: "2026-02-27"
@@ -205,44 +205,37 @@ This skill is applicable to execute the workflow or actions described in the ove
 
 <!-- AGI-INTEGRATION-START -->
 
-## AGI Framework Integration
+## 🧠 AGI Framework Integration
 
 > **Adapted for [@techwavedev/agi-agent-kit](https://www.npmjs.com/package/@techwavedev/agi-agent-kit)**
 > Original source: [antigravity-awesome-skills](https://github.com/sickn33/antigravity-awesome-skills)
 
-### Memory-First Protocol
+### Qdrant Memory Integration
 
-Retrieve prior documentation structure and content to maintain consistency. Cache generated docs to avoid regenerating unchanged sections.
-
+Before executing complex tasks with this skill:
 ```bash
-# Check for prior documentation context before starting
-python3 execution/memory_manager.py auto --query "documentation patterns and prior content for Docx Official"
+python3 execution/memory_manager.py auto --query "<task summary>"
+```
+- **Cache hit?** Use cached response directly — no need to re-process.
+- **Memory match?** Inject `context_chunks` into your reasoning.
+- **No match?** Proceed normally, then store results:
+```bash
+python3 execution/memory_manager.py store \\
+  --content "Description of what was decided/solved" \\
+  --type decision \\
+  --tags docx <relevant-tags>
 ```
 
-### Storing Results
+### Agent Team Collaboration
 
-After completing work, store documentation decisions for future sessions:
+- This skill can be invoked by the `orchestrator` agent via intelligent routing.
+- In **Agent Teams mode**, results are shared via Qdrant shared memory for cross-agent context.
+- In **Subagent mode**, this skill runs in isolation with its own memory namespace.
 
-```bash
-python3 execution/memory_manager.py store \
-  --content "Documentation: API reference generated from OpenAPI spec, deployment guide updated with new env vars" \
-  --type technical --project <project> \
-  --tags docx-official documentation
-```
+### Local LLM Support
 
-### Multi-Agent Collaboration
-
-Share documentation changes with all agents so they reference the latest guides and APIs.
-
-```bash
-python3 execution/cross_agent_context.py store \
-  --agent "<your-agent>" \
-  --action "Documentation updated — API reference, deployment guide, and CHANGELOG all current" \
-  --project <project>
-```
-
-### Agent Team: Documentation
-
-This skill pairs with `documentation_team` — dispatched automatically after any code change to keep docs in sync.
+When available, use local Ollama models for embedding and lightweight inference:
+- Embeddings: `nomic-embed-text` via Qdrant memory system
+- Lightweight analysis: Local models reduce API costs for repetitive patterns
 
 <!-- AGI-INTEGRATION-END -->
