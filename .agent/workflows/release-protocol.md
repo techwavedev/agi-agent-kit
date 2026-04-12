@@ -8,9 +8,8 @@ description: Comprehensive Release Protocol for Agi Agent Kit. Enforces document
 >
 > | Repo                        | Remote        | Purpose             | NPM Publish? |
 > | --------------------------- | ------------- | ------------------- | ------------ |
-> | Repository                    | Remote        | Purpose              | NPM Publish? |
-> |-------------------------------|---------------|----------------------|--------------|
-> | `techwavedev/agi-agent-kit` | `origin`      | Public distribution  | ✅ YES       |
+> | `techwavedev/agi`           | `origin`      | Private development | ❌ NEVER     |
+> | `techwavedev/agi-agent-kit` | `public-repo` | Public distribution | ✅ YES       |
 >
 > **Flow:** `main` → `public` branch → push to `public-repo` → create release on `public-repo` → NPM auto-publishes
 

@@ -1,6 +1,6 @@
 # Implementation Plan: NotebookLM Concepts
 
-This plan maps the concepts extracted from your NotebookLM link to the current state of our `techwavedev/agi-agent-kit` framework, identifying what we already do well and where we can improve.
+This plan maps the concepts extracted from your NotebookLM link to the current state of our `techwavedev/agi` framework, identifying what we already do well and where we can improve.
 
 ## Analysis of Concepts vs Current Framework
 
