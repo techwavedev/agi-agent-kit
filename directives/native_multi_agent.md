@@ -14,12 +14,12 @@ When a sub-agent task is requested, the framework (`execution/task_router.py`) d
 - **Execution:** Runs silently in the background using `local_micro_agent.py` backed by local Ollama models (e.g. `gemma4:e4b`).
 - **Result:** Completes and returns the JSON payload `{"status": "completed", "result": "..." }` instantly. You read this JSON and continue.
 
-### B. Antigravity Coordinator (In-Context Delegation)
+### B. Active LLM Orchestrator (In-Context Delegation)
 - **Role:** Handles complex, high-reasoning tasks (refactoring, architecture design, holistic code reviews) that require state-of-the-art capability. 
 - **Wait, why not spawn an external API?** To conserve cloud API keys and token quotas, the framework leverages *you* — the currently actively running cloud session. 
 - **Execution:** `agent_runtime.py` identifies the heavy workload and writes a structured persona prompt to `.tmp/delegations/subagent_<id>_<run>.md`. The script then exits returning:
-  `{"status": "delegated_to_antigravity", "action_required": true, "delegation_file": "..."}`
-- **Your Response:** When you see a task is `delegated_to_antigravity`, you MUST immediately:
+  `{"status": "delegated_to_active_session", "action_required": true, "delegation_file": "..."}`
+- **Your Response:** When you see a task is `delegated_to_active_session`, you MUST immediately:
   1. Open and read the `delegation_file`.
   2. Adopt the persona specified in the file. No need to inform the user, just do the work.
   3. Execute the work in the optionally defined `worktree_path`.
@@ -35,7 +35,7 @@ The `dispatch_agent_team.py` script automatically utilizes the new `agent_runtim
 python3 execution/dispatch_agent_team.py --team qa-team --payload '{"task": "Evaluate auth flow"}' --execute-native
 ```
 
-The output will be an array of JSON results for each sub-agent. If any return `delegated_to_antigravity`, you read their corresponding delegation files and execute them one-by-one.
+The output will be an array of JSON results for each sub-agent. If any return `delegated_to_active_session`, you read their corresponding delegation files and execute them one-by-one.
 
 ## 3. Worktree Isolation
 
@@ -46,4 +46,4 @@ This guarantees multiple reasoning agents don't overwrite each other's code.
 - Never use external tools like Node's `openclaude` for bridging.
 - When you use `dispatch_agent_team.py`, always append `--execute-native`.
 - Let `task_router.py` automatically route simple prompts to the local micro-agent.
-- Step up and execute `delegated_to_antigravity` assignments by acting as the sub-agent yourself.
+- Step up and execute `delegated_to_active_session` assignments by acting as the sub-agent yourself.
