@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation Parity**: Placed iced blockchain authentication features formally into backlog. Stripped associated modules and `README.md` concepts from the live execution architecture to align framework features with active repository capabilities.
 - **Docker Dependency Validation**: Relegated Docker Daemon checks in `system_checkup.py` to 'Optional', preventing OS-level warning crashes for strictly cloud-based Qdrant deployments.
 
+### Security
+- **Python Backend Buffer Overflows**: Hard-pinned `cryptography>=44.0.0` and `requests>=2.32.3` across all orchestrator execution requirements to definitively resolve GitHub Dependabot (CVE-2026-39892, CVE-2026-25645) path traversal and array limitations.
+- **Node Frontend Exploits**: Pulled down the synchronized `all-deps` group from `public` to enforce strict sub-dependency lockfiles within `ui-ux-pro-max/cli` mitigating picomatch ReDoS and node-tar symlink poisonings (CVE-2026-33671, CVE-2026-23745).
+
 ## [1.7.7] - 2026-04-12
 
 ### Added
