@@ -23,6 +23,11 @@ Tools by category:
   agent_broadcast      Broadcast an update to ALL agents
   agent_pending        Check tasks that have been handed off to you
 
+  ── GitHub / PR (gh CLI) ─────────────────────────────────────────────
+  pr_status            PR state, mergeable flag, CI checks summary, draft flag, URL
+  pr_diff              Unified diff for a PR (truncated to max_bytes)
+  copilot_check_result Read a Copilot delegation result from .tmp/delegations/<run_id>.json
+
   ── System ───────────────────────────────────────────────────────────
   session_health       Full health check: Qdrant + Ollama + collections
 
@@ -61,6 +66,7 @@ import json
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 _EXECUTION_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -298,6 +304,73 @@ TOOLS = [
             "type": "object",
             "properties": {}
         }
+    },
+    # ── GitHub / PR ────────────────────────────────────────────────────
+    {
+        "name": "pr_status",
+        "description": (
+            "Get the current status of a GitHub pull request: state (open/closed/merged), "
+            "mergeable flag, draft flag, CI checks summary, and URL. "
+            "Accepts a PR number (e.g. 42) or a full GitHub issue/PR URL."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "pr": {
+                    "type": "string",
+                    "description": "PR number (e.g. '42') or full GitHub PR/issue URL"
+                },
+                "repo": {
+                    "type": "string",
+                    "description": "owner/repo (e.g. 'techwavedev/agi'). Omit to use the repo detected by gh from the current directory."
+                }
+            },
+            "required": ["pr"]
+        }
+    },
+    {
+        "name": "pr_diff",
+        "description": (
+            "Return the unified diff for a GitHub pull request, truncated to max_bytes. "
+            "Useful for reviewing what changed without leaving the chat interface."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "pr": {
+                    "type": "string",
+                    "description": "PR number (e.g. '42') or full GitHub PR URL"
+                },
+                "repo": {
+                    "type": "string",
+                    "description": "owner/repo (e.g. 'techwavedev/agi'). Omit to use the repo detected by gh from the current directory."
+                },
+                "max_bytes": {
+                    "type": "integer",
+                    "description": "Maximum bytes of diff to return (default: 20000)",
+                    "default": 20000
+                }
+            },
+            "required": ["pr"]
+        }
+    },
+    {
+        "name": "copilot_check_result",
+        "description": (
+            "Read the result of a Copilot delegation run from .tmp/delegations/<run_id>.json. "
+            "Written by the Copilot poller after a run completes. "
+            "Returns the full JSON payload, or an error if the file does not exist yet."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "run_id": {
+                    "type": "string",
+                    "description": "The delegation run ID (filename stem, without .json extension)"
+                }
+            },
+            "required": ["run_id"]
+        }
     }
 ]
 
@@ -323,6 +396,139 @@ def run_script(script_name: str, args: list[str], timeout: int = 60) -> str:
         return json.dumps({"error": f"Script not found: {script_path}"})
     except Exception as e:
         return json.dumps({"error": type(e).__name__, "message": str(e)})
+
+
+def _run_gh(gh_args: list[str], timeout: int = 30) -> str:
+    """Run a `gh` CLI command and return stdout as a string, or a JSON error."""
+    try:
+        result = subprocess.run(
+            ["gh"] + gh_args,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        if result.returncode != 0:
+            return json.dumps({
+                "error": "gh_cli_error",
+                "exit_code": result.returncode,
+                "stderr": result.stderr.strip()
+            })
+        return result.stdout.strip()
+    except FileNotFoundError:
+        return json.dumps({"error": "gh_not_found", "message": "gh CLI is not installed or not on PATH"})
+    except subprocess.TimeoutExpired:
+        return json.dumps({"error": "timeout", "command": "gh " + " ".join(gh_args)})
+    except Exception as e:
+        return json.dumps({"error": type(e).__name__, "message": str(e)})
+
+
+def _parse_pr_ref(pr_arg: str) -> str:
+    """Extract a bare PR number from either a plain number or a GitHub URL."""
+    pr_arg = pr_arg.strip()
+    # Accept full URLs like https://github.com/owner/repo/pull/42
+    if pr_arg.startswith("http"):
+        # The last path component is the number
+        return pr_arg.rstrip("/").split("/")[-1]
+    return pr_arg
+
+
+def _gh_pr_status(args: dict) -> str:
+    """Implement pr_status: return PR state, mergeable, draft, checks, url."""
+    pr_ref = _parse_pr_ref(args["pr"])
+    repo_flag = ["--repo", args["repo"]] if args.get("repo") else []
+
+    fields = "number,title,state,isDraft,mergeable,url,headRefName,baseRefName,statusCheckRollup"
+    raw = _run_gh(["pr", "view", pr_ref] + repo_flag + ["--json", fields])
+
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return json.dumps({"error": "invalid_json_from_gh", "raw": raw})
+
+    if "error" in data:
+        return raw  # propagate structured gh error
+
+    checks_raw = data.get("statusCheckRollup") or []
+    checks_summary: dict[str, int] = {}
+    for check in checks_raw:
+        state = (check.get("state") or check.get("conclusion") or "UNKNOWN").upper()
+        checks_summary[state] = checks_summary.get(state, 0) + 1
+
+    result = {
+        "number": data.get("number"),
+        "title": data.get("title"),
+        "state": data.get("state"),
+        "draft": data.get("isDraft"),
+        "mergeable": data.get("mergeable"),
+        "url": data.get("url"),
+        "head": data.get("headRefName"),
+        "base": data.get("baseRefName"),
+        "checks": checks_summary,
+        "checks_total": len(checks_raw)
+    }
+    return json.dumps(result)
+
+
+def _gh_pr_diff(args: dict) -> str:
+    """Implement pr_diff: return unified diff, truncated to max_bytes."""
+    pr_ref = _parse_pr_ref(args["pr"])
+    repo_flag = ["--repo", args["repo"]] if args.get("repo") else []
+    max_bytes = int(args.get("max_bytes") or 20000)
+
+    raw = _run_gh(["pr", "diff", pr_ref] + repo_flag)
+
+    try:
+        err = json.loads(raw)
+        if "error" in err:
+            return raw  # propagate structured error
+    except (json.JSONDecodeError, TypeError):
+        pass  # raw is the diff text — that's expected
+
+    if len(raw) > max_bytes:
+        truncated = raw[:max_bytes]
+        return json.dumps({
+            "diff": truncated,
+            "truncated": True,
+            "total_bytes": len(raw),
+            "returned_bytes": max_bytes
+        })
+    return json.dumps({"diff": raw, "truncated": False, "total_bytes": len(raw)})
+
+
+def _copilot_check_result(args: dict) -> str:
+    """Implement copilot_check_result: read .tmp/delegations/<run_id>.json."""
+    run_id = args.get("run_id", "").strip()
+    if not run_id:
+        return json.dumps({"error": "run_id is required"})
+
+    # Security: reject run_ids that try to escape the delegations directory
+    if "/" in run_id or "\\" in run_id or ".." in run_id:
+        return json.dumps({"error": "invalid_run_id", "message": "run_id must not contain path separators"})
+
+    project_root = os.path.dirname(_EXECUTION_DIR)
+    delegation_path = os.path.join(project_root, ".tmp", "delegations", run_id + ".json")
+
+    # Resolve and verify the path stays inside .tmp/delegations/
+    resolved = Path(delegation_path).resolve()
+    expected_dir = Path(project_root, ".tmp", "delegations").resolve()
+    if not resolved.is_relative_to(expected_dir):
+        return json.dumps({"error": "path_traversal_blocked"})
+
+    if not resolved.exists():
+        return json.dumps({
+            "error": "not_found",
+            "run_id": run_id,
+            "message": "Delegation result file not found. The run may still be in progress."
+        })
+
+    try:
+        with resolved.open("r", encoding="utf-8") as fh:
+            payload = json.load(fh)
+        return json.dumps(payload)
+    except json.JSONDecodeError as exc:
+        return json.dumps({"error": "invalid_json", "message": str(exc)})
+    except OSError as exc:
+        return json.dumps({"error": "read_error", "message": str(exc)})
 
 
 def handle_tool_call(name: str, args: dict) -> dict:
@@ -430,6 +636,16 @@ def handle_tool_call(name: str, args: dict) -> dict:
     # ── System ──────────────────────────────────────────────────────────
     elif name == "session_health":
         return {"type": "text", "text": run_script("session_boot.py", ["--json"], timeout=30)}
+
+    # ── GitHub / PR ──────────────────────────────────────────────────────
+    elif name == "pr_status":
+        return {"type": "text", "text": _gh_pr_status(args)}
+
+    elif name == "pr_diff":
+        return {"type": "text", "text": _gh_pr_diff(args)}
+
+    elif name == "copilot_check_result":
+        return {"type": "text", "text": _copilot_check_result(args)}
 
     else:
         return {"type": "text", "text": json.dumps({"error": f"Unknown tool: {name}"})}

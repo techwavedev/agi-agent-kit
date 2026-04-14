@@ -40,6 +40,12 @@ import time
 import urllib.request
 import urllib.error
 from pathlib import Path
+from typing import Optional, Dict, Any, List
+try:
+    from execution.turboquant_compressor import TurboQuantKVCacheCompressor, TurboQuantDynamicCache
+    TURBOQUANT_AVAILABLE = True
+except ImportError:
+    TURBOQUANT_AVAILABLE = False
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 
@@ -124,7 +130,7 @@ def get_available_models() -> list:
         return []
 
 
-def select_model(preferred: str | None, task: str) -> str:
+def select_model(preferred: Optional[str], task: str) -> str:
     """Select the best available model for a task.
 
     Priority: explicit --model > task-based heuristic > first available in chain.
@@ -201,7 +207,7 @@ def select_model(preferred: str | None, task: str) -> str:
 
 def run_cloud_inference(model: str, prompt: str, temperature: float = 0.0,
                         max_tokens: int = 1024, json_mode: bool = False,
-                        system_prompt: str | None = None) -> dict:
+                        system_prompt: Optional[str] = None) -> dict:
     """Run inference against a cloud provider completely seamlessly via standard libraries."""
     env_vars = load_env_vars()
     start = time.time()
@@ -273,7 +279,7 @@ def run_cloud_inference(model: str, prompt: str, temperature: float = 0.0,
 
 def run_inference(model: str, prompt: str, temperature: float = 0.0,
                   max_tokens: int = 1024, json_mode: bool = False,
-                  system_prompt: str | None = None) -> dict:
+                  system_prompt: Optional[str] = None) -> dict:
     """Route inference securely to either local Ollama or Cloud API."""
     env_vars = load_env_vars()
     cloud_available = [c["name"] for c in CLOUD_FALLBACK_REGISTRY if env_vars.get(c["env"])]
@@ -333,7 +339,7 @@ def run_inference(model: str, prompt: str, temperature: float = 0.0,
         return {"status": "error", "model": model, "message": str(e)}
 
 
-def run_with_fallback(task: str, context: str, preferred_model: str | None,
+def run_with_fallback(task: str, context: str, preferred_model: Optional[str],
                       temperature: float, max_tokens: int, json_mode: bool) -> dict:
     """Run inference with automatic fallback through the model chain."""
     model = select_model(preferred_model, task)
@@ -387,6 +393,57 @@ def run_with_fallback(task: str, context: str, preferred_model: str | None,
         "models_tried": list(tried),
     }
 
+def run_hf_turboquant_inference(model_id: str, prompt: str, temperature: float, max_tokens: int, json_mode: bool, system_prompt: str = None) -> dict:
+    """Run inference using local PyTorch/HuggingFace integrated with TurboQuant KV Cache."""
+    if not TURBOQUANT_AVAILABLE:
+        return {"status": "error", "message": "TurboQuant compressor not available (possibly missing torch/transformers)."}
+    
+    try:
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+    except ImportError as e:
+        return {"status": "error", "message": f"HuggingFace Transformers not installed: {e}"}
+
+    start = time.time()
+    try:
+        # We load model natively to intercept the Transformer KV Cache
+        device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+        tokenizer = AutoTokenizer.from_pretrained(model_id)
+        model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float16).to(device)
+
+        full_prompt = f"{system_prompt}\n{prompt}" if system_prompt else prompt
+        inputs = tokenizer(full_prompt, return_tensors="pt").to(device)
+        
+        # Initialize the TurboQuant compressor and the injected Cache wrapper
+        # Using a conservative 128 hidden dim heuristic for mock injection 
+        # (in reality we fetch hidden_size from model.config)
+        hidden_dim = model.config.hidden_size // model.config.num_attention_heads
+        compressor = TurboQuantKVCacheCompressor(hidden_dim=hidden_dim, bits=3, use_qjl=True, device=device)
+        turbo_cache = TurboQuantDynamicCache(compressor)
+
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=max_tokens,
+            temperature=temperature,
+            do_sample=(temperature > 0.0),
+            past_key_values=turbo_cache  # INJECT TURBOQUANT CACHE
+        )
+        
+        response = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+        elapsed = time.time() - start
+        
+        return {
+            "status": "success",
+            "model": f"hf-turboquant:{model_id}",
+            "response": response.strip(),
+            "metrics": {
+                "elapsed_seconds": round(elapsed, 2),
+                "is_local_hf": True,
+                "turboquant_active": True
+            }
+        }
+    except Exception as e:
+        return {"status": "error", "message": f"TurboQuant HF inference failed: {e}"}
 
 def cmd_list_models():
     """List available models with their capabilities."""
@@ -449,6 +506,10 @@ def main():
                         help="Force JSON format response")
     parser.add_argument("--raw", action="store_true",
                         help="Output only the model response text (no metadata)")
+    parser.add_argument("--use-turboquant", action="store_true",
+                        help="Run inference using HuggingFace with TurboQuant KV Cache Compression")
+    parser.add_argument("--hf-model", type=str, default="google/gemma-2b-it",
+                        help="HuggingFace model ID if using TurboQuant (default: google/gemma-2b-it)")
 
     args = parser.parse_args()
 
@@ -474,20 +535,43 @@ def main():
             }), file=sys.stderr)
             sys.exit(2)
         context = p.read_text(encoding="utf-8", errors="replace")
-        # Truncate if too large for local models (keep under 16K chars)
-        if len(context) > 16000:
-            context = context[:8000] + "\n\n[... truncated ...]\n\n" + context[-4000:]
     elif args.input_text:
         context = args.input_text
 
-    result = run_with_fallback(
-        task=args.task,
-        context=context,
-        preferred_model=args.model,
-        temperature=args.temperature,
-        max_tokens=args.max_tokens,
-        json_mode=args.json,
-    )
+    # Automatically enable TurboQuant for massive contexts to prevent truncation loss and cloud token costs
+    if len(context) > 16000:
+        if TURBOQUANT_AVAILABLE and not args.use_turboquant:
+            args.use_turboquant = True
+        elif not args.use_turboquant:
+            # Truncate if too large for standard Ollama models
+            context = context[:8000] + "\n\n[... truncated ...]\n\n" + context[-4000:]
+
+    if args.use_turboquant:
+        system = (
+            "You are a precise, deterministic assistant for small code and text tasks. "
+            "Give direct, concise answers."
+        )
+        if args.json: system += " Always respond with valid JSON."
+        prompt = args.task
+        if context: prompt += f"\n\n---\nContent:\n```\n{context}\n```"
+        
+        result = run_hf_turboquant_inference(
+            model_id=args.hf_model,
+            prompt=prompt,
+            temperature=args.temperature,
+            max_tokens=args.max_tokens,
+            json_mode=args.json,
+            system_prompt=system
+        )
+    else:
+        result = run_with_fallback(
+            task=args.task,
+            context=context,
+            preferred_model=args.model,
+            temperature=args.temperature,
+            max_tokens=args.max_tokens,
+            json_mode=args.json,
+        )
 
     if result["status"] != "success":
         print(json.dumps(result), file=sys.stderr)

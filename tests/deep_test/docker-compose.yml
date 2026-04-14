@@ -1,0 +1,40 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: agi_deep_test_ollama
+    # No ports exposed to host to prevent conflict with local Ollama
+    volumes:
+      - ollama_storage:/root/.ollama
+    networks:
+      - deep_test_net
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: agi_deep_test_qdrant
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    networks:
+      - deep_test_net
+
+  agi_runner:
+    build:
+      context: ../../
+      dockerfile: Dockerfile.public_test
+    container_name: agi_deep_test_runner
+    depends_on:
+      - ollama
+      - qdrant
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - QDRANT_URL=http://qdrant:6333
+    networks:
+      - deep_test_net
+    entrypoint: ["tail", "-f", "/dev/null"] # Keep alive for the test script to exec into
+
+volumes:
+  ollama_storage:
+  qdrant_storage:
+
+networks:
+  deep_test_net:
+    driver: bridge

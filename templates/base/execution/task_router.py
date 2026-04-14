@@ -20,6 +20,9 @@ Usage:
     # Batch: classify multiple tasks from a JSON file
     python3 execution/task_router.py batch --tasks-file tasks.json
 
+    # Recommend ranked agents from the capability map
+    python3 execution/task_router.py recommend --task "Review this PR for security issues"
+
     # Show routing stats
     python3 execution/task_router.py stats
 
@@ -124,6 +127,117 @@ _LOCAL_RE = re.compile("|".join(LOCAL_PATTERNS), re.IGNORECASE)
 # Stats file for tracking routing decisions
 # ---------------------------------------------------------------------------
 STATS_FILE = Path(__file__).resolve().parent.parent / ".tmp" / "task_router_stats.json"
+
+# ---------------------------------------------------------------------------
+# Agent capabilities map
+# ---------------------------------------------------------------------------
+CAPABILITIES_FILE = Path(__file__).resolve().parent.parent / "data" / "agent_capabilities.json"
+
+# Cost tier ordering for ranking (lower index = cheaper)
+_COST_ORDER = ["free", "low", "medium", "subscription", "high"]
+
+
+def load_agent_capabilities(capabilities_path: Path | None = None) -> dict:
+    """Load agent capabilities from data/agent_capabilities.json.
+
+    Args:
+        capabilities_path: Explicit path to the JSON file.  When *None*, the
+            default ``data/agent_capabilities.json`` next to the repo root is
+            used.
+
+    Returns:
+        The capabilities dict, or an empty dict if the file is missing or
+        cannot be parsed.
+    """
+    path = capabilities_path or CAPABILITIES_FILE
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def recommend_agent(task: str, capabilities: dict | None = None,
+                    context_length: int = 0) -> list:
+    """Return a ranked list of agents best suited for a given task.
+
+    Ranking criteria (in priority order):
+    1. ``best_for`` keyword match — agents whose ``best_for`` list contains a
+       keyword that appears in the task string are preferred.
+    2. Context-window fit — agents whose ``max_context`` is sufficient for
+       *context_length* are preferred over those that would overflow.
+    3. Cost tier — cheaper agents rank higher when capability is otherwise equal.
+
+    Args:
+        task: Natural-language task description.
+        capabilities: Dict of agent capability records (loaded from
+            ``data/agent_capabilities.json`` when *None*).
+        context_length: Estimated token / character count of the context that
+            the chosen agent will need to hold.  Used to filter out agents
+            whose ``max_context`` is too small.
+
+    Returns:
+        List of dicts, each containing::
+
+            {
+                "agent": str,          # agent identifier
+                "score": int,          # higher is better
+                "reasons": [str],      # human-readable scoring notes
+                "capabilities": dict,  # raw capability record
+            }
+
+        Sorted descending by ``score``.
+    """
+    if capabilities is None:
+        capabilities = load_agent_capabilities()
+
+    if not capabilities:
+        return []
+
+    task_lower = task.lower()
+    ranked = []
+
+    for agent_id, caps in capabilities.items():
+        score = 0
+        reasons = []
+
+        # 1. best_for keyword match (word-boundary aware to avoid false positives
+        #    like "preview" matching "review" or "microarchitecture" matching "architecture")
+        best_for = caps.get("best_for", [])
+        matched_keywords = [
+            kw for kw in best_for
+            if re.search(r"\b" + re.escape(kw.lower()) + r"\b", task_lower)
+        ]
+        if matched_keywords:
+            score += len(matched_keywords) * 10
+            reasons.append(f"best_for match: {', '.join(matched_keywords)}")
+
+        # 2. Context window fit
+        max_ctx = caps.get("max_context", 0)
+        if context_length > 0:
+            if max_ctx >= context_length:
+                score += 5
+                reasons.append(f"context window sufficient ({max_ctx:,})")
+            else:
+                score -= 20
+                reasons.append(f"context window too small ({max_ctx:,} < {context_length:,})")
+
+        # 3. Cost tier (prefer cheaper when score is otherwise equal)
+        cost_tier = caps.get("cost_tier", "high")
+        cost_idx = _COST_ORDER.index(cost_tier) if cost_tier in _COST_ORDER else len(_COST_ORDER)
+        # Invert: free=4 pts, low=3, medium=2, subscription=1, high=0
+        cost_score = max(0, len(_COST_ORDER) - 1 - cost_idx)
+        score += cost_score
+        reasons.append(f"cost_tier={cost_tier}")
+
+        ranked.append({
+            "agent": agent_id,
+            "score": score,
+            "reasons": reasons,
+            "capabilities": caps,
+        })
+
+    ranked.sort(key=lambda x: x["score"], reverse=True)
+    return ranked
 
 
 def classify_task(task: str, context: str = "") -> dict:
@@ -440,6 +554,20 @@ def main():
     # stats
     subparsers.add_parser("stats", help="Show routing statistics")
 
+    # recommend
+    recommend_p = subparsers.add_parser(
+        "recommend", help="Recommend ranked agents from the capability map"
+    )
+    recommend_p.add_argument("--task", required=True, help="Task description")
+    recommend_p.add_argument(
+        "--context-length", type=int, default=0,
+        help="Estimated context size in characters/tokens (default: 0)"
+    )
+    recommend_p.add_argument(
+        "--capabilities-file", default=None,
+        help="Path to agent_capabilities.json (default: data/agent_capabilities.json)"
+    )
+
     args = parser.parse_args()
 
     if not args.command:
@@ -502,6 +630,23 @@ def main():
 
     elif args.command == "stats":
         cmd_stats()
+
+    elif args.command == "recommend":
+        caps_path = Path(args.capabilities_file) if args.capabilities_file else None
+        capabilities = load_agent_capabilities(caps_path)
+        if not capabilities:
+            print(json.dumps({
+                "status": "error",
+                "message": "agent_capabilities.json not found or empty",
+                "hint": "Ensure data/agent_capabilities.json exists",
+            }), file=sys.stderr)
+            sys.exit(2)
+        ranked = recommend_agent(args.task, capabilities, args.context_length)
+        print(json.dumps({
+            "task": args.task,
+            "context_length": args.context_length,
+            "ranked_agents": ranked,
+        }, indent=2))
 
     sys.exit(0)
 

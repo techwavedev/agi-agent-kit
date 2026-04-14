@@ -372,6 +372,25 @@ def main():
         "agent_id": identity.get("agent_id"),
     }
 
+    # Step 6: Check for pending delegations from previous sessions
+    try:
+        check_del_script = PROJECT_DIR / "execution" / "check_delegations.py"
+        if check_del_script.exists():
+            proc = subprocess.run(
+                [sys.executable, str(check_del_script), "--json"],
+                capture_output=True, text=True, timeout=10,
+                cwd=str(PROJECT_DIR),
+            )
+            if proc.stdout.strip():
+                del_data = json.loads(proc.stdout)
+                report["pending_delegations"] = del_data
+            else:
+                report["pending_delegations"] = {"pending": [], "stale": [], "total_pending": 0}
+        else:
+            report["pending_delegations"] = {"pending": [], "stale": [], "total_pending": 0}
+    except Exception:
+        report["pending_delegations"] = {"pending": [], "stale": [], "total_pending": 0}
+
     if args.json_output:
         print(json.dumps(report, indent=2))
     else:
@@ -389,6 +408,29 @@ def main():
         if report["actions_taken"]:
             for action in report["actions_taken"]:
                 print(f"   ✅ {action}")
+
+        # Pending Delegations section
+        del_report = report.get("pending_delegations", {})
+        active = del_report.get("pending", [])
+        stale = del_report.get("stale", [])
+        if active or stale:
+            print(f"\n⚠️  Pending Delegations: {len(active)} active, {len(stale)} stale (>24h)")
+            for entry in active:
+                if entry.get("type") == "copilot":
+                    print(f"   • [{entry['run_id']}] type=copilot  state={entry.get('state')}  age={entry['age_hours']}h")
+                    if entry.get("issue_url"):
+                        print(f"     issue: {entry['issue_url']}")
+                else:
+                    print(f"   • [{entry['run_id']}] persona={entry.get('persona')}  age={entry['age_hours']}h")
+                    print(f"     file: {entry['instructions_file']}")
+            if stale:
+                print("   🗑️  Stale (consider cleanup):")
+                for entry in stale:
+                    if entry.get("type") == "copilot":
+                        print(f"   • [{entry['run_id']}] type=copilot  state={entry.get('state')}  age={entry['age_hours']}h")
+                    else:
+                        print(f"   • [{entry['run_id']}] persona={entry.get('persona')}  age={entry['age_hours']}h")
+            print("   Run: python3 execution/check_delegations.py --auto-resume  to get re-injection blocks")
 
     sys.exit(0 if report["memory_ready"] else (1 if qdrant.get("status") == "ok" else 2))
 

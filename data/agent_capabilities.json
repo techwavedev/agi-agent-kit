@@ -1,0 +1,37 @@
+{
+  "claude": {
+    "max_context": 1000000,
+    "tools": ["mcp", "bash", "edit"],
+    "cost_tier": "high",
+    "github_native": false,
+    "best_for": ["architecture", "review", "multi-file"]
+  },
+  "copilot": {
+    "max_context": 32000,
+    "tools": ["github"],
+    "cost_tier": "subscription",
+    "github_native": true,
+    "best_for": ["scaffolding", "rename", "tests", "lint"]
+  },
+  "gemini": {
+    "max_context": 1000000,
+    "tools": ["mcp", "bash"],
+    "cost_tier": "medium",
+    "github_native": false,
+    "best_for": ["long-context", "review"]
+  },
+  "antigravity": {
+    "max_context": 128000,
+    "tools": ["mcp", "bash", "edit"],
+    "cost_tier": "low",
+    "github_native": false,
+    "best_for": ["coding", "debug"]
+  },
+  "ollama-local": {
+    "max_context": 8000,
+    "tools": [],
+    "cost_tier": "free",
+    "github_native": false,
+    "best_for": ["classify", "summarize", "format"]
+  }
+}

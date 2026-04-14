@@ -5,11 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.10] - 2026-04-14
+
+### Added
+- **TurboQuant KV Cache Optimization**: Integrated native KV Cache footprint reduction to deeply optimize context window persistence and lower local memory ceiling. Supports PyTorch detection with graceful degradation.
+- **Strict Isolated Airgap**: Expanded deployment boundaries to enforce fully containerized validation bounds on the 'public/' architecture, preventing test spillage and confirming completely offline-ready synchronization via Docker instantiation.
+- **Python 3.9 Standard Environment Alignment**: Down-compiled all Type hints across the executor substrate `(Optional[str])` to universally align `local_micro_agent.py` to the strict minimum macOS Python environments, ensuring deep backwards-compatibility for natively orchestrating tasks locally without upgrading to 3.10.
+
 ## [1.7.9] - 2026-04-12
 
 ### Fixed
 - **Release Gate Bypass**: Suppressed `public_release` dummy templates from double-triggering security execution scan alerts during `publish-npm`.
-- **Ghost Fixes Resolved**: Restored and anchored Copilot automated security fixes that were erroneously self-reverted during validation. 
+- **Ghost Fixes Resolved**: Restored and anchored Copilot automated security fixes that were erroneously self-reverted during validation.
 
 ## [1.7.8] - 2026-04-12
 

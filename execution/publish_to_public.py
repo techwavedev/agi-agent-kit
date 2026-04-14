@@ -28,9 +28,9 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT_DIR / ".private"
-PUBLIC_DIR = ROOT_DIR / "public_release"
+PUBLIC_DIR = ROOT_DIR / "public_release_repo"
 
-IGNORED_ROOT_DIRS = {".git", "public_release", "node_modules", ".venv", ".idea", "__pycache__"}
+IGNORED_ROOT_DIRS = {".git", "public_release", "public_release_repo", "node_modules", ".venv", ".idea", "__pycache__"}
 
 
 def run(cmd, check=True, capture=True, cwd=None):

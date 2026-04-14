@@ -1,0 +1,35 @@
+# Dockerfile.public_test
+FROM node:20-bookworm-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3 python3-pip curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy the generated public directory
+COPY public/ ./
+
+# Install globally to verify npm package configuration is sane
+RUN npm install -g .
+
+# Test 1: Sane CLI mapping
+RUN agi-agent-kit init --help
+
+# Test 2: Scaffold a blank project inside the isolated container
+WORKDIR /test-mount
+RUN agi-agent-kit init --pack=core --ci
+
+# Test 3: Verify the functional python engine and dependencies
+RUN pip3 install --break-system-packages -r requirements.txt
+
+# Test 4: Run CLI execution menus to prove imports resolve and standard execution works
+RUN python3 execution/local_micro_agent.py --help
+RUN python3 execution/memory_manager.py --help
+
+# Test 5: Execute deep operational mock tests to guarantee mathematical PyTorch models compile natively
+RUN python3 execution/turboquant_compressor.py
+
+# Finalize image test
+RUN echo "✅ Public Agent Kit successfully verified via isolated Docker test."

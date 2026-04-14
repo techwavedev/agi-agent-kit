@@ -24,6 +24,8 @@ Arguments:
     --dry-run     Print the manifest without storing to memory (optional)
     --execute-native Run the manifest directly through agent_runtime.py
     --project     Project name for Qdrant tagging (default: agi-agent-kit)
+    --auto-route  Read data/agent_capabilities.json and inject ranked agent
+                  recommendations into the manifest under "_recommended_agents"
 
 
 Exit Codes:
@@ -554,6 +556,9 @@ def main():
                         help="Project name for Qdrant tagging")
     parser.add_argument("--local-route", action="store_true",
                         help="Pre-classify subtasks via task_router.py and tag local-eligible ones")
+    parser.add_argument("--auto-route", action="store_true",
+                        help="Read data/agent_capabilities.json and inject ranked agent "
+                             "recommendations into the manifest (_recommended_agents key)")
     args = parser.parse_args()
 
     # Parse payload
@@ -606,6 +611,35 @@ def main():
                         payload["_routing_reason"] = classification.get("reason", "")
             except Exception:
                 pass
+
+    # Inject ranked agent recommendations from capability map if requested
+    if args.auto_route:
+        task_router = root / "execution" / "task_router.py"
+        if task_router.exists():
+            task_desc = payload.get("commit_msg", payload.get("task", ""))
+            context_length = len(str(payload))
+            try:
+                recommend_result = subprocess.run(
+                    [
+                        sys.executable, str(task_router), "recommend",
+                        "--task", task_desc,
+                        "--context-length", str(context_length),
+                    ],
+                    capture_output=True, text=True, timeout=10, cwd=str(root)
+                )
+                if recommend_result.returncode == 0:
+                    recommendation = json.loads(recommend_result.stdout)
+                    payload["_recommended_agents"] = recommendation.get("ranked_agents", [])
+                else:
+                    print(json.dumps({
+                        "warning": "auto-route: recommend step failed",
+                        "stderr": recommend_result.stderr.strip(),
+                    }), file=sys.stderr)
+            except Exception as exc:
+                print(json.dumps({
+                    "warning": "auto-route: exception during recommend",
+                    "error": str(exc),
+                }), file=sys.stderr)
 
     manifest = build_manifest(args.team, payload, subagents, root,
                               parallel=args.parallel, worktree_info=worktree_info)

@@ -58,18 +58,42 @@ You'll be guided through an interactive wizard:
 1. **Existing install check** — detects a prior install and offers Update / Reinstall / Cancel
 2. **Install scope** — project-local (current dir) or global (`~/.agent` shared across projects)
 3. **Smart backup** — scans files at risk and creates a timestamped backup before touching anything
-4. **Pack selection** — choose skills to install:
+4. **Agent selection** — choose which AI coding agents you'll use (symlinks and platform dirs are created only for the selected agents):
+   - **Claude Code** — CLAUDE.md symlink + `.claude/skills` directory
+   - **GitHub Copilot** — COPILOT.md symlink
+   - **Antigravity / Gemini CLI** — GEMINI.md symlink + `.gemini/skills` directory
+   - **Cursor** — `.cursor/skills` directory
+   - **OpenCode / OpenClaw** — OPENCODE.md + OPENCLAW.md symlinks + `.openclaw/skills` directory
+   - Default (press Enter): all agents installed (backward compatible)
+5. **Pack selection** — choose skills to install:
    - **core** — 4 essential skills (webcrawler, pdf-reader, qdrant-memory, documentation)
    - **medium** — Core + 89 professional skills in 16 categories + `.agent/` structure
    - **full** — Everything: Medium + 1,098 community skills (1,191 total)
    - **custom** — Core + you pick specific domains (AI Agents, DevOps, Security, Frontend, etc.)
-5. **Memory setup** — detects Ollama/Docker/Qdrant; if missing, asks whether to install locally or use a custom URL (supports Qdrant Cloud, remote servers)
-6. **Agent Teams** — opt-in to parallel multi-agent execution (writes `.claude/settings.json`)
-7. **Summary** — shows exactly what was configured vs what needs manual action
+6. **Memory setup** — detects Ollama/Docker/Qdrant; if missing, asks whether to install locally or use a custom URL (supports Qdrant Cloud, remote servers)
+7. **Agent Teams** — opt-in to parallel multi-agent execution (writes `.claude/settings.json`, only shown when Claude Code is selected)
+8. **Summary** — shows exactly what was configured vs what needs manual action
+
+### Non-interactive (CI) installs
+
+Use `--agents` to skip the interactive agent-selection prompt — ideal for CI pipelines, Docker images, and automation scripts:
+
+```bash
+# Claude Code only
+npx @techwavedev/agi-agent-kit init --agents=claude --ci
+
+# Claude + Copilot
+npx @techwavedev/agi-agent-kit init --agents=claude,copilot --ci
+
+# All agents (default behaviour, same as omitting the flag)
+npx @techwavedev/agi-agent-kit init --ci
+```
+
+Valid agent values: `claude`, `copilot`, `gemini`, `cursor`, `opencode`
 
 After installation the wizard shows your next steps, including:
 
-```bashok misunderstood
+```bash
 # Boot the memory system (verifies Qdrant + Ollama, auto-fixes issues)
 python3 execution/session_boot.py --auto-fix
 

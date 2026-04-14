@@ -118,10 +118,17 @@ def format_active_session_delegation(agent_id: str, task: str, payload_str: str,
     to consume in the current context, effectively becoming the sub-agent.
     """
     tmp_dir = ensure_tmp_dir(project_root)
-    run_id = datetime.now().strftime("%Y%md_%H%M%S")
+    run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     delegation_file = tmp_dir / f"subagent_{agent_id}_{run_id}.md"
+    created_at = datetime.now(timezone.utc).isoformat()
 
-    prompt = f"""# 🤖 Sub-Agent Context For Active Session
+    prompt = f"""---
+status: pending
+run_id: {run_id}
+persona: {agent_id}
+created_at: {created_at}
+---
+# 🤖 Sub-Agent Context For Active Session
 
 You (the active orchestrator session) have been assigned the role of sub-agent: `{agent_id}`.
 Due to hardware limitations or API constraints, you are executing this task natively

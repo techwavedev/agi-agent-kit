@@ -1,0 +1,12 @@
+{
+  "skill_path": "skills/notebooklm-internal",
+  "assertions": [
+    {"type": "has_yaml_frontmatter", "file": "SKILL.md"},
+    {"type": "contains", "file": "SKILL.md", "value": "internal: true"},
+    {"type": "contains", "file": "SKILL.md", "value": "public: false"},
+    {"type": "contains", "file": "SKILL.md", "value": "non_interactive: true"},
+    {"type": "contains", "file": "SKILL.md", "value": "INTERNAL USE ONLY"},
+    {"type": "contains", "file": "SKILL.md", "value": "forked_from: skills/notebooklm"},
+    {"type": "max_lines", "file": "SKILL.md", "value": 250}
+  ]
+}

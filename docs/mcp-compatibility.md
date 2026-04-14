@@ -17,7 +17,7 @@ Two servers are provided:
 
 | Server | File | Tools | Use when |
 |---|---|---|---|
-| `agi-framework` | `execution/mcp_server.py` | 13 | Daily use — memory + cross-agent + health |
+| `agi-framework` | `execution/mcp_server.py` | 16 | Daily use — memory + cross-agent + GitHub PR + health |
 | `qdrant-memory` | `skills/qdrant-memory/mcp_server.py` | 6 | Direct Qdrant access (low-level ops) |
 
 ---
@@ -80,6 +80,16 @@ All agents share the same Qdrant instance. These tools wire them together.
 | Tool | What it does |
 |---|---|
 | `session_health` | Qdrant + Ollama + collections health check. Returns `memory_ready: true/false` |
+
+### GitHub / PR tools
+
+| Tool | What it does |
+|---|---|
+| `pr_status` | PR state, mergeable flag, draft flag, CI checks summary, URL. Accepts PR number or full URL. |
+| `pr_diff` | Unified diff for a PR, truncated to `max_bytes` (default 20 000). |
+| `copilot_check_result` | Read a Copilot delegation result from `.tmp/delegations/<run_id>.json`. |
+
+> **Prerequisites for GitHub tools:** `gh` CLI must be installed and authenticated (`gh auth login`).
 
 ---
 

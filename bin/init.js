@@ -5,7 +5,7 @@
  * CLI tool to scaffold AI agent projects with modular skill packs.
  *
  * Usage:
- *   npx @techwavedev/agi-agent-kit init [--pack=<pack>] [--path=<dir>]
+ *   npx @techwavedev/agi-agent-kit init [--pack=<pack>] [--path=<dir>] [--agents=<list>]
  *
  * Packs:
  *   core   - Base framework + common skills (webcrawler, pdf-reader, qdrant-memory)
@@ -13,9 +13,12 @@
  *   full   - Medium + 785 community skills (complete suite)
  *
  * Options:
- *   --path=<dir>    Target directory (default: current)
- *   --no-symlinks   Skip GEMINI.md/CLAUDE.md symlink creation
- *   --help          Show help
+ *   --path=<dir>        Target directory (default: current)
+ *   --no-symlinks       Skip agent instruction-file symlink creation
+ *   --agents=<list>     Comma-separated agents to support (claude,copilot,gemini,cursor,opencode)
+ *                       Default: all agents (backward compatible)
+ *   --ci                Skip all prompts, use safe defaults
+ *   --help              Show help
  */
 
 const fs = require("fs");
@@ -93,6 +96,45 @@ const DOMAINS = [
   { id: "i18n",         label: "i18n & Localisation",       knowledge: 1,   extended: 0   },
 ];
 
+// All supported agents with their metadata
+const AGENTS = [
+  {
+    id: "claude",
+    label: "Claude Code",
+    symlinks: ["CLAUDE.md"],
+    platformDirs: [".claude/skills"],
+    anthropic: true,
+  },
+  {
+    id: "copilot",
+    label: "GitHub Copilot",
+    symlinks: ["COPILOT.md"],
+    platformDirs: [],
+    anthropic: false,
+  },
+  {
+    id: "gemini",
+    label: "Antigravity / Gemini CLI",
+    symlinks: ["GEMINI.md"],
+    platformDirs: [".gemini/skills"],
+    anthropic: false,
+  },
+  {
+    id: "cursor",
+    label: "Cursor",
+    symlinks: [],
+    platformDirs: [".cursor/skills"],
+    anthropic: false,
+  },
+  {
+    id: "opencode",
+    label: "OpenCode / OpenClaw",
+    symlinks: ["OPENCODE.md", "OPENCLAW.md"],
+    platformDirs: [".openclaw/skills"],
+    anthropic: false,
+  },
+];
+
 // Parse command line arguments
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -104,6 +146,7 @@ function parseArgs() {
     help: false,
     global: false,
     ci: false,       // --ci: skip all prompts, use safe defaults
+    agents: null,    // null = all (default); array of agent ids when specified
   };
 
   for (const arg of args) {
@@ -120,6 +163,9 @@ function parseArgs() {
       options.symlinks = false;
     } else if (arg === "--ci") {
       options.ci = true;
+    } else if (arg.startsWith("--agents=")) {
+      const raw = arg.split("=")[1];
+      options.agents = raw.split(",").map((a) => a.trim().toLowerCase()).filter(Boolean);
     } else if (arg === "--help" || arg === "-h") {
       options.help = true;
     }
@@ -137,11 +183,17 @@ ${colors.bright}Usage:${colors.reset}
   npx @techwavedev/agi-agent-kit init [options]
 
 ${colors.bright}Options:${colors.reset}
-  --pack=<pack>    Select skill pack (core, medium, full)
-  --path=<dir>     Target directory (default: current)
-  --global, -g     Install globally to ~/.agent directory
-  --no-symlinks    Skip GEMINI.md/CLAUDE.md symlink creation
-  --help           Show this help message
+  --pack=<pack>         Select skill pack (core, medium, full)
+  --path=<dir>          Target directory (default: current)
+  --global, -g          Install globally to ~/.agent directory
+  --no-symlinks         Skip agent instruction-file symlink creation
+  --agents=<list>       Comma-separated agents to support; skips the interactive
+                        prompt. Use this for CI/non-interactive installs.
+                        Values: claude, copilot, gemini, cursor, opencode
+                        Example: --agents=claude,copilot
+                        Default (omit flag): all agents installed
+  --ci                  Skip all prompts, use safe defaults
+  --help                Show this help message
 
 ${colors.bright}Packs:${colors.reset}
   ${colors.green}core${colors.reset}      Base framework + common skills
@@ -157,6 +209,8 @@ ${colors.bright}Examples:${colors.reset}
   npx @techwavedev/agi-agent-kit init
   npx @techwavedev/agi-agent-kit init --pack=medium
   npx @techwavedev/agi-agent-kit init --pack=full
+  npx @techwavedev/agi-agent-kit init --agents=claude,copilot
+  npx @techwavedev/agi-agent-kit init --agents=claude --ci
 
 ${colors.bright}Note:${colors.reset} Most scripts require ${colors.cyan}python3${colors.reset}.
 `);
@@ -268,6 +322,62 @@ async function promptDomainSelection() {
       const names = selected.map((id) => DOMAINS.find((d) => d.id === id).label);
       log.success(`Selected domains: ${colors.cyan}${names.join(", ")}${colors.reset}`);
       process.env._AGI_CUSTOM_DOMAINS = selected.join(",");
+      resolve(selected);
+    });
+  });
+}
+
+// Prompt user to select which AI coding agents they will use.
+// Returns an array of agent ids (e.g. ["claude", "copilot"]).
+// Defaults to ALL agents when the user presses Enter without selecting.
+async function promptAgentSelection() {
+  console.log(`\n${colors.bright}━━━ AI Coding Agent Support ━━━${colors.reset}\n`);
+  console.log(`  Which AI coding agents will you use?`);
+  console.log(`  ${colors.cyan}Space${colors.reset} to toggle, ${colors.cyan}Enter${colors.reset} to confirm. Default (no selection) = all agents.\n`);
+
+  AGENTS.forEach((agent, i) => {
+    const num = String(i + 1).padStart(2);
+    console.log(`  ${colors.bright}${num}.${colors.reset} ${agent.label}`);
+  });
+
+  console.log(`\n  Enter agent numbers separated by commas (e.g. 1,3) or press Enter for all:`);
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+  return new Promise((resolve) => {
+    rl.question(`  Your agents: `, (answer) => {
+      rl.close();
+      const input = answer.trim();
+
+      // Empty input → all agents (backward-compatible default)
+      if (!input) {
+        log.success(`All agents selected (default).`);
+        resolve(AGENTS.map((a) => a.id));
+        return;
+      }
+
+      // Parse comma-separated numbers or agent ids
+      const selected = [];
+      const parts = input.split(",").map((p) => p.trim());
+      for (const part of parts) {
+        const n = parseInt(part, 10);
+        if (!isNaN(n) && n >= 1 && n <= AGENTS.length) {
+          selected.push(AGENTS[n - 1].id);
+        } else {
+          // Allow passing id directly (e.g. "claude")
+          const match = AGENTS.find((a) => a.id === part.toLowerCase());
+          if (match) selected.push(match.id);
+        }
+      }
+
+      if (selected.length === 0) {
+        log.warn("No valid agents selected — defaulting to all agents.");
+        resolve(AGENTS.map((a) => a.id));
+        return;
+      }
+
+      const names = selected.map((id) => AGENTS.find((a) => a.id === id).label);
+      log.success(`Selected agents: ${colors.cyan}${names.join(", ")}${colors.reset}`);
       resolve(selected);
     });
   });
@@ -967,7 +1077,8 @@ function copyBaseFiles(targetPath, templatesPath, options) {
   }
 }
 
-// Create symlinks for multi-platform support
+// Create symlinks for multi-platform support.
+// options.agents: array of agent ids (e.g. ["claude","copilot"]) or null/undefined for all.
 function createSymlinks(targetPath, options = {}) {
   log.header("Creating symlinks...");
 
@@ -978,14 +1089,20 @@ function createSymlinks(targetPath, options = {}) {
     return;
   }
 
-  // Instruction file symlinks (all point to AGENTS.md)
-  const instructionSymlinks = [
-    { name: "GEMINI.md", target: "AGENTS.md" },
-    { name: "CLAUDE.md", target: "AGENTS.md" },
-    { name: "OPENCODE.md", target: "AGENTS.md" },
-    { name: "COPILOT.md", target: "AGENTS.md" },
-    { name: "OPENCLAW.md", target: "AGENTS.md" },
-  ];
+  // Resolve the set of selected agent ids (default: all)
+  const selectedAgentIds = options.agents && options.agents.length > 0
+    ? options.agents
+    : AGENTS.map((a) => a.id);
+
+  const selectedAgents = AGENTS.filter((a) => selectedAgentIds.includes(a.id));
+
+  // Collect instruction-file symlinks for selected agents only
+  const instructionSymlinks = [];
+  for (const agent of selectedAgents) {
+    for (const symlinkName of agent.symlinks) {
+      instructionSymlinks.push({ name: symlinkName, target: "AGENTS.md" });
+    }
+  }
 
   for (const link of instructionSymlinks) {
     const linkPath = path.join(targetPath, link.name);
@@ -1002,7 +1119,7 @@ function createSymlinks(targetPath, options = {}) {
   }
 
   // Global Stub for Claude Code (Issue #35)
-  if (options.global) {
+  if (options.global && selectedAgentIds.includes("claude")) {
     const homeDir = os.homedir() || process.env.HOME || process.env.USERPROFILE || "";
     const claudeDir = path.join(homeDir, ".claude");
     try {
@@ -1016,7 +1133,8 @@ function createSymlinks(targetPath, options = {}) {
   }
 
   // Platform-specific skill directory symlinks
-  // Maps each platform's expected skills path to our canonical skills/ dir
+  // Maps each platform's expected skills path to our canonical skills/ dir.
+  // Only create symlinks for platforms associated with selected agents.
   const skillsDir = path.join(targetPath, "skills");
   if (!fs.existsSync(skillsDir)) {
     return;
@@ -1024,14 +1142,29 @@ function createSymlinks(targetPath, options = {}) {
 
   const homeDir = os.homedir() || process.env.HOME || process.env.USERPROFILE || "";
 
-  const platformDirs = [
-    { platform: ".claude/skills", platformName: "Claude Code", globalPath: path.join(homeDir, ".claude", "skills") },
-    { platform: ".gemini/skills", platformName: "Gemini CLI", globalPath: path.join(homeDir, ".gemini", "skills") },
-    { platform: ".codex/skills", platformName: "Codex CLI", globalPath: path.join(process.env.CODEX_HOME || homeDir, ".codex", "skills") },
-    { platform: ".cursor/skills", platformName: "Cursor", globalPath: path.join(homeDir, ".cursor", "skills") },
-    { platform: ".adal/skills", platformName: "AdaL CLI", globalPath: path.join(homeDir, ".adal", "skills") },
-    { platform: ".openclaw/skills", platformName: "OpenClaw", globalPath: path.join(homeDir, ".openclaw", "skills") },
+  // Build set of platform dirs requested by selected agents
+  const requestedPlatformDirs = new Set();
+  for (const agent of selectedAgents) {
+    for (const dir of agent.platformDirs) {
+      requestedPlatformDirs.add(dir);
+    }
+  }
+
+  // Full platform dir table (platform relative path → metadata)
+  const allPlatformDirs = [
+    { platform: ".claude/skills",  platformName: "Claude Code", globalPath: path.join(homeDir, ".claude", "skills") },
+    { platform: ".gemini/skills",  platformName: "Gemini CLI",  globalPath: path.join(homeDir, ".gemini", "skills") },
+    { platform: ".codex/skills",   platformName: "Codex CLI",   globalPath: path.join(process.env.CODEX_HOME || homeDir, ".codex", "skills") },
+    { platform: ".cursor/skills",  platformName: "Cursor",      globalPath: path.join(homeDir, ".cursor", "skills") },
+    { platform: ".adal/skills",    platformName: "AdaL CLI",    globalPath: path.join(homeDir, ".adal", "skills") },
+    { platform: ".openclaw/skills",platformName: "OpenClaw",    globalPath: path.join(homeDir, ".openclaw", "skills") },
   ];
+
+  // Filter to only platforms requested by selected agents (or all if agents=all)
+  const allSelected = selectedAgentIds.length === AGENTS.length;
+  const platformDirs = allPlatformDirs.filter(
+    (info) => allSelected || requestedPlatformDirs.has(info.platform)
+  );
 
   for (const info of platformDirs) {
     const { platform, platformName, globalPath } = info;
@@ -1425,6 +1558,26 @@ async function init(options) {
     await backupExistingFiles(options.path, options);
   }
 
+  // Determine which AI agents to support
+  // --agents=<list> bypasses the interactive prompt; CI defaults to all
+  if (!options.agents) {
+    if (options.ci) {
+      options.agents = AGENTS.map((a) => a.id); // CI: all agents (backward compat)
+    } else {
+      options.agents = await promptAgentSelection();
+    }
+  } else {
+    // Validate provided agent ids and warn about unknown ones
+    const valid = options.agents.filter((id) => AGENTS.some((a) => a.id === id));
+    const invalid = options.agents.filter((id) => !AGENTS.some((a) => a.id === id));
+    if (invalid.length > 0) {
+      log.warn(`Unknown agent(s) ignored: ${invalid.join(", ")}. Valid values: ${AGENTS.map((a) => a.id).join(", ")}`);
+    }
+    options.agents = valid.length > 0 ? valid : AGENTS.map((a) => a.id);
+    const names = options.agents.map((id) => AGENTS.find((a) => a.id === id).label);
+    log.info(`Agents (from --agents flag): ${colors.cyan}${names.join(", ")}${colors.reset}`);
+  }
+
   // Determine pack
   let pack = options.pack;
   if (!pack) {
@@ -1452,8 +1605,24 @@ async function init(options) {
   // Copy base files
   copyBaseFiles(options.path, templatesPath, options);
 
-  // Copy skills
+  // Copy skills — after install, optionally remove cowork-export if no Anthropic agent selected
   copySkills(options.path, pack, templatesPath);
+
+  // Remove cowork-export skill if no Anthropic agent (Claude Code) was selected
+  const hasAnthropicAgent = options.agents.some(
+    (id) => AGENTS.find((a) => a.id === id && a.anthropic)
+  );
+  if (!hasAnthropicAgent) {
+    const coworkSkillPath = path.join(options.path, "skills", "cowork-export");
+    if (fs.existsSync(coworkSkillPath)) {
+      try {
+        fs.rmSync(coworkSkillPath, { recursive: true, force: true });
+        log.info("Skipped cowork-export skill (no Anthropic/Claude agent selected).");
+      } catch (e) {
+        log.warn(`Could not remove cowork-export skill: ${e.message}`);
+      }
+    }
+  }
 
   // Post-install: detect and fix duplicate skill names (prevents Gemini CLI conflicts)
   deduplicateSkills(options.path);
@@ -1499,9 +1668,15 @@ async function init(options) {
   }
 
   // Ask about platform features (Agent Teams, MCP, etc.) BEFORE running setup wizard
-  const platformFeatures = options.ci
+  // Only prompt for Agent Teams when Claude Code is among the selected agents
+  const hasClaude = options.agents.includes("claude");
+  const platformFeatures = (options.ci || !hasClaude)
     ? { agentTeams: false }
     : await promptPlatformFeatures(options.path);
+
+  if (!hasClaude && !options.ci) {
+    log.info("Agent Teams skipped (Claude Code not selected).");
+  }
 
   // Auto-run platform setup wizard
   runPlatformSetup(options.path);
@@ -1532,11 +1707,14 @@ async function init(options) {
     memoryHint = `  3. ${colors.bright}Start memory services${colors.reset} (open a ${colors.red}NEW terminal tab${colors.reset} for Ollama):\n\n     ${colors.yellow}# Terminal tab 1 — leave this running:${colors.reset}\n     ${colors.yellow}ollama serve${colors.reset}\n\n     ${colors.yellow}# Terminal tab 2 — run once:${colors.reset}\n     ${colors.yellow}docker run -d -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant${colors.reset}\n     ${colors.yellow}python3 execution/session_boot.py --auto-fix${colors.reset}`;
   }
 
+  const agentNames = options.agents.map((id) => AGENTS.find((a) => a.id === id).label).join(", ");
+
   console.log(`
 ${colors.bright}Summary of what was configured:${colors.reset}
   ${colors.green}✔${colors.reset} Python environment (.venv)
   ${colors.green}✔${colors.reset} Skills installed (${pack} pack)
   ${colors.green}✔${colors.reset} AGENTS.md + platform symlinks
+  ${colors.green}✔${colors.reset} AI agents: ${colors.cyan}${agentNames}${colors.reset}
   ${infraChoice.useLocal ? colors.green + "✔" + colors.reset : colors.yellow + "−" + colors.reset} Memory (Qdrant + Ollama): ${infraChoice.useLocal ? colors.green + "enabled" + colors.reset : colors.yellow + "disabled" + colors.reset}
   ${platformFeatures.agentTeams ? colors.green + "✔" + colors.reset : colors.yellow + "−" + colors.reset} Agent Teams (parallel execution): ${platformFeatures.agentTeams ? colors.green + "enabled" + colors.reset : colors.yellow + "skipped" + colors.reset}
   ${colors.dim}− MCP Servers: not configured (project-specific, add later)${colors.reset}
@@ -1545,11 +1723,9 @@ ${colors.bright}Next steps:${colors.reset}
   1. Activate Python environment:
      ${colors.yellow}source .venv/bin/activate${colors.reset}
   2. Review ${colors.cyan}AGENTS.md${colors.reset} for architecture overview
-${memoryHint}${platformFeatures.agentTeams ? "" : `
-  ▸ To enable Agent Teams later:\n    ${colors.yellow}echo '${JSON.stringify({ env: { CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1" } }, null, 2)}' > .claude/settings.json${colors.reset}`}
+${memoryHint}${platformFeatures.agentTeams ? "" : hasClaude ? `
+  ▸ To enable Agent Teams later:\n    ${colors.yellow}echo '${JSON.stringify({ env: { CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1" } }, null, 2)}' > .claude/settings.json${colors.reset}` : ""}
   ▸ To add MCP servers: edit ${colors.cyan}.claude/settings.json${colors.reset} → ${colors.cyan}mcpServers${colors.reset} section
-  ▸ To install Claude plugins (pyright-lsp etc): type inside Claude Code:
-    ${colors.yellow}/plugin install pyright-lsp@claude-plugins-official${colors.reset}
   ▸ Check ${colors.cyan}skills/${colors.reset} for available capabilities
 
 Happy coding! 🎉
