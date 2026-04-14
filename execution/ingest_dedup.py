@@ -1,4 +1,4 @@
-"""SQLite dedup layer for ingest pipeline (#119, techwavedev/agi#123).
+"""SQLite dedup layer for ingest pipeline (#119, techwavedev/agi-agent-kit#123).
 
 Tracks which (source_type, external_id) items have been fetched and which
 notebooks each has been pushed to. One table for every source type — uniqueness

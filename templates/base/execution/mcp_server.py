@@ -322,7 +322,7 @@ TOOLS = [
                 },
                 "repo": {
                     "type": "string",
-                    "description": "owner/repo (e.g. 'techwavedev/agi'). Omit to use the repo detected by gh from the current directory."
+                    "description": "owner/repo (e.g. 'octocat/hello-world'). Omit to use the repo detected by gh from the current directory."
                 }
             },
             "required": ["pr"]
@@ -343,7 +343,7 @@ TOOLS = [
                 },
                 "repo": {
                     "type": "string",
-                    "description": "owner/repo (e.g. 'techwavedev/agi'). Omit to use the repo detected by gh from the current directory."
+                    "description": "owner/repo (e.g. 'octocat/hello-world'). Omit to use the repo detected by gh from the current directory."
                 },
                 "max_bytes": {
                     "type": "integer",

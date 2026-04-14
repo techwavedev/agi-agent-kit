@@ -9,24 +9,24 @@ description: Comprehensive Release Protocol for Agi Agent Kit. Enforces document
 > | Repo                        | Physical Location        | Purpose             | NPM Publish? |
 > | --------------------------- | ------------------------ | ------------------- | ------------ |
 > | `techwavedev/agi`           | `.` (Root Directory)     | Private development | ❌ NEVER     |
-> | `techwavedev/agi-agent-kit` | `./public_release/`      | Public distribution | ✅ YES       |
+> | `techwavedev/agi-agent-kit` | `./public_release_repo/`      | Public distribution | ✅ YES       |
 >
-> **Flow:** `main` → Airgap Sync to `public_release/` → commit & tag inside `public_release/` → push to origin -> NPM auto-publishes
+> **Flow:** `main` → Airgap Sync to `public_release_repo/` → commit & tag inside `public_release_repo/` → push to origin -> NPM auto-publishes
 
 ### 0. Private/Public Physical Separation (CRITICAL)
 
 > **🚫 NEVER run `git merge` between private and public branches.**
 > The repository uses a strict **Physical Airgap**. 
-> The public release lives purely in the `public_release/` directory.
+> The public release lives purely in the `public_release_repo/` directory.
 
 ```bash
-# Sync public files from root to the public_release/ airgap
+# Sync public files from root to the public_release_repo/ airgap
 python3 execution/publish_to_public.py --dry-run   # preview blocked private files
 python3 execution/publish_to_public.py             # wipe and sync files securely
 ```
 
 This script reads the `.private` manifest and explicitly omits those files
-when copying to the `public_release/` folder. The `.private` file at repo root is the
+when copying to the `public_release_repo/` folder. The `.private` file at repo root is the
 **single source of truth** for what must never appear on the public repository.
 
 As a failsafe, the sync script dynamically executes `.agent/scripts/release_gate.py` ON the copied destination path BEFORE it commits, guaranteeing nothing slips through.
