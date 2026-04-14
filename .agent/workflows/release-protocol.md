@@ -61,7 +61,7 @@ python3 execution/publish_to_public.py
 2. Change to the public repository directory:
 
 ```bash
-cd public_release
+cd public_release_repo
 ```
 
 3. Tag the release and push:

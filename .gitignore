@@ -11,6 +11,11 @@ token.json
 .tmp/
 !.tmp/.gitkeep
 
+# Airgap release clone (never commit into private repo)
+public_release_repo/
+public_release/
+public/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -24,8 +29,11 @@ templates/skills/extended/**/examples/**/package-lock.json
 docker-compose.langfuse.yml
 .agent/
 .claude/
-# Allow context-mode hooks and shared settings
+# Allow context-mode hooks, router/enforcement hooks, and shared settings
+# (these are listed in .private so they never leak to the public release)
 !.claude/hooks/
+!.claude/hooks/*.py
+.claude/hooks/__pycache__/
 !.claude/settings.json
 .gemini/
 *.skill

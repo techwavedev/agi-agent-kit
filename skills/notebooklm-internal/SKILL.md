@@ -145,6 +145,12 @@ python3 execution/memory_manager.py store \
   --tags notebooklm documentation
 ```
 
+### Ingest Pipeline Integration
+
+The ingest pipeline uses `execution/source_fetchers` to collect content and
+`execution/ingest_dispatcher.py` to orchestrate fetch → dedup → format → upload.
+See `directives/sources_to_notebooklm.md` for the full SOP.
+
 ### Multi-Agent Collaboration
 
 ```bash

@@ -8,8 +8,8 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy the generated public directory
-COPY public/ ./
+# Copy the airgapped public release tree
+COPY public_release_repo/ ./
 
 # Install globally to verify npm package configuration is sane
 RUN npm install -g .

@@ -1,12 +1,39 @@
 {
-  "skill_path": "skills/notebooklm-internal",
-  "assertions": [
-    {"type": "has_yaml_frontmatter", "file": "SKILL.md"},
-    {"type": "contains", "file": "SKILL.md", "value": "internal: true"},
-    {"type": "contains", "file": "SKILL.md", "value": "public: false"},
-    {"type": "contains", "file": "SKILL.md", "value": "non_interactive: true"},
-    {"type": "contains", "file": "SKILL.md", "value": "INTERNAL USE ONLY"},
-    {"type": "contains", "file": "SKILL.md", "value": "forked_from: skills/notebooklm"},
-    {"type": "max_lines", "file": "SKILL.md", "value": 250}
+  "skill": "notebooklm-internal",
+  "version": "1.1.0",
+  "description": "Binary assertions for notebooklm-internal SKILL.md quality and ingest pipeline coverage",
+  "evaluations": [
+    {
+      "name": "skill-frontmatter",
+      "description": "SKILL.md has valid YAML frontmatter with required internal flags",
+      "input_file": "../SKILL.md",
+      "assertions": [
+        {"type": "has_yaml_frontmatter"},
+        {"type": "contains", "value": "internal: true"},
+        {"type": "contains", "value": "public: false"},
+        {"type": "contains", "value": "non_interactive: true"},
+        {"type": "contains", "value": "INTERNAL USE ONLY"},
+        {"type": "contains", "value": "forked_from: skills/notebooklm"}
+      ]
+    },
+    {
+      "name": "skill-size",
+      "description": "SKILL.md stays under 250 lines for token efficiency",
+      "input_file": "../SKILL.md",
+      "assertions": [
+        {"type": "max_lines", "value": 250}
+      ]
+    },
+    {
+      "name": "ingest-pipeline-coverage",
+      "description": "SKILL.md references all ingest pipeline components",
+      "input_file": "../SKILL.md",
+      "assertions": [
+        {"type": "contains", "value": "ensure_notebook"},
+        {"type": "contains", "value": "add_source"},
+        {"type": "contains", "value": "ingest_dispatcher"},
+        {"type": "contains", "value": "source_fetchers"}
+      ]
+    }
   ]
 }

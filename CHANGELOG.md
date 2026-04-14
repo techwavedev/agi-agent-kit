@@ -5,12 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.7.10] - 2026-04-14
+## [1.7.11] - 2026-04-14
 
 ### Added
-- **TurboQuant KV Cache Optimization**: Integrated native KV Cache footprint reduction to deeply optimize context window persistence and lower local memory ceiling. Supports PyTorch detection with graceful degradation.
-- **Strict Isolated Airgap**: Expanded deployment boundaries to enforce fully containerized validation bounds on the 'public/' architecture, preventing test spillage and confirming completely offline-ready synchronization via Docker instantiation.
-- **Python 3.9 Standard Environment Alignment**: Down-compiled all Type hints across the executor substrate `(Optional[str])` to universally align `local_micro_agent.py` to the strict minimum macOS Python environments, ensuring deep backwards-compatibility for natively orchestrating tasks locally without upgrading to 3.10.
+- **X Fetcher (twscrape)**: `execution/source_fetchers/x_fetcher.py` — fetch tweets from X profiles using twscrape with cookie-jar auth, thread reconstruction, media download, and date-range filtering (#121).
+- **Ingest Pipeline Directive**: `directives/sources_to_notebooklm.md` — full SOP for the sources → NotebookLM ingest pipeline (#131).
+- **Ingest Workflow**: `.agent/workflows/sync-sources-to-notebooklm.md` — turbo quick-reference workflow for ingest runs (#131).
+- **Ingest Evals**: Extended `skills/notebooklm-internal/eval/evals.json` with binary assertions for ingest pipeline coverage (#131).
+
+### Fixed
+- **TurboQuant Inline Compression (completing 1.7.10)**: `TurboQuantDynamicCache.update()` now actually compresses overflowed KV tokens instead of pass-through. Implements sliding fp16 window + per-layer compressed chunk list; decompresses on read so the attention layer sees the full logical sequence. Measured ~1.8x compression with <0.03 MSE over a 64-token stream; ratio scales with stream length (longer context → higher savings). `memory_footprint_bytes()` added for observability.
+- **Airgap Folder Consolidation**: Deleted stray `public/` and `public_release/` sibling folders that were accidentally created alongside `public_release_repo/`. All `publish_to_public.py` docstrings, log messages, error hints, and `IGNORED_ROOT_DIRS` now consistently reference the single `public_release_repo/` clone. `Dockerfile.public_test` now copies from the correct folder (was silently broken after the prior rename).
+- **Dynamic Push Branch**: `publish_to_public.py` now derives the current branch name instead of hardcoding `git push origin public` (public fork's default is `main`).
+- **Scanner Skip List**: `execution/security_scan.py` ignore list updated to match the renamed folder.
+- **.gitignore**: Added `public_release_repo/`, `public_release/`, `public/` so the local airgap clone can never be committed into the private repo.
+
+### Added
+- **Publish Gatekeeper**: `publish_to_public.py` now fetches the public remote before any destructive sync and refuses to publish if the public repo has commits (Dependabot, CodeQL auto-fixes, community PRs) not represented in the private source. Airgap auto-sync commits are correctly filtered out. Override available via `--force-unsafe` for reviewed edge cases.
+- **TurboQuant inline test**: `mock_test()` now asserts window-bounded memory, compressed-chunk accumulation, and round-trip MSE across simulated generation steps.
+
+### Notes
+- `1.7.10` shipped the TurboQuant compressor kernel + HuggingFace cache skeleton but the inline compression path was a stub (raw tensors passed through). 1.7.11 is the honest completion of that feature. 1.7.10 has been unpublished from NPM to prevent installs of the misleading version.
+
+## [1.7.10] - 2026-04-14 [UNPUBLISHED]
+
+### Added
+- **TurboQuant KV Cache Compressor (kernel + skeleton, inline path stubbed)**: Integrated the TurboQuant (Google 2026) math kernel — PolarQuant rotation, bit-packed quantization, QJL 1-bit residuals — as a standalone compressor. The HuggingFace `DynamicCache` adapter was wired up but the `update()` method did not actually compress during generation (superseded by 1.7.11).
+- **Strict Isolated Airgap**: Expanded deployment boundaries to enforce fully containerized validation bounds, preventing test spillage and confirming completely offline-ready synchronization via Docker instantiation.
+- **Python 3.9 Standard Environment Alignment**: Down-compiled all type hints across the executor substrate (`Optional[str]`) to universally align `local_micro_agent.py` to the strict minimum macOS Python environments, ensuring deep backwards-compatibility for natively orchestrating tasks locally without upgrading to 3.10.
 
 ## [1.7.9] - 2026-04-12
 

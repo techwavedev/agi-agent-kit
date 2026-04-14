@@ -33,7 +33,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 # Directories to skip entirely
 SKIP_DIRS = {"node_modules", ".git", ".venv", ".venv.test", ".idea", ".tmp", "__pycache__",
              ".mypy_cache", "venv", "env", "browser_state", "browser_profile",
-             "_metadata", ".playwright-browsers", "public_release"}
+             "_metadata", ".playwright-browsers", "public_release_repo"}
 # Files always skipped (gitignored, private, or generated)
 SKIP_FILES = {"docker-compose.langfuse.yml", "library.json", "auth_info.json",
               "state.json", "verified_contents.json"}
