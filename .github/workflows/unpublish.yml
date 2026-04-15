@@ -77,24 +77,40 @@ jobs:
             echo "::warning::Version ${VER} not on registry; nothing to do."
           fi
 
-      - name: Unpublish (within 72h window) — OIDC trusted
-        if: steps.registry_check.outputs.exists == 'true' && steps.registry_check.outputs.age_sec != '' && fromJSON(steps.registry_check.outputs.age_sec) < 259200
-        env:
-          VER: ${{ steps.ver.outputs.version }}
-        run: |
-          echo "Unpublishing @techwavedev/agi-agent-kit@${VER} via OIDC trusted publisher..."
-          npm unpublish "@techwavedev/agi-agent-kit@${VER}"
-          echo "✅ Unpublished ${VER}"
+      # NPM's OIDC trusted-publisher token is scoped to publish-like operations
+      # (publish + deprecate). `unpublish` requires interactive owner auth and
+      # NPM's backend silently ignores unpublish calls from OIDC tokens even
+      # though the CLI reports success. So we always DEPRECATE (works via
+      # OIDC), and additionally attempt unpublish within the 72h window as a
+      # best-effort; if NPM accepts it, great, but we don't rely on it.
 
-      - name: Deprecate (outside 72h window) — OIDC trusted
-        if: steps.registry_check.outputs.exists == 'true' && (steps.registry_check.outputs.age_sec == '' || fromJSON(steps.registry_check.outputs.age_sec) >= 259200)
+      - name: Deprecate — OIDC trusted (always, idempotent, authoritative)
+        if: steps.registry_check.outputs.exists == 'true'
         env:
           VER: ${{ steps.ver.outputs.version }}
           REASON: ${{ github.event.inputs.reason || 'Release deleted; version withdrawn.' }}
         run: |
-          echo "::warning::Version ${VER} is older than 72h — cannot unpublish, deprecating instead."
+          echo "Deprecating @techwavedev/agi-agent-kit@${VER} via OIDC..."
           npm deprecate "@techwavedev/agi-agent-kit@${VER}" "${REASON}"
-          echo "⚠️ Deprecated ${VER}: ${REASON}"
+          echo "⚠️ Deprecated ${VER}"
+          echo "  users installing this version will now see: ${REASON}"
+
+      - name: Attempt unpublish (within 72h window) — best-effort
+        if: steps.registry_check.outputs.exists == 'true' && steps.registry_check.outputs.age_sec != '' && fromJSON(steps.registry_check.outputs.age_sec) < 259200
+        continue-on-error: true
+        env:
+          VER: ${{ steps.ver.outputs.version }}
+        run: |
+          echo "Attempting unpublish (may silently no-op if OIDC lacks unpublish scope)..."
+          npm unpublish "@techwavedev/agi-agent-kit@${VER}" || true
+          # Verify with a cache-bypass GET to registry
+          sleep 5
+          if curl -s "https://registry.npmjs.org/@techwavedev%2Fagi-agent-kit" -H "Cache-Control: no-cache" \
+             | python3 -c "import json,sys; d=json.load(sys.stdin); sys.exit(0 if '${VER}' not in d.get('versions',{}) else 1)"; then
+            echo "✅ Unpublish took effect — ${VER} removed from registry versions."
+          else
+            echo "::warning::Unpublish did NOT take effect (NPM OIDC tokens can't unpublish). Relying on deprecation."
+          fi
 
       - name: Summary
         if: always()
