@@ -7,16 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.7.11] - 2026-04-14
 
-### Fixed
-- **TurboQuant Inline Compression (completing 1.7.10)**: `TurboQuantDynamicCache.update()` now actually compresses overflowed KV tokens instead of pass-through. Implements sliding fp16 window + per-layer compressed chunk list; decompresses on read so the attention layer sees the full logical sequence. Measured ~1.8x compression with <0.03 MSE over a 64-token stream; ratio scales with stream length (longer context → higher savings). `memory_footprint_bytes()` added for observability.
-- **Airgap Folder Consolidation**: Deleted stray `public/` and `public_release/` sibling folders that were accidentally created alongside `public_release_repo/`. All `publish_to_public.py` docstrings, log messages, error hints, and `IGNORED_ROOT_DIRS` now consistently reference the single `public_release_repo/` clone. `Dockerfile.public_test` now copies from the correct folder (was silently broken after the prior rename).
-- **Dynamic Push Branch**: `publish_to_public.py` now derives the current branch name instead of hardcoding `git push origin public` (public fork's default is `main`).
-- **Scanner Skip List**: `execution/security_scan.py` ignore list updated to match the renamed folder.
-- **.gitignore**: Added `public_release_repo/`, `public_release/`, `public/` so the local airgap clone can never be committed into the private repo.
-
 ### Added
-- **Publish Gatekeeper**: `publish_to_public.py` now fetches the public remote before any destructive sync and refuses to publish if the public repo has commits (Dependabot, CodeQL auto-fixes, community PRs) not represented in the private source. Airgap auto-sync commits are correctly filtered out. Override available via `--force-unsafe` for reviewed edge cases.
-- **TurboQuant inline test**: `mock_test()` now asserts window-bounded memory, compressed-chunk accumulation, and round-trip MSE across simulated generation steps.
+- **X → NotebookLM Ingest Pipeline (complete)**: end-to-end flow from X/YouTube scraping through NotebookLM upload, covering issues #121, #126, #127, #128, #129, #131:
+  - **X Fetcher (twscrape)**: `execution/source_fetchers/x_fetcher.py` — fetch tweets from X profiles via twscrape with cookie-jar auth, thread reconstruction, media download, date-range filtering (#121).
+  - **`ensure_notebook.py`**: resolve-or-create NotebookLM notebooks by id or display name, persist resolved ids back to config, auto-skip UI calls when cached (#126).
+  - **`add_source.py`**: headless Playwright upload of primary source + attachments in a single browser session; JSONL audit log at `skills/notebooklm-internal/library.jsonl` (#127).
+  - **Dispatcher (`execution/ingest_dispatcher.py`) + config schema**: fetcher → dedup → format → ensure_notebook → add_source → mark_pushed per `config/ingest_sources.json`. `run | run-one <id> | dry-run | validate` subcommands with `--parallel N` thread pool, per-source failure isolation, structural config validator in `execution/ingest_config.py` (#128).
+  - **Cron Scheduler (`execution/ingest_scheduler.py`)**: idempotent crontab install/uninstall, `run-now` with log teeing + 30-day retention, failure capture via cross-agent-context, dispatcher-side cadence gating (#129).
+  - **Ingest Directive + Workflow + Evals**: `directives/sources_to_notebooklm.md` SOP, `.agent/workflows/sync-sources-to-notebooklm.md` turbo workflow, extended `skills/notebooklm-internal/eval/evals.json` binary assertions (#131).
+- **Publish Gatekeeper**: `publish_to_public.py` now fetches the public remote before any destructive sync and refuses to publish if the public repo has commits (Dependabot, CodeQL auto-fixes, community PRs) not represented in the private source. Uses `git cherry` (patch-id equivalence), private-side symlink skip, and private-newer timestamp check. Override available via `--force-unsafe` for reviewed edge cases.
+- **TurboQuant inline test**: `mock_test()` asserts window-bounded memory, compressed-chunk accumulation, and round-trip MSE across simulated generation steps.
+
+### Fixed
+- **TurboQuant Inline Compression (completing 1.7.10)**: `TurboQuantDynamicCache.update()` now actually compresses overflowed KV tokens instead of pass-through. Sliding fp16 window + per-layer compressed chunk list; decompresses on read so attention sees the full logical sequence. Measured ~1.8x compression with <0.03 MSE over a 64-token stream. `memory_footprint_bytes()` added for observability.
+- **Airgap Folder Consolidation**: Deleted stray `public/` and `public_release/` sibling folders alongside `public_release_repo/`. All `publish_to_public.py` docstrings, log messages, error hints, and `IGNORED_ROOT_DIRS` now reference the single `public_release_repo/` clone. `Dockerfile.public_test` now copies from the correct folder.
+- **Dynamic Push Branch**: `publish_to_public.py` now derives the current branch name instead of hardcoding `git push origin public`.
+- **Scanner Skip List**: `execution/security_scan.py` ignore list updated for the renamed folder.
+- **.gitignore**: Added `public_release_repo/`, `public_release/`, `public/` so the local airgap clone can never be committed into the private repo.
+- **Worktree hook propagation**: `.claude/hooks/local_router_hook.py` now tracked in git so `Agent(isolation: "worktree")` sub-agents inherit the hook and don't deadlock on the harness pre-tool enforcer.
 
 ### Notes
 - `1.7.10` shipped the TurboQuant compressor kernel + HuggingFace cache skeleton but the inline compression path was a stub (raw tensors passed through). 1.7.11 is the honest completion of that feature. 1.7.10 has been unpublished from NPM to prevent installs of the misleading version.

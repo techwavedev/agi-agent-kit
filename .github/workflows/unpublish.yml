@@ -1,0 +1,109 @@
+name: Unpublish from NPM (on release deletion)
+
+# Triggers:
+#   - release.deleted: deleting a GitHub release also unpublishes that
+#     version from NPM via OIDC (mirror of publish.yml on release.published).
+#   - workflow_dispatch: manual fallback — type the version to unpublish.
+#
+# Subject to NPM's 72h unpublish window. After 72h, NPM only allows
+# `npm deprecate`, which this workflow falls back to automatically.
+
+on:
+  release:
+    types: [deleted]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to unpublish (e.g. 1.7.10) — must match an existing release tag (vX.Y.Z)'
+        required: true
+        type: string
+      reason:
+        description: 'Why are we removing this version? (logged + used as deprecate message)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  unpublish:
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Resolve target version
+        id: ver
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          if [ "$EVENT_NAME" = "release" ]; then
+            VER="${RELEASE_TAG#v}"
+          else
+            VER="${INPUT_VERSION#v}"
+          fi
+          if [ -z "$VER" ]; then
+            echo "::error::Could not resolve version to unpublish"
+            exit 1
+          fi
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "Target version: $VER"
+
+      - name: Setup Node.js (npm ≥11.5.1 for OIDC)
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Verify version exists on registry
+        id: registry_check
+        env:
+          VER: ${{ steps.ver.outputs.version }}
+        run: |
+          if npm view "@techwavedev/agi-agent-kit@${VER}" version >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            PUB_TIME=$(npm view "@techwavedev/agi-agent-kit" time --json | jq -r --arg v "$VER" '.[$v] // empty')
+            echo "Published at: $PUB_TIME"
+            if [ -n "$PUB_TIME" ]; then
+              AGE_SEC=$(( $(date +%s) - $(date -d "$PUB_TIME" +%s) ))
+              echo "age_sec=$AGE_SEC" >> "$GITHUB_OUTPUT"
+              echo "Age: $((AGE_SEC / 3600))h $((AGE_SEC % 3600 / 60))m"
+            fi
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Version ${VER} not on registry; nothing to do."
+          fi
+
+      - name: Unpublish (within 72h window) — OIDC trusted
+        if: steps.registry_check.outputs.exists == 'true' && steps.registry_check.outputs.age_sec != '' && fromJSON(steps.registry_check.outputs.age_sec) < 259200
+        env:
+          VER: ${{ steps.ver.outputs.version }}
+        run: |
+          echo "Unpublishing @techwavedev/agi-agent-kit@${VER} via OIDC trusted publisher..."
+          npm unpublish "@techwavedev/agi-agent-kit@${VER}"
+          echo "✅ Unpublished ${VER}"
+
+      - name: Deprecate (outside 72h window) — OIDC trusted
+        if: steps.registry_check.outputs.exists == 'true' && (steps.registry_check.outputs.age_sec == '' || fromJSON(steps.registry_check.outputs.age_sec) >= 259200)
+        env:
+          VER: ${{ steps.ver.outputs.version }}
+          REASON: ${{ github.event.inputs.reason || 'Release deleted; version withdrawn.' }}
+        run: |
+          echo "::warning::Version ${VER} is older than 72h — cannot unpublish, deprecating instead."
+          npm deprecate "@techwavedev/agi-agent-kit@${VER}" "${REASON}"
+          echo "⚠️ Deprecated ${VER}: ${REASON}"
+
+      - name: Summary
+        if: always()
+        env:
+          VER: ${{ steps.ver.outputs.version }}
+          EXISTED: ${{ steps.registry_check.outputs.exists }}
+        run: |
+          echo "## Unpublish summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Version: \`${VER}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Was on registry: \`${EXISTED}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Triggered by: \`${{ github.event_name }}\`" >> "$GITHUB_STEP_SUMMARY"

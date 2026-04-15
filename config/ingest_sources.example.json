@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "elon-x",
+      "type": "x",
+      "handle": "elonmusk",
+      "notebooks": ["Elon Daily"],
+      "enabled": false,
+      "cadence": "daily",
+      "config": {
+        "include_replies": false,
+        "include_retweets": false,
+        "include_media": true
+      }
+    },
+    {
+      "id": "lex-yt",
+      "type": "youtube",
+      "handle": "@lexfridman",
+      "notebooks": ["Lex Interviews", "Science Podcasts"],
+      "enabled": false,
+      "cadence": "daily",
+      "config": {
+        "transcript": true,
+        "max_items": 5
+      }
+    }
+  ]
+}

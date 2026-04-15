@@ -1,0 +1,51 @@
+{
+  "skill": "claude-code-design",
+  "version": "1.0.0",
+  "evaluations": [
+    {
+      "name": "skill-md-structure",
+      "description": "SKILL.md meets Skills 2.0 structural requirements and routes to NotebookLM.",
+      "input_file": "../SKILL.md",
+      "assertions": [
+        { "type": "has_yaml_frontmatter", "value": true },
+        { "type": "max_lines", "value": 200 },
+        { "type": "min_lines", "value": 30 },
+        { "type": "no_consecutive_blank_lines", "value": true },
+        { "type": "contains", "value": "NotebookLM" },
+        { "type": "contains", "value": "scripts/run.py ask_question.py" },
+        { "type": "contains", "value": "references/claude_code_design_principles.md" },
+        { "type": "contains", "value": "Memory-First" },
+        { "type": "contains", "value": "voltagent" },
+        { "type": "not_contains", "value": "TODO: write this" }
+      ]
+    },
+    {
+      "name": "voltagent-patterns-reference-present",
+      "description": "VoltAgent cross-framework patterns reference exists.",
+      "input_file": "../references/voltagent_patterns.md",
+      "assertions": [
+        { "type": "min_lines", "value": 100 },
+        { "type": "contains_all", "value": ["VoltAgent", "DESIGN.md", "subagent", "MIT"] }
+      ]
+    },
+    {
+      "name": "principles-reference-present",
+      "description": "Principles reference exists and covers core Claude Code design topics.",
+      "input_file": "../references/claude_code_design_principles.md",
+      "assertions": [
+        { "type": "min_lines", "value": 40 },
+        { "type": "contains_all", "value": ["Progressive Disclosure", "Karpathy", "Worktree", "Memory-First", "Determinism"] }
+      ]
+    },
+    {
+      "name": "usage-patterns-reference-present",
+      "description": "Usage patterns reference exists and shows real commands.",
+      "input_file": "../references/usage_patterns.md",
+      "assertions": [
+        { "type": "min_lines", "value": 15 },
+        { "type": "contains", "value": "ask_question.py" },
+        { "type": "contains", "value": "ask_design.sh" }
+      ]
+    }
+  ]
+}

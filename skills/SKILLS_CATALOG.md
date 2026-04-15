@@ -1,6 +1,6 @@
 # Skills Catalog
 
-> **Auto-generated Documentation** — Last updated: 2026-04-10 18:49
+> **Auto-generated Documentation** — Last updated: 2026-04-14 23:14
 >
 > This catalog is automatically maintained. Update it by running:
 > ```bash
@@ -15,11 +15,14 @@ This document provides comprehensive documentation on available skills, how to u
 
 - [What Are Skills?](#what-are-skills)
 - [Available Skills](#available-skills)
+  - [Claude Code Design](#claude-code-design)
   - [Cowork Export](#cowork-export)
   - [Documentation](#documentation)
   - [Image Ai Generator](#image-ai-generator)
   - [Notebooklm](#notebooklm)
+  - [Notebooklm Internal](#notebooklm-internal)
   - [Pdf Reader](#pdf-reader)
+  - [Plugin Discovery](#plugin-discovery)
   - [Qdrant Memory](#qdrant-memory)
   - [Resend](#resend)
   - [Supply Chain Monitor](#supply-chain-monitor)
@@ -48,6 +51,23 @@ skill-name/
 ---
 
 ## Available Skills
+
+### Claude Code Design
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `claude-code-design` |
+| **Location** | `skills/claude-code-design/` |
+| **Type** | Standalone |
+
+**Description:** "Answer questions about Claude Code / Anthropic agent design patterns (CLAUDE.md layering, skills anatomy, progressive disclosure, memory-first, orchestration, sub-agents, worktree isolation, Karpathy loop). Primary backend is a NotebookLM RAG over Anthropic design notebooks; falls back to bundled references when the notebook is not registered."
+
+**References:**
+- `references/claude_code_design_principles.md`
+- `references/usage_patterns.md`
+- `references/voltagent_patterns.md`
+
+---
 
 ### Cowork Export
 
@@ -145,6 +165,42 @@ skill-name/
 
 ---
 
+### Notebooklm Internal
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `notebooklm-internal` |
+| **Location** | `skills/notebooklm-internal/` |
+| **Type** | Standalone |
+
+**Description:** "INTERNAL ONLY. Forked write-capable variant of the public notebooklm skill. Adds programmatic source ingestion (add_source) for the X/YouTube → NotebookLM pipeline (#119). Headless, non-interactive, cron-driven. NEVER ship publicly."
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/add_source.py` | *[See script for details]* |
+| `scripts/ask_question.py` | *[See script for details]* |
+| `scripts/auth_manager.py` | *[See script for details]* |
+| `scripts/browser_session.py` | *[See script for details]* |
+| `scripts/browser_utils.py` | *[See script for details]* |
+| `scripts/cleanup_manager.py` | *[See script for details]* |
+| `scripts/config.py` | *[See script for details]* |
+| `scripts/ensure_notebook.py` | *[See script for details]* |
+| `scripts/notebook_manager.py` | *[See script for details]* |
+| `scripts/run.py` | *[See script for details]* |
+| `scripts/setup_environment.py` | *[See script for details]* |
+| `scripts/test_add_source.py` | *[See script for details]* |
+| `scripts/test_ensure_notebook.py` | *[See script for details]* |
+
+**References:**
+- `references/api_reference.md`
+- `references/configuration.md`
+- `references/troubleshooting.md`
+- `references/usage_patterns.md`
+
+---
+
 ### Pdf Reader
 
 | Property | Value |
@@ -163,6 +219,24 @@ skill-name/
 
 **References:**
 - `references/pdf_libraries.md`
+
+---
+
+### Plugin Discovery
+
+| Property | Value |
+| -------- | ----- |
+| **Name** | `plugin-discovery` |
+| **Location** | `skills/plugin-discovery/` |
+| **Type** | Standalone |
+
+**Description:** Platform-adaptive plugin and extension auto-discovery. Detects the runtime environment (Claude Code, Gemini, Opencode, Kiro) and recommends or installs relevant plugins, extensions, MCP servers, and marketplace integrations. Use when setting up a project, onboarding, or when the user asks about available tools/plugins.
+
+**Scripts:**
+
+| Script | Purpose |
+| ------ | ------- |
+| `scripts/platform_setup.py` | *[See script for details]* |
 
 ---
 

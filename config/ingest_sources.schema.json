@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "ingest_sources.json",
+  "description": "Pipeline config for X.com / YouTube / other sources → NotebookLM (#128)",
+  "type": "object",
+  "required": ["version", "sources"],
+  "properties": {
+    "version": {"type": "integer", "const": 1},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "handle", "notebooks", "enabled"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1, "pattern": "^[a-z0-9][a-z0-9-]*$"},
+          "type": {"type": "string", "enum": ["x", "youtube"]},
+          "handle": {"type": "string", "minLength": 1},
+          "notebooks": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "minItems": 1
+          },
+          "notebook_ids": {
+            "type": "object",
+            "description": "Resolved name→id map, persisted by ensure_notebook.py (#126)",
+            "additionalProperties": {"type": "string"}
+          },
+          "enabled": {"type": "boolean"},
+          "cadence": {"type": "string", "enum": ["hourly", "daily", "weekly"]},
+          "schedule": {"type": "string", "description": "Optional cron expression (overrides cadence)"},
+          "since": {"type": "string", "format": "date-time", "description": "ISO8601 lower bound for fetch"},
+          "until": {"type": "string", "format": "date-time", "description": "ISO8601 upper bound for fetch"},
+          "config": {"type": "object", "description": "Fetcher-specific options"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

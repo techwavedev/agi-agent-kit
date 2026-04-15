@@ -80,6 +80,7 @@ qa_team
 - **No test framework detected:** `test-generator` defaults to Python `unittest`
 - **Tests fail due to missing dependency:** `test-verifier` escalates, does not loop
 - **Changed file is documentation only:** QA team is skipped
+- **Tests fail due to a real bug in the changed code (not the test):** escalate to `debugger` (`directives/subagents/debugger.md`). The debugger finds the root cause and applies a fix, then `test-verifier` re-runs. Do NOT let `test-generator` weaken the test to make it pass.
 
 ---
 
